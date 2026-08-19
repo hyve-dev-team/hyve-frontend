@@ -1,0 +1,217 @@
+/* Custom font Import */
+
+/* POPPINS ofnt family */
+@import url("https://fonts.googleapis.com/css2?family=Athiti:wght@200;300;400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Sora:wght@100..800&display=swap");
+
+/* fallback font - SORA font family */
+@font-face {
+  font-family: "Sora", sans-serif;
+  src: url("../fonts/Sora/Sora-VariableFont_wght.ttf");
+}
+
+/* INTER font family */
+@font-face {
+  font-family: "Inter", sans-serif;
+  src: url("../fonts/inter/Inter-VariableFont_opsz\,wght.ttf");
+}
+
+/* Tailwind utility classes */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* BASE */
+@layer base {
+  /* RESET */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  /* CSS variables */
+  :root {
+    --color-primary: 255 99 0;
+    --color-primary-light: 255 241 233;
+    --color-primary-hover: 229 88 0;
+    /* --color-primary-hover: rgb(229, 88, 0); */
+    --color-dark: 36 36 36;
+    --color-dark-light: 241 241 241;
+    --color-white: 255 255 255;
+    --hightlight: 255 99 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 50px;
+  }
+  body {
+    scrollbar-width: thin;
+  }
+  
+  /* -- */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Sora", sans-serif;
+  }
+  h1 {
+    font-size: 2.5rem; /* 40px */
+  }
+  h2 {
+    font-size: 2.25rem; /* 36px */
+  }
+  h3 {
+    font-size: 1.5rem; /* 24px */
+  }
+  h4 {
+    font-size: 1.1rem; /* 20px */
+  }
+  p {
+    font-size: 1rem; /* 16px */
+    font-family: "Poppins", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  li {
+    list-style-type: none;
+  }
+}
+
+/* COMPONENTS */
+@layer components {
+  /* Custom-plain CSS and Custom-Media-Queries */
+  .container {
+    @apply w-full max-w-[90%] sm:max-w-[85%] my-0 mx-auto desktop-lg:w-full desktop-lg:max-w-[60%] desktop-xl:max-w-[50%];
+  }
+
+  .nav-link {
+    @apply text-sm font-medium text-black transition-colors duration-200 font-poppins hover:text-white md:hover:text-primary;
+  }
+
+  .nav-link.active {
+    @apply text-primary;
+  }
+
+  /* Mobile nav links */
+  .mobile-menu {
+    @apply fixed top-0 left-0 bg-primary w-full h-max z-[20] md:hidden py-6 translate-y-[-100%] transition-all duration-[.4s];
+  }
+  .mobile-menu.active {
+    @apply block md:hidden shadow-[0px_3px_8px_rgba(0,0,0,0.4)] translate-y-0;
+  }
+
+  /* smooth transition */
+  .smooth-transition {
+    @apply transition-all duration-300;
+  }
+
+  /* text trucation and responsiveness on all screens*/
+  .trunc {
+    @apply whitespace-nowrap overflow-hidden text-ellipsis w-[100%] lg:w-[70%];
+  }
+
+  .heading-responsive {
+    @apply text-[18px] sm:text-[24px] md:text-[28px] lg:text-[32px];
+  }
+
+  .paragraph-responsive {
+    @apply text-[12px] md:text-[16px];
+  }
+
+  /* faded mask style for hero section stacked image effect */
+  .faded-mask {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 6%,
+      black 94%,
+      transparent 100%
+    );
+  }
+
+  /* Onboarding screen */
+  .centralizeContent {
+    @apply absolute top-0 left-0 flex items-center justify-center w-full h-full;
+  }
+  .onboardingBtn {
+    @apply w-full sm:w-[70%] lg:w-[40%] mx-auto py-3 text-white  rounded-full shadow-md outline-none md:py-3 md:px-10 lg:px-16 bg-primary font-poppins md:hover:bg-primary-hover smooth-transition text-[12px] sm:text-sm font-normal flex items-center justify-center gap-1 capitalize;
+  }
+
+  /* signup and login page styles */
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+  .form-group {
+    @apply flex items-center border-2  py-3 px-2 md:px-3 border-[#00000040] rounded-[8px];
+  }
+  .form-input {
+    @apply w-full mx-2 text-sm text-black outline-none md:mx-3 font-athiti;
+  }
+
+  /* verification page */
+  .verificationBox {
+    @apply h-10 w-10 sm:w-12 sm:h-12 md:w-14 md:h-14 text-sm md:text-2xl font-normal md:font-semibold text-center border border-[#00000075] rounded-lg md:rounded-xl focus:border-primary focus:ring-primary-light focus:ring-4 focus:bg-primary-light/20 focus:outline-none transition-all duration-150 ease-in-out [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none;
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    @apply border-2 border-primary-light rounded-[50%] border-t-primary;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+
+  /* Tenant dashboard: Update profile inout */
+  .update_user_info {
+    @apply w-full mt-1 text-sm text-black/60 outline-none font-athiti border-2 py-2 md:py-3 px-2 md:px-3 border-[#00000040] rounded-[8px] font-light
+  }
+  
+  /* Landlord Dashboard: Upload new property */
+   .upload_new_property {
+    @apply w-full mt-1 text-sm text-black/60 outline-none font-athiti border py-2 md:py-3 px-2 md:px-3 border-[#00000040] rounded-[8px] focus:border-primary smooth-transition
+  }
+  /* piuw = property_image_upload_wrapper */
+  .piuw {
+    @apply bg-[#FFF7F3] flex justify-center p-6 rounded-xl cursor-pointer hover:bg-[#FF630040]/10 smooth-transition
+  }
+  /* piucp = property_image_upload_circle_parent */
+  .piucp {
+   @apply flex items-center justify-center w-20 h-20 bg-[#FF630040]/20 rounded-full  
+  }
+  /* piucc = property_image_upload_circle_child */
+  .piucc {
+   @apply bg-[#FF630040]/20 rounded-full w-14 h-14 flex items-center justify-center 
+  }
+  /* piuci =  property_image_upload_circle_icon */
+  .piuci {
+    @apply text-white text-[30px]
+  }
+}
+
+/* UTILITIES */
+@layer utilities {
+  /* Utility class to center body content, improving resonsiveness on device with screens larger than 1400px */
+  .page-wrapper {
+    @apply desktop-lg:max-w-[1400px] mx-auto;
+  }
+  /* Utility class to prevent scrolling on the body */
+  .no-scroll {
+    overflow: hidden !important;
+  }
+
+  /* utility class to hide webkitscroll bar */
+  .scroll-bar-hidden {
+    @apply [&::-webkit-scrollbar]:hidden;
+  }
+}
