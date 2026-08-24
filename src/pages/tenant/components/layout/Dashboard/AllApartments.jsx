@@ -1,15 +1,49 @@
+
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import featuredLodges from '../../../../../utils/featuredLodges'
-import { BsHeart } from "react-icons/bs";
+import { getSavedIds, toggleSaved, subscribeToSavedChanges } from '../../../../../utils/savedLodges'
+import { BsHeart, BsHeartFill } from "react-icons/bs";
 import { LuUserRoundCog } from "react-icons/lu";
 import { IoStarSharp } from 'react-icons/io5'
 
-const AllApartments = () => {
+// Accepts an optional `lodges` prop so search/filter pages can pass a
+// filtered/sorted subset. Defaults to the full static list so existing
+// usages (Dashboard) keep working unchanged.
+const AllApartments = ({ lodges = featuredLodges, emptyMessage = "No apartments match your search." }) => {
+    // Track which lodge ids are saved so the heart icon reflects real state
+    // and survives refresh (see utils/savedLodges.js).
+    const [savedIds, setSavedIds] = useState(() => getSavedIds());
+
+    useEffect(() => {
+        const sync = () => setSavedIds(getSavedIds());
+        sync();
+        const unsubscribe = subscribeToSavedChanges(sync);
+        return unsubscribe;
+    }, []);
+
+    const handleToggleSave = (e, lodgeId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleSaved(lodgeId);
+        // toggleSaved dispatches the change event which updates savedIds via sync()
+    };
+
+    if (!lodges || lodges.length === 0) {
+        return (
+            <section className='mt-4 md:mt-6'>
+                <p className='py-12 text-sm text-center text-[#AAAAAA]'>{emptyMessage}</p>
+            </section>
+        );
+    }
+
     return (
         <>
             <section className='mt-4 md:mt-6'>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-1 md:gap-6 lg:grid-cols-2">
-                    {featuredLodges.map((lodge) => (
+                    {lodges.map((lodge) => {
+                        const saved = savedIds.includes(lodge.id);
+                        return (
                         <div key={lodge.id} className='border border-[#FF630033] rounded-[8px] p-2 md:mb-2 md:p-0 sm:border-0 '>
                             {/* lodge image */}
                             <div className="rounded-[6px] relative overflow-hidden w-full h-[280px] sm:h-[300px] sm:rounded-[16px]">
@@ -17,15 +51,15 @@ const AllApartments = () => {
                                     <img src={lodge.lodgeImage} alt="featured lodge" className='object-cover w-full h-full' />
                                 </Link>
 
-                                {/* save apartment button */}
+                                {/* save apartment button — persists via localStorage, see utils/savedLodges.js */}
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        console.log('Lodge saved:', lodge.id);
-                                    }}
+                                    aria-label={saved ? "Unsave apartment" : "Save apartment"}
+                                    onClick={(e) => handleToggleSave(e, lodge.id)}
                                     className='absolute z-10 p-2 bg-white rounded-full shadow-sm cursor-pointer right-3 top-3 md:right-6 md:top-6'
                                 >
-                                    <BsHeart className='text-primary sm:text-[16px] md:text-[20px]' />
+                                    {saved
+                                        ? <BsHeartFill className='text-primary sm:text-[16px] md:text-[20px]' />
+                                        : <BsHeart className='text-primary sm:text-[16px] md:text-[20px]' />}
                                 </button>
                             </div>
                             
@@ -56,7 +90,7 @@ const AllApartments = () => {
 
                             {/* lodge location estimation */}
                             <div className="flex flex-wrap items-center gap-2 mt-1 md:mt-2" >
-                                <p className="text-[12px] md:text-sm mr-2 text-[#AAAAAA] sm:text-black">2.1 km from Unilag</p>
+                                <p className="text-[12px] md:text-sm mr-2 text-[#AAAAAA] sm:text-black">{lodge.nearbyDistance}</p>
                                 <span className="hidden bg-[#DDFFE7] text-[#1B784D] text-[10px] md:text-[10px] px-4 rounded-sm md:rounded-md md:py-[.2rem] py-[.15rem] sm:block">
                                     Verified
                                 </span>
@@ -104,7 +138,8 @@ const AllApartments = () => {
                                 </Link>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div >
             </section >
         </>

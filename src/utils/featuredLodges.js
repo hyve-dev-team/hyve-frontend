@@ -1,3 +1,4 @@
+
 const featuredLodges = [
 
     {
@@ -57,13 +58,13 @@ const featuredLodges = [
     {
         id: 2,
         lodgeImage: "/images/apartments/apartment-image-2.png",
-        lodgeDesc: "Newly Built 2 Bedroom Flat",
-        price: 250000,
-        nearbyDistance: "2.1 km from Unilag",
+        lodgeDesc: "Cozy Self-Contained Studio",
+        price: 120000,
+        nearbyDistance: "1.4 km from UI",
         starRating: 4.8,
         totalReviews: 12,
-        status: "closed",
-        amenities: "Fenced, Solar Inverter",
+        status: "open",
+        amenities: "Wifi, Running Water",
         lodgeTumbnails: [
             {
                 id: 1,
@@ -98,13 +99,13 @@ const featuredLodges = [
     {
         id: 3,
         lodgeImage: "/images/apartments/apartment-image-3.png",
-        lodgeDesc: "Newly Built 2 Bedroom Flat",
-        price: 250000,
-        nearbyDistance: "2.1 km from Unilag",
+        lodgeDesc: "Modern 3 Bedroom Duplex",
+        price: 450000,
+        nearbyDistance: "3.8 km from OAU",
         starRating: 4.8,
         totalReviews: 12,
-        status: "open",
-        amenities: "Electricity,  Wifi, +3 more",
+        status: "closed",
+        amenities: "Electricity, Wifi, Parking",
         lodgeTumbnails: [
             {
                 id: 1,
@@ -152,13 +153,13 @@ const featuredLodges = [
     {
         id: 4,
         lodgeImage: "/images/apartments/apartment-image-3.png",
-        lodgeDesc: "Newly Built 2 Bedroom Flat",
-        price: 250000,
-        nearbyDistance: "2.1 km from Unilag",
+        lodgeDesc: "Affordable Mini Flat",
+        price: 90000,
+        nearbyDistance: "0.9 km from FUTA",
         starRating: 4.8,
         reviews: 12,
-        status: "closed",
-        amenities: "Electricity, Wifi",
+        status: "open",
+        amenities: "Running Water",
         lodgeTumbnails: [
             {
                 id: 1,
@@ -206,13 +207,13 @@ const featuredLodges = [
     {
         id: 5,
         lodgeImage: "/images/apartments/apartment-image-3.png",
-        lodgeDesc: "Newly Built 2 Bedroom Flat",
-        price: 250000,
-        nearbyDistance: "2.1 km from Unilag",
+        lodgeDesc: "Luxury 2 Bedroom Apartment",
+        price: 600000,
+        nearbyDistance: "2.5 km from Covenant University",
         starRating: 4.8,
         reviews: 12,
         status: "open",
-        amenities: "Electricity, Wifi, Running Water",
+        amenities: "Electricity, Wifi, Generator",
         lodgeTumbnails: [
             {
                 id: 1,
@@ -260,13 +261,13 @@ const featuredLodges = [
     {
         id: 6,
         lodgeImage: "/images/apartments/apartment-image-3.png",
-        lodgeDesc: "Newly Built 2 Bedroom Flat",
-        price: 250000,
-        nearbyDistance: "2.1 km from Unilag",
+        lodgeDesc: "Shared Room in Hostel",
+        price: 60000,
+        nearbyDistance: "0.5 km from LASU",
         starRating: 4.8,
         reviews: 12,
-        status: "open",
-        amenities: "Wifi, Running Water",
+        status: "closed",
+        amenities: "Running Water",
         lodgeTumbnails: [
             {
                 id: 1,
