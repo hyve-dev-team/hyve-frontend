@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 import defaultProfile from "../../assets/images/shared-images/user-1.png"
 import apartmentImage from "../../assets/images/apartments/apartment-image-2.png"
@@ -8,6 +9,7 @@ import { LuUserRoundCog } from 'react-icons/lu'
 import { Link } from 'react-router-dom'
 import Header from './components/layout/Dashboard/Header'
 import { BiChat } from 'react-icons/bi'
+import { hyveSuccess, hyveError } from '../../utils/hyveToast'
 
 const ManageApartment = () => {
     // State to handle show more/less of apartment description
@@ -16,9 +18,51 @@ const ManageApartment = () => {
     // State to track the currently displayed main image
     const [mainImage, setMainImage] = useState(null);
 
+    // Review form state — the "Submit review" button had no onSubmit at all before this.
+    // Persisted to localStorage for now; swap for a real POST /reviews call once that
+    // endpoint exists on the backend.
+    const [rating, setRating] = useState('');
+    const [reviewText, setReviewText] = useState('');
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
     // Handle show more/less functionality
     const toggleDescription = () => {
         setIsExpanded(prev => !prev);
+    };
+
+    const handleReviewSubmit = (e) => {
+        e.preventDefault();
+
+        if (!rating) {
+            hyveError("Please select a rating", "Rating is required before submitting a review.");
+            return;
+        }
+        if (!reviewText.trim()) {
+            hyveError("Please write a review", "Tell us a bit about your stay first.");
+            return;
+        }
+
+        setIsSubmittingReview(true);
+
+        try {
+            const raw = localStorage.getItem("hyve_apartment_reviews");
+            const existing = raw ? JSON.parse(raw) : [];
+            existing.push({
+                apartmentId: 1, // hardcoded to match the rest of this page's static "current lodge" data
+                rating: Number(rating),
+                text: reviewText.trim(),
+                date: new Date().toISOString(),
+            });
+            localStorage.setItem("hyve_apartment_reviews", JSON.stringify(existing));
+
+            hyveSuccess("Review submitted", "Thanks for sharing your experience!");
+            setRating('');
+            setReviewText('');
+        } catch (err) {
+            hyveError("Something went wrong", "Your review wasn't saved. Please try again.");
+        } finally {
+            setIsSubmittingReview(false);
+        }
     };
 
     return (
@@ -167,10 +211,16 @@ const ManageApartment = () => {
 
 
                                     <div className='w-full mt-10'>
-                                        <form>
+                                        <form onSubmit={handleReviewSubmit}>
                                             <div>
-                                                <label htmlFor="" className='text-[#AAAAAA] text-sm'>Rating *</label>
-                                                <select name="" id="" className='w-full px-3 py-3 md:py-4 mt-2 border border-[#6E6E6E] rounded-xl outline-none text-xs focus:border-primary appearance-none' required>
+                                                <label htmlFor="review-rating" className='text-[#AAAAAA] text-sm'>Rating *</label>
+                                                <select
+                                                    name="rating"
+                                                    id="review-rating"
+                                                    value={rating}
+                                                    onChange={(e) => setRating(e.target.value)}
+                                                    className='w-full px-3 py-3 md:py-4 mt-2 border border-[#6E6E6E] rounded-xl outline-none text-xs focus:border-primary appearance-none'
+                                                >
                                                     <option value="">Select a rating (1 - 5)</option>
                                                     <option value="1">1 - Needs Major Improvements</option>
                                                     <option value="2">2 - Below Expectation</option>
@@ -180,11 +230,23 @@ const ManageApartment = () => {
                                                 </select>
                                             </div>
                                             <div className='mt-2'>
-                                                <textarea placeholder='Drop a review...' name="review" id="review" maxLength={250} className='w-full h-[100px] px-3 py-2 border border-[#6E6E6E] rounded-xl outline-none text-sm focus:border-primary text-black/80' required></textarea>
+                                                <textarea
+                                                    placeholder='Drop a review...'
+                                                    name="review"
+                                                    id="review"
+                                                    maxLength={250}
+                                                    value={reviewText}
+                                                    onChange={(e) => setReviewText(e.target.value)}
+                                                    className='w-full h-[100px] px-3 py-2 border border-[#6E6E6E] rounded-xl outline-none text-sm focus:border-primary text-black/80'
+                                                ></textarea>
                                             </div>
 
-                                            <button type='submit' className='w-full sm:w-1/3 mt-4 py-3 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-sm sm:text-[14px]'>
-                                                Submit review
+                                            <button
+                                                type='submit'
+                                                disabled={isSubmittingReview}
+                                                className='w-full sm:w-1/3 mt-4 py-3 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-sm sm:text-[14px] disabled:opacity-60'
+                                            >
+                                                {isSubmittingReview ? "Submitting..." : "Submit review"}
                                             </button>
                                         </form>
                                     </div>
