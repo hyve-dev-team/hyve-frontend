@@ -10,6 +10,8 @@ import { Link } from 'react-router-dom'
 import Header from './components/layout/Dashboard/Header'
 import { BiChat } from 'react-icons/bi'
 import { hyveSuccess, hyveError } from '../../utils/hyveToast'
+import { addReview } from '../../utils/propertiesApi'
+import { getCurrentLodge } from '../../utils/currentLodge'
 
 const ManageApartment = () => {
     // State to handle show more/less of apartment description
@@ -30,7 +32,7 @@ const ManageApartment = () => {
         setIsExpanded(prev => !prev);
     };
 
-    const handleReviewSubmit = (e) => {
+    const handleReviewSubmit = async (e) => {
         e.preventDefault();
 
         if (!rating) {
@@ -42,24 +44,25 @@ const ManageApartment = () => {
             return;
         }
 
+        const currentLodge = getCurrentLodge();
+        if (!currentLodge?.apartmentId) {
+            hyveError("No current lodge found", "You need an active booking to leave a review.");
+            return;
+        }
+
         setIsSubmittingReview(true);
 
         try {
-            const raw = localStorage.getItem("hyve_apartment_reviews");
-            const existing = raw ? JSON.parse(raw) : [];
-            existing.push({
-                apartmentId: 1, // hardcoded to match the rest of this page's static "current lodge" data
+            await addReview(currentLodge.apartmentId, {
                 rating: Number(rating),
-                text: reviewText.trim(),
-                date: new Date().toISOString(),
+                comment: reviewText.trim(),
             });
-            localStorage.setItem("hyve_apartment_reviews", JSON.stringify(existing));
 
             hyveSuccess("Review submitted", "Thanks for sharing your experience!");
             setRating('');
             setReviewText('');
         } catch (err) {
-            hyveError("Something went wrong", "Your review wasn't saved. Please try again.");
+            hyveError("Something went wrong", err.message || "Your review wasn't saved. Please try again.");
         } finally {
             setIsSubmittingReview(false);
         }

@@ -1,5 +1,7 @@
+
 import { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import config from '../../config';
 
 
 /* verification code length */
@@ -10,6 +12,7 @@ const Verification = () => {
 
     const [code, setCode] = useState(new Array(CODE_LENGTH).fill(''));
     const [isError, setIsError] = useState(false)
+    const [isResending, setIsResending] = useState(false)
 
     // Array of refs to manage focus for each input box
     const inputRefs = useRef([]);
@@ -83,6 +86,26 @@ const Verification = () => {
 
 
 
+    /* Handle resend OTP */
+    const handleResend = async () => {
+        const userEmail = localStorage.getItem("userEmail");
+        if (!userEmail || isResending) return;
+
+        setIsResending(true);
+        try {
+            const res = await config.postAPI({
+                url: "/api/v1/auth/resend-otp",
+                params: { email: userEmail },
+            });
+            alert(res?.message || (res?.success ? "Code resent — check your email." : "Couldn't resend the code."));
+        } catch (error) {
+            console.error("Resend OTP error:", error);
+            alert("Couldn't resend the code. Please try again.");
+        } finally {
+            setIsResending(false);
+        }
+    };
+
     /* Handle Verification Logic */
     const handleVerification = async (e) => {
         e.preventDefault();
@@ -90,49 +113,44 @@ const Verification = () => {
         const userEmail = localStorage.getItem("userEmail");
         const userRole = localStorage.getItem("userRole");
 
-        
-        /* if user is tenant now verify the email */
-        if (userRole === "user" && fullCode.length === 6) {
-            setIsError(false)
-            console.log(fullCode.length)
+        if (fullCode.length !== CODE_LENGTH) {
+            setIsError(true);
+            return;
+        }
+        setIsError(false);
 
-            // 
-            const res = await fetch("http://localhost:1909/api/tenant/verify-email", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email: userEmail, otp: fullCode}),
+        try {
+            // Real backend: verify-otp activates the account AND returns a real
+            // token + user in one call — no separate set-password/login step needed.
+            const res = await config.postAPI({
+                url: "/api/v1/auth/verify-otp",
+                params: { email: userEmail, otp: fullCode },
             });
 
-            const resData = await res.json();
-
-            if (!res.ok) {
-                console.error(resData.error.message || "Registration failed");
+            if (!res?.success || !res?.data?.token) {
+                setIsError(true);
+                alert(res?.message || "Verification failed. Please check the code and try again.");
                 return;
             }
-            alert("Verification successful! Redirecting to dashboard...");
-            navigate("/user/dashboard")
-            localStorage.removeItem("userEmail");
-        } else {
-            /* if inputed code is not up to 6, send an error feedback */
-            setIsError(true)
-        }
 
-        /* if user is landlord now verify the email */
-        if (userRole === "landlord" && fullCode.length === 6) {
-            setIsError(false)
-            console.log(fullCode.length)
+            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+            localStorage.removeItem("userEmail");
 
             alert("Verification successful! Redirecting to your dashboard...");
-            navigate("/landlord/dashboard")
-            localStorage.removeItem("userEmail");
-            localStorage.removeItem("userRole");
-        } else {
-            /* if inputed code is not up to 6, send an error feedback */
-            setIsError(true)
+
+            if (userRole === "landlord") {
+                navigate("/landlord/dashboard");
+            } else {
+                navigate("/user/dashboard");
+            }
+        } catch (error) {
+            console.error("Verification error:", error);
+            setIsError(true);
+            alert("Something went wrong verifying your code. Please try again.");
         }
     }
+
 
     return (
         <>
@@ -175,7 +193,7 @@ const Verification = () => {
                         </button>
 
                         <div className='mt-6'>
-                            <p className='text-sm'>Didn't get code? <span className='text-[#AAAAAA] cursor-pointer'>Resend in 30s</span></p>
+                            <p className='text-sm'>Didn't get code? <span onClick={handleResend} className={`cursor-pointer ${isResending ? "text-[#DDD]" : "text-[#AAAAAA]"}`}>{isResending ? "Resending..." : "Resend code"}</span></p>
                         </div>
                     </div>
                 </div>

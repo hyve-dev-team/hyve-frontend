@@ -1,6 +1,12 @@
-import React, { useEffect, useState } from 'react'
-import featuredLodges from '../utils/featuredLodges';
 
+import { useEffect, useState } from 'react'
+import { getPropertyById } from '../utils/propertiesApi';
+import { mapProperty } from '../utils/mapProperty';
+
+// Reviews come embedded on the Property object itself (real API doesn't have a
+// separate reviews-by-property endpoint), so this hook just fetches the property
+// and hands back the same mapped shape as useFetchApartment — kept as a separate
+// hook since ApartmentReviews.jsx already imports it under this name.
 const useFetchReviews = (apartmentID) => {
   const [apartment, setApartment] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -10,43 +16,31 @@ const useFetchReviews = (apartmentID) => {
     setIsLoading(true);
     setError(null);
 
-    // Check if the ID is available before fetching
     if (!apartmentID) {
       setError("Not Found!");
       setIsLoading(false);
       return;
     }
 
-    // stimulated data fetching
-    const fetchDummyApartmentReview = async () => {
+    let cancelled = false;
+
+    const fetchApartmentReviews = async () => {
       try {
-        // Stimulated network delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Ensure apartmentId is a number
-        const idToFind = Number(apartmentID);
-
-        // Find the apartment where the ID matches
-        const response = featuredLodges.find(lodge => lodge.id === idToFind);
-
-        if (response) {
-          setApartment(response);
-        } else {
-          const notFoundError = `Apartment Not Found!`;
-          setError(notFoundError);
-          setApartment(null);
-        }
-
+        const property = await getPropertyById(apartmentID);
+        if (cancelled) return;
+        setApartment(mapProperty(property));
       } catch (err) {
-        // Catch any unexpected errors during processing
-        setError("An unexpected error occurred.");
+        if (cancelled) return;
+        console.error("Error fetching apartment reviews:", err);
+        setError(err.message || "Apartment Not Found!");
         setApartment(null);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
-    fetchDummyApartmentReview()
+    fetchApartmentReviews();
+    return () => { cancelled = true; };
   }, [apartmentID]);
   return { apartment, isLoading, error };
 }

@@ -1,8 +1,7 @@
 "use client"
 import { useState, useEffect } from 'react';
-// import axios from 'axios';
-import featuredLodges from '../utils/featuredLodges';
-
+import { getPropertyById } from '../utils/propertiesApi';
+import { mapProperty } from '../utils/mapProperty';
 
 const useFetchApartment = (apartmentID) => {
     const [apartment, setApartment] = useState(null);
@@ -13,63 +12,33 @@ const useFetchApartment = (apartmentID) => {
         setIsLoading(true);
         setError(null);
 
-        // Check if the ID is available before fetching
         if (!apartmentID) {
             setError("No apartment ID found in the URL.");
             setIsLoading(false);
             return;
         }
 
-        // const fetchApartment = async () => {
-        //     try {
-        //         setIsLoading(true);
-        //         setError(null);
+        let cancelled = false;
 
-        //         // API URL for the single apartment
-        //         const url = ``;
-
-        //         // Perform the GET request
-        //         const response = await axios.get(url);
-        //         setApartment(response.data);
-        //     } catch (err) {
-        //         console.error("Error fetching apartment:", err);
-        //         setError("Failed to load apartment details. Please try again.");
-        //     } finally {
-        //         setIsLoading(false);
-        //     }
-        // };
-
-        const fetchDummyApartment = async () => {
+        const fetchApartment = async () => {
             try {
-                // Stimulated network delay
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                // Ensure apartmentId is a number
-                const idToFind = Number(apartmentID);
-
-                // Find the apartment where the ID matches
-                const response = featuredLodges.find(lodge => lodge.id === idToFind);
-
-                if (response) {
-                    setApartment(response);
-                } else {
-                    const notFoundError = `Apartment with ID ${apartmentID} Not found.`;
-                    setError(notFoundError);
-                    setApartment(null);
-                }
-
+                const property = await getPropertyById(apartmentID);
+                if (cancelled) return;
+                setApartment(mapProperty(property));
             } catch (err) {
-                // Catch any unexpected errors during processing
-                setError("An unexpected error occurred.");
+                if (cancelled) return;
+                console.error("Error fetching apartment:", err);
+                setError(err.message || "Failed to load apartment details. Please try again.");
                 setApartment(null);
             } finally {
-                setIsLoading(false);
+                if (!cancelled) setIsLoading(false);
             }
-        }
+        };
 
-        // fetchApartment();
-        fetchDummyApartment()
+        fetchApartment();
+        return () => { cancelled = true; };
     }, [apartmentID]);
+
     return { apartment, isLoading, error };
 };
 

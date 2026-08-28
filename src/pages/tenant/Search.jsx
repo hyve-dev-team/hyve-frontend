@@ -1,10 +1,13 @@
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Sidebar from './components/layout/Sidebar/Sidebar'
 import Header from './components/layout/Dashboard/Header'
 import AllApartments from './components/layout/Dashboard/AllApartments'
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
-import featuredLodges from '../../utils/featuredLodges'
+import { getProperties } from '../../utils/propertiesApi'
+import { mapProperties } from '../../utils/mapProperty'
+import useSavedPropertyIds from '../../hooks/useSavedPropertyIds'
+import { hyveError } from '../../utils/hyveToast'
 import { RiSearch2Line } from 'react-icons/ri'
 
 const SORT_OPTIONS = {
@@ -16,14 +19,32 @@ const SORT_OPTIONS = {
 }
 
 const Search = () => {
+    const [allLodges, setAllLodges] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [query, setQuery] = useState("");
     const [sort, setSort] = useState("");
+    const { savedIds, applyOptimisticChange } = useSavedPropertyIds();
 
-    // Client-side search + sort against the static dataset for now.
-    // Swap the `.filter` below for a real API call (config.getAPI) once
-    // GET /apartments exists on the backend — the input/select wiring stays the same.
+    useEffect(() => {
+        let cancelled = false;
+        // Fetch a large page and filter/sort client-side — the exact Spring Data
+        // sortBy string format wasn't confirmed against a live call, so this avoids
+        // sending a malformed param that silently gets ignored or errors.
+        getProperties({ page: 0, size: 100 })
+            .then((data) => {
+                if (cancelled) return;
+                setAllLodges(mapProperties(data.content));
+            })
+            .catch((err) => {
+                console.error("Failed to load properties:", err);
+                hyveError("Couldn't load listings", "Please refresh and try again.");
+            })
+            .finally(() => !cancelled && setIsLoading(false));
+        return () => { cancelled = true; };
+    }, []);
+
     const results = useMemo(() => {
-        let list = featuredLodges;
+        let list = allLodges;
 
         if (query.trim()) {
             const q = query.trim().toLowerCase();
@@ -52,7 +73,7 @@ const Search = () => {
         }
 
         return list;
-    }, [query, sort]);
+    }, [allLodges, query, sort]);
 
     return (
         <div className='page-wrapper'>
@@ -84,7 +105,7 @@ const Search = () => {
                         </div>
                         
                         <div className='flex items-center justify-between mt-8'>
-                            <h4 className="text-sm font-normal rounded-lg font-poppins">{results.length} ads found</h4>
+                            <h4 className="text-sm font-normal rounded-lg font-poppins">{isLoading ? "Loading..." : `${results.length} ads found`}</h4>
 
                             <div>
                                 <label htmlFor="filter" className='text-sm'>Filter:</label>
@@ -103,7 +124,14 @@ const Search = () => {
                         </div>
 
                         {/* Available Lodges */}
-                        <AllApartments lodges={results} emptyMessage="No apartments match your search." />
+                        {!isLoading && (
+                            <AllApartments
+                                lodges={results}
+                                savedIds={savedIds}
+                                onSavedChange={applyOptimisticChange}
+                                emptyMessage="No apartments match your search."
+                            />
+                        )}
                     </div>
                 </main>
             </div>

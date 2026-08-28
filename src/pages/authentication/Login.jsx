@@ -1,5 +1,7 @@
+
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from "react-router-dom";
+import config from "../../config";
 
 
 /*  */
@@ -52,55 +54,37 @@ const Login = () => {
   };
 
 
-  /* User Registration Logic */
+  /* User Login Logic */
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (userRole === "user"){
-      navigate("/user/dashboard")
+    if (!validateAll()) return;
+
+    try {
+      const res = await config.postAPI({
+        url: "/api/v1/auth/login",
+        params: { email: formData.email, password: formData.password },
+      });
+
+      // Real API wraps the payload as { success, message, data: { token, user } }
+      if (!res?.success || !res?.data?.token) {
+        alert(res?.message || "Invalid email or password. Please try again.");
+        return;
+      }
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem("userRole", userRole);
+
+      if (userRole === "user") {
+        navigate("/user/dashboard");
+      } else if (userRole === "landlord") {
+        navigate("/landlord/dashboard");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("An error occurred. Please try again later.");
     }
-
-    if (userRole === "landlord"){
-      navigate("/landlord/dashboard")
-    }
-
-    /* Validate all inputs */
-    // if (validateAll()) {
-    //   // proceed with login
-
-    //   /* User registration logic for 'user' role */
-    //   if (userRole === "user") {
-    //     try {
-
-    //       const res = await fetch("http://localhost:1909/api/tenant/sign-in", {
-    //         method: "POST",
-    //         headers: {
-    //           "Content-Type": "application/json",
-    //         },
-    //         body: JSON.stringify({ userName: formData.email, password: formData.password }),
-    //       });
-
-    //       const resData = await res.json();
-
-    //       if (!res.ok) {
-    //         console.error(resData.error.message || "Login failed");
-    //         alert(resData.error.message || "Login failed. Please try again.");
-    //         return;
-    //       }
-
-    //       alert("login successful!");
-    //       localStorage.setItem("userData", JSON.stringify(resData.payload));
-    //       localStorage.setItem("userRole", userRole);
-    //       navigate("/user/dashboard")
-
-    //     } catch (error) {
-    //       console.error("Network error:", error);
-    //       alert("An error occurred. Please try again later.");
-    //     }
-    //   }
-
-
-    // }
   }
 
   return (

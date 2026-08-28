@@ -1,11 +1,32 @@
+
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { chatData } from '../../utils/chatData'
+import { getChatRooms, getCurrentUserId } from '../../utils/chatApi'
 import ChatItem from './components/layout/Chat/ChatItem'
 import Header from './components/layout/Dashboard/Header'
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
 import Sidebar from './components/layout/Sidebar/Sidebar'
+import { hyveError } from '../../utils/hyveToast'
 
 const ChatList = () => {
+    const [rooms, setRooms] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const currentUserId = getCurrentUserId();
+
+    useEffect(() => {
+        getChatRooms()
+            .then(setRooms)
+            .catch((err) => {
+                console.error("Failed to load chat rooms:", err);
+                hyveError("Couldn't load chats", "Please refresh and try again.");
+            })
+            .finally(() => setIsLoading(false));
+    }, []);
+
+    // The other person in a 1:1 room — whichever participant isn't the logged-in user.
+    const getOtherParticipant = (room) =>
+        room.participants?.find((p) => p.id !== currentUserId) || room.participants?.[0];
+
     return (
         <>
             <div className='page-wrapper'>
@@ -23,19 +44,28 @@ const ChatList = () => {
                                 <h2 className="text-[16px] md:text-[20px] font-semibold font-poppins">Chats</h2>
                             </div>
 
-                            <div className="divide-y divide-[#0000000D]">
-                                {chatData.map(chat => (
-                                    <Link  key={chat.id} to={`/user/conversation/${chat.id}`} className='block'>
-                                        <ChatItem
-                                            avatarSrc={chat.avatarSrc}
-                                            name={chat.name}
-                                            lastMessage={chat.lastMessage}
-                                            timestamp={chat.timestamp}
-                                            isOnline={chat.isOnline}
-                                        />
-                                    </Link>
-                                ))}
-                            </div>
+                            {isLoading ? (
+                                <p className='py-12 text-sm text-center text-[#AAAAAA]'>Loading chats...</p>
+                            ) : rooms.length === 0 ? (
+                                <p className='py-12 text-sm text-center text-[#AAAAAA]'>No conversations yet. Message a landlord from a listing to start one.</p>
+                            ) : (
+                                <div className="divide-y divide-[#0000000D]">
+                                    {rooms.map(room => {
+                                        const other = getOtherParticipant(room);
+                                        return (
+                                            <Link key={room.id} to={`/user/conversation/${room.id}`} className='block'>
+                                                <ChatItem
+                                                    avatarSrc={other?.profilePictureUrl}
+                                                    name={`${other?.firstName || ""} ${other?.lastName || ""}`.trim() || "Unknown"}
+                                                    lastMessage={other?.online ? "Online" : "Tap to view conversation"}
+                                                    timestamp=""
+                                                    isOnline={other?.online}
+                                                />
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </main>
                 </div>

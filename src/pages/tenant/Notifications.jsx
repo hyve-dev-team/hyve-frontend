@@ -5,39 +5,79 @@ import hyveLogo from "../../assets/svg/logo/hyve-logo.svg"
 import Sidebar from './components/layout/Sidebar/Sidebar'
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
 import { LuArrowLeft } from "react-icons/lu";
-import notificationData from '../../utils/notificationdata';
 import NotificationItem from './components/layout/Notification/NotificationItem';
-import { getReadIds, markAsRead, markAllAsRead, subscribeToNotificationChanges } from '../../utils/notifications';
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../utils/notificationsApi';
+import { hyveError } from '../../utils/hyveToast';
+
+// The real Notification object only has a `type` string (server-defined, e.g.
+// "MESSAGE", "SAVE", "REVIEW"), not a direct link — so route by best-effort
+// keyword match. Falls back to staying on this page (still marks as read) if the
+// type doesn't match anything recognized.
+function linkForType(type = "") {
+    const t = type.toLowerCase();
+    if (t.includes("message") || t.includes("chat")) return "/user/chats";
+    if (t.includes("save")) return "/user/apartment/saved";
+    if (t.includes("review")) return "/user/apartment/manage";
+    if (t.includes("book") || t.includes("reserv")) return "/user/apartment/manage";
+    return null;
+}
 
 const Notifications = () => {
     const navigate = useNavigate();
+    const [notifications, setNotifications] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Read/unread state persists via localStorage (see utils/notifications.js).
-    // Swap getReadIds()/markAsRead() for real API calls once the backend has
-    // GET /notifications and a mark-as-read endpoint.
-    const [readIds, setReadIds] = useState(() => getReadIds());
+    const loadNotifications = () => {
+        setIsLoading(true);
+        getNotifications()
+            .then(setNotifications)
+            .catch((err) => {
+                console.error("Failed to load notifications:", err);
+                hyveError("Couldn't load notifications", "Please refresh and try again.");
+            })
+            .finally(() => setIsLoading(false));
+    };
 
     useEffect(() => {
-        const sync = () => setReadIds(getReadIds());
-        const unsubscribe = subscribeToNotificationChanges(sync);
-        return unsubscribe;
+        loadNotifications();
     }, []);
 
-    /* function to handle "Go back" btn on notification page */
     const handleGoBack = () => {
         navigate(-1)
     }
 
-    const handleNotificationClick = (notification) => {
-        markAsRead(notification.id);
-        if (notification.link) navigate(notification.link);
+    const handleNotificationClick = async (notification) => {
+        // Optimistic: mark read in the UI immediately, then confirm with the server.
+        setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
+        try {
+            await markNotificationAsRead(notification.id);
+        } catch (err) {
+            console.error("Failed to mark notification as read:", err);
+        }
+        const link = linkForType(notification.type);
+        if (link) navigate(link);
     };
 
-    const handleMarkAllRead = () => {
-        markAllAsRead(notificationData.map((n) => n.id));
+    const handleMarkAllRead = async () => {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        try {
+            await markAllNotificationsAsRead();
+        } catch (err) {
+            console.error("Failed to mark all as read:", err);
+            hyveError("Couldn't mark all as read", "Please try again.");
+        }
     };
 
-    const unreadCount = notificationData.filter((n) => !readIds.includes(n.id)).length;
+    const unreadCount = notifications.filter((n) => !n.read).length;
+
+    const formatDate = (iso) => {
+        if (!iso) return "";
+        try {
+            return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+        } catch {
+            return "";
+        }
+    };
 
     return (
         <>
@@ -50,13 +90,10 @@ const Notifications = () => {
                     <main className='w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-auto'>
                         {/* Notification page Navbar */}
                         <header className="sticky top-0 z-20 flex items-center justify-between px-3 pt-5 pb-4 bg-white border-b sm:pt-6 sm:pb-6 sm:px-6 lg:px-16 lg:flex-row border-[#0000000D]">
-                            {/* Back Arrow Placeholder */}
                             <button aria-label="Go back" onClick={handleGoBack} className="text-xl text-gray-700">
                                 <LuArrowLeft />
                             </button>
 
-
-                            {/* Logo */}
                             <div className='w-[80px] sm:w-[90px] ml-4 lg:ml-6'>
                                 <Link to={"/user/dashboard"}>
                                     <img src={hyveLogo} alt="Hyve-logo" className='object-cover w-full' />
@@ -66,7 +103,6 @@ const Notifications = () => {
 
                         <div className='px-3 pb-24 mt-8 sm:pb-16 sm:px-6 lg:px-16 lg:mt-10'>
                             <div className='w-full lg:w-[70%] mx-auto '>
-                                {/* Title */}
                                 <div className="flex items-center justify-between mb-2 md:mb-6">
                                     <h3 className="text-[16px] md:text-[24px] font-semibold text-gray-900 font-poppins">
                                         Notifications
@@ -88,18 +124,23 @@ const Notifications = () => {
                                     )}
                                 </div>
 
-                                {/* Notification Item */}
-                                <div className="divide-y divide-[#0000000D]">
-                                    {notificationData.map(notification => (
-                                        <NotificationItem
-                                            key={notification.id}
-                                            title={notification.title}
-                                            date={notification.date}
-                                            read={readIds.includes(notification.id)}
-                                            onClick={() => handleNotificationClick(notification)}
-                                        />
-                                    ))}
-                                </div>
+                                {isLoading ? (
+                                    <p className='py-12 text-sm text-center text-[#AAAAAA]'>Loading notifications...</p>
+                                ) : notifications.length === 0 ? (
+                                    <p className='py-12 text-sm text-center text-[#AAAAAA]'>You have no notifications yet.</p>
+                                ) : (
+                                    <div className="divide-y divide-[#0000000D]">
+                                        {notifications.map(notification => (
+                                            <NotificationItem
+                                                key={notification.id}
+                                                title={notification.message}
+                                                date={formatDate(notification.createdAt)}
+                                                read={notification.read}
+                                                onClick={() => handleNotificationClick(notification)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </main>

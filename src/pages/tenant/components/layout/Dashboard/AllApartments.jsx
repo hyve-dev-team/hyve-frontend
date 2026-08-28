@@ -1,32 +1,43 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import featuredLodges from '../../../../../utils/featuredLodges'
-import { getSavedIds, toggleSaved, subscribeToSavedChanges } from '../../../../../utils/savedLodges'
+import { saveProperty, unsaveProperty } from '../../../../../utils/propertiesApi';
+import { hyveError } from '../../../../../utils/hyveToast';
 import { BsHeart, BsHeartFill } from "react-icons/bs";
 import { LuUserRoundCog } from "react-icons/lu";
 import { IoStarSharp } from 'react-icons/io5'
 
-// Accepts an optional `lodges` prop so search/filter pages can pass a
-// filtered/sorted subset. Defaults to the full static list so existing
-// usages (Dashboard) keep working unchanged.
-const AllApartments = ({ lodges = featuredLodges, emptyMessage = "No apartments match your search." }) => {
-    // Track which lodge ids are saved so the heart icon reflects real state
-    // and survives refresh (see utils/savedLodges.js).
-    const [savedIds, setSavedIds] = useState(() => getSavedIds());
+// `lodges` must be passed in — already mapped via utils/mapProperty.js by whichever
+// page fetched them (Dashboard/Search/Saved). `savedIds` is a Set of saved property
+// ids so the heart icon reflects the real server-side saved state.
+const AllApartments = ({ lodges = [], savedIds = new Set(), onSavedChange, emptyMessage = "No apartments match your search." }) => {
+    // Tracks in-flight save/unsave calls per-lodge so rapid double-clicks don't fire twice.
+    const [pendingIds, setPendingIds] = useState(new Set());
 
-    useEffect(() => {
-        const sync = () => setSavedIds(getSavedIds());
-        sync();
-        const unsubscribe = subscribeToSavedChanges(sync);
-        return unsubscribe;
-    }, []);
-
-    const handleToggleSave = (e, lodgeId) => {
+    const handleToggleSave = async (e, lodgeId) => {
         e.preventDefault();
         e.stopPropagation();
-        toggleSaved(lodgeId);
-        // toggleSaved dispatches the change event which updates savedIds via sync()
+
+        if (pendingIds.has(lodgeId)) return;
+        setPendingIds((prev) => new Set(prev).add(lodgeId));
+
+        const currentlySaved = savedIds.has(lodgeId);
+        try {
+            if (currentlySaved) {
+                await unsaveProperty(lodgeId);
+            } else {
+                await saveProperty(lodgeId);
+            }
+            onSavedChange?.(lodgeId, !currentlySaved);
+        } catch (err) {
+            hyveError("Something went wrong", err.message || "Couldn't update saved apartments.");
+        } finally {
+            setPendingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(lodgeId);
+                return next;
+            });
+        }
     };
 
     if (!lodges || lodges.length === 0) {
@@ -42,7 +53,7 @@ const AllApartments = ({ lodges = featuredLodges, emptyMessage = "No apartments 
             <section className='mt-4 md:mt-6'>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-1 md:gap-6 lg:grid-cols-2">
                     {lodges.map((lodge) => {
-                        const saved = savedIds.includes(lodge.id);
+                        const saved = savedIds.has(lodge.id);
                         return (
                         <div key={lodge.id} className='border border-[#FF630033] rounded-[8px] p-2 md:mb-2 md:p-0 sm:border-0 '>
                             {/* lodge image */}
@@ -51,11 +62,12 @@ const AllApartments = ({ lodges = featuredLodges, emptyMessage = "No apartments 
                                     <img src={lodge.lodgeImage} alt="featured lodge" className='object-cover w-full h-full' />
                                 </Link>
 
-                                {/* save apartment button — persists via localStorage, see utils/savedLodges.js */}
+                                {/* save apartment button — calls the real save/unsave endpoints */}
                                 <button
                                     aria-label={saved ? "Unsave apartment" : "Save apartment"}
                                     onClick={(e) => handleToggleSave(e, lodge.id)}
-                                    className='absolute z-10 p-2 bg-white rounded-full shadow-sm cursor-pointer right-3 top-3 md:right-6 md:top-6'
+                                    disabled={pendingIds.has(lodge.id)}
+                                    className='absolute z-10 p-2 bg-white rounded-full shadow-sm cursor-pointer right-3 top-3 md:right-6 md:top-6 disabled:opacity-50'
                                 >
                                     {saved
                                         ? <BsHeartFill className='text-primary sm:text-[16px] md:text-[20px]' />
@@ -82,7 +94,7 @@ const AllApartments = ({ lodges = featuredLodges, emptyMessage = "No apartments 
                                             ₦ {lodge.price}
                                         </p>
                                         <p className="text-[10px] md:text-[12px] font-light capitalize text-right">
-                                            per year
+                                            per month
                                         </p>
                                     </div>
                                 </div>
