@@ -1,7 +1,7 @@
 
 import axios from "axios";
 // import { findWhere } from "underscore";
-const baseURL = "http://hyvn-api-production-66db.up.railway.app"
+const baseURL = "https://hyvn-api-production-66db.up.railway.app"
 // const tinyAPIKey = process.env.TINY_API_KEY;
 
 const config = {
