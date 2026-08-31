@@ -1,15 +1,85 @@
-import { Link } from 'react-router-dom';
-import featuredLodges from '../../../../../utils/featuredLodges'
-import { BsHeart } from "react-icons/bs";
+
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { saveProperty, unsaveProperty } from '../../../../../utils/propertiesApi';
+import { createOrGetChatRoom } from '../../../../../utils/chatApi';
+import { hyveError } from '../../../../../utils/hyveToast';
+import { BsHeart, BsHeartFill } from "react-icons/bs";
 import { LuUserRoundCog } from "react-icons/lu";
 import { IoStarSharp } from 'react-icons/io5'
 
-const AllApartments = () => {
+// `lodges` must be passed in — already mapped via utils/mapProperty.js by whichever
+// page fetched them (Dashboard/Search/Saved). `savedIds` is a Set of saved property
+// ids so the heart icon reflects the real server-side saved state.
+const AllApartments = ({ lodges = [], savedIds = new Set(), onSavedChange, emptyMessage = "No apartments match your search." }) => {
+    const navigate = useNavigate();
+    // Tracks in-flight save/unsave calls per-lodge so rapid double-clicks don't fire twice.
+    const [pendingIds, setPendingIds] = useState(new Set());
+    // Tracks which "Message Owner" click is in flight.
+    const [openingChatFor, setOpeningChatFor] = useState(null);
+
+    const handleMessageOwner = async (e, lodge) => {
+        e.preventDefault();
+        if (!lodge.landlord?.id) {
+            hyveError("Can't start chat", "This listing has no landlord on record.");
+            return;
+        }
+        setOpeningChatFor(lodge.id);
+        try {
+            // Real fix: this used to be a static Link to /user/chats (or even a
+            // hardcoded /user/conversation/1 on ApartmentDetails) regardless of which
+            // listing/landlord was involved. Now opens/creates the real room for this
+            // specific landlord.
+            const room = await createOrGetChatRoom(lodge.landlord.id);
+            navigate(`/user/conversation/${room.id}`);
+        } catch (err) {
+            hyveError("Couldn't open chat", err.message || "Please try again.");
+        } finally {
+            setOpeningChatFor(null);
+        }
+    };
+
+    const handleToggleSave = async (e, lodgeId) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (pendingIds.has(lodgeId)) return;
+        setPendingIds((prev) => new Set(prev).add(lodgeId));
+
+        const currentlySaved = savedIds.has(lodgeId);
+        try {
+            if (currentlySaved) {
+                await unsaveProperty(lodgeId);
+            } else {
+                await saveProperty(lodgeId);
+            }
+            onSavedChange?.(lodgeId, !currentlySaved);
+        } catch (err) {
+            hyveError("Something went wrong", err.message || "Couldn't update saved apartments.");
+        } finally {
+            setPendingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(lodgeId);
+                return next;
+            });
+        }
+    };
+
+    if (!lodges || lodges.length === 0) {
+        return (
+            <section className='mt-4 md:mt-6'>
+                <p className='py-12 text-sm text-center text-[#AAAAAA]'>{emptyMessage}</p>
+            </section>
+        );
+    }
+
     return (
         <>
             <section className='mt-4 md:mt-6'>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-1 md:gap-6 lg:grid-cols-2">
-                    {featuredLodges.map((lodge) => (
+                    {lodges.map((lodge) => {
+                        const saved = savedIds.has(lodge.id);
+                        return (
                         <div key={lodge.id} className='border border-[#FF630033] rounded-[8px] p-2 md:mb-2 md:p-0 sm:border-0 '>
                             {/* lodge image */}
                             <div className="rounded-[6px] relative overflow-hidden w-full h-[280px] sm:h-[300px] sm:rounded-[16px]">
@@ -17,15 +87,16 @@ const AllApartments = () => {
                                     <img src={lodge.lodgeImage} alt="featured lodge" className='object-cover w-full h-full' />
                                 </Link>
 
-                                {/* save apartment button */}
+                                {/* save apartment button — calls the real save/unsave endpoints */}
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        console.log('Lodge saved:', lodge.id);
-                                    }}
-                                    className='absolute z-10 p-2 bg-white rounded-full shadow-sm cursor-pointer right-3 top-3 md:right-6 md:top-6'
+                                    aria-label={saved ? "Unsave apartment" : "Save apartment"}
+                                    onClick={(e) => handleToggleSave(e, lodge.id)}
+                                    disabled={pendingIds.has(lodge.id)}
+                                    className='absolute z-10 p-2 bg-white rounded-full shadow-sm cursor-pointer right-3 top-3 md:right-6 md:top-6 disabled:opacity-50'
                                 >
-                                    <BsHeart className='text-primary sm:text-[16px] md:text-[20px]' />
+                                    {saved
+                                        ? <BsHeartFill className='text-primary sm:text-[16px] md:text-[20px]' />
+                                        : <BsHeart className='text-primary sm:text-[16px] md:text-[20px]' />}
                                 </button>
                             </div>
                             
@@ -48,7 +119,7 @@ const AllApartments = () => {
                                             ₦ {lodge.price}
                                         </p>
                                         <p className="text-[10px] md:text-[12px] font-light capitalize text-right">
-                                            per year
+                                            per month
                                         </p>
                                     </div>
                                 </div>
@@ -56,7 +127,7 @@ const AllApartments = () => {
 
                             {/* lodge location estimation */}
                             <div className="flex flex-wrap items-center gap-2 mt-1 md:mt-2" >
-                                <p className="text-[12px] md:text-sm mr-2 text-[#AAAAAA] sm:text-black">2.1 km from Unilag</p>
+                                <p className="text-[12px] md:text-sm mr-2 text-[#AAAAAA] sm:text-black">{lodge.nearbyDistance}</p>
                                 <span className="hidden bg-[#DDFFE7] text-[#1B784D] text-[10px] md:text-[10px] px-4 rounded-sm md:rounded-md md:py-[.2rem] py-[.15rem] sm:block">
                                     Verified
                                 </span>
@@ -97,14 +168,13 @@ const AllApartments = () => {
                                     </button>
                                 </Link>
 
-                                <Link to={`/user/chats`} className="w-1/2 py-2 text-black bg-transparent border-2 rounded-lg shadow-md border-primary hover:bg-gray smooth-transition text-[12px] sm:text-[14px] text-center">
-                                    <button type='button'>
-                                        Message Owner
-                                    </button>
-                                </Link>
+                                <button type='button' onClick={(e) => handleMessageOwner(e, lodge)} disabled={openingChatFor === lodge.id} className="w-1/2 py-2 text-black bg-transparent border-2 rounded-lg shadow-md border-primary hover:bg-gray smooth-transition text-[12px] sm:text-[14px] text-center disabled:opacity-50">
+                                    {openingChatFor === lodge.id ? "Opening..." : "Message Owner"}
+                                </button>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div >
             </section >
         </>

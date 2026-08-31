@@ -1,14 +1,31 @@
+
 import Sidebar from './components/layout/Sidebar/Sidebar'
 import Header from './components/layout/Dashboard/Header'
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
+import featuredLodges from '../../utils/featuredLodges'
+import { setCurrentLodge } from '../../utils/currentLodge'
 
 const Reservation = () => {
+    const { apartmentID } = useParams();
     const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
 
     const handlePayment = (e) => {
         e.preventDefault()
+
+        // On real payment success, record this as the tenant's current lodge so
+        // CurrentLodgeCard (dashboard) and ManageApartment reflect a real booking
+        // instead of the previous always-on "Lid Lodge" placeholder.
+        const lodge = featuredLodges.find((l) => l.id === Number(apartmentID));
+        const rentExpiry = new Date();
+        rentExpiry.setFullYear(rentExpiry.getFullYear() + 1);
+
+        setCurrentLodge({
+            apartmentId: Number(apartmentID),
+            name: lodge ? lodge.lodgeDesc : "Your Apartment",
+            rentExpiryDate: rentExpiry.toISOString(),
+        });
 
         setIsPaymentSuccessful(true)
     }

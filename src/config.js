@@ -1,6 +1,7 @@
+
 import axios from "axios";
 // import { findWhere } from "underscore";
-const baseURL =  "http://localhost:1909" // process.env.BASE_URL;
+const baseURL = "https://hyvn-api-production-66db.up.railway.app"
 // const tinyAPIKey = process.env.TINY_API_KEY;
 
 const config = {
@@ -16,7 +17,7 @@ const config = {
       }).toString();
       fetch(url, {
         headers: {
-          Authorization: retrievedObject ? retrievedObject : "",
+          Authorization: retrievedObject ? `Bearer ${retrievedObject}` : "",
         },
       })
         .then((response) => {
@@ -50,7 +51,7 @@ const config = {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          Authorization: retrievedObject ? retrievedObject : "",
+          Authorization: retrievedObject ? `Bearer ${retrievedObject}` : "",
         },
         body: JSON.stringify({ ...data.params, lang_code: "EN" }),
       })
@@ -85,7 +86,7 @@ const config = {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          Authorization: retrievedObject ? retrievedObject : "",
+          Authorization: retrievedObject ? `Bearer ${retrievedObject}` : "",
         },
         body: JSON.stringify({ ...data.params, lang_code: "EN" }),
       })
@@ -118,7 +119,7 @@ const config = {
         method: "post",
         headers: {
           contentType: "application/json",
-          Authorization: retrievedObject ? retrievedObject : "",
+          Authorization: retrievedObject ? `Bearer ${retrievedObject}` : "",
         },
         body: data.params,
       })
@@ -152,7 +153,7 @@ const config = {
         method: "put",
         headers: {
           contentType: "application/json",
-          // Authorization: retrievedObject ? retrievedObject : "",
+          // Authorization: retrievedObject ? `Bearer ${retrievedObject}` : "",
         },
         body: data.params,
       })
@@ -185,7 +186,7 @@ const config = {
         var retrievedObject = localStorage.getItem("token");
         let result = await axios.get(`${baseURL}${data.url}`, {
           params: { ...data.params, code: "EN" },
-          headers: { Authorization: retrievedObject ? retrievedObject : "" },
+          headers: { Authorization: retrievedObject ? `Bearer ${retrievedObject}` : "" },
         });
         console.log(result, "result");
 
@@ -211,7 +212,7 @@ const config = {
         const retrievedObject = localStorage.getItem("token");
         // For POST requests, the payload is the second argument
         const result = await axios.post(`${baseURL}${data.url}`, data.data, {
-          headers: { Authorization: retrievedObject ? retrievedObject : "" },
+          headers: { Authorization: retrievedObject ? `Bearer ${retrievedObject}` : "" },
         });
         // Assuming the successful response is also in result.data.payload
         resolve(result?.data?.payload);

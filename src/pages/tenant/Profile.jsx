@@ -1,23 +1,50 @@
-import { Link } from 'react-router-dom'
+
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from './components/layout/Sidebar/Sidebar'
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
 import Header from './components/layout/Dashboard/Header'
 import ProfileOption from './components/layout/Profile/ProfileOption'
 import { GrTransaction } from "react-icons/gr";
-
 import { HiUser } from "react-icons/hi2";
+import defaultProfileImage from "../../assets/images/shared-images/user-1.png";
 
 const Profile = () => {
-    // const userData = JSON.parse(localStorage.getItem('userData'))
-    // const user = {
-    //     name: userData.firstName + " " + userData.lastName,
-    //     email: userData.email",
-    //     profileImage: "/images/shared-images/user-1.png"
-    // };
-    const user = {
-        name: "John Doe",
-        email: "johndoe@gmail.com",
-        profileImage: "/images/shared-images/user-1.png"
+    const navigate = useNavigate();
+
+    // Start with whatever was cached at login (see Login.jsx / Verification.jsx),
+    // so the page has something to show instantly, then refresh from the real
+    // GET /profile endpoint. Note: the backend's getProfile controller currently
+    // always responds with `success: false` even on a real success (a backend bug,
+    // not fixed here since it's outside frontend scope) — so we check for the
+    // presence of `user` in the response instead of trusting `success`.
+    const cachedUser = (() => {
+        try {
+            return JSON.parse(localStorage.getItem("user")) || null;
+        } catch {
+            return null;
+        }
+    })();
+
+    // The real backend has no "get my profile" endpoint — only PUT to update one.
+    // The user object returned at login/verify-otp is already complete and correct,
+    // so that's the source of truth here. It gets refreshed automatically whenever
+    // UpdateProfile.jsx successfully saves changes (see that file).
+    const [user] = useState(
+        cachedUser
+            ? {
+                  name: `${cachedUser.firstName || ""} ${cachedUser.lastName || ""}`.trim() || "HYVE User",
+                  email: cachedUser.email || "",
+                  profileImage: cachedUser.profilePictureUrl || defaultProfileImage,
+              }
+            : { name: "HYVE User", email: "", profileImage: defaultProfileImage }
+    );
+
+    const handleSignOut = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("userRole");
+        navigate("/");
     };
 
     return (
@@ -54,7 +81,7 @@ const Profile = () => {
 
                                 {/* sign out action btn */}
                                 <div className='mt-12 text-center'>
-                                    <button className='px-3 py-1 text-sm text-white rounded-lg bg-primary hover:bg-primary-hover smooth-transition'>Sign out</button>
+                                    <button onClick={handleSignOut} className='px-3 py-1 text-sm text-white rounded-lg bg-primary hover:bg-primary-hover smooth-transition'>Sign out</button>
                                 </div>
                             </div>
                         </div>

@@ -1,8 +1,11 @@
+
 "use client"
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import defaultProfile from "../../assets/images/shared-images/user-1.png"
 import useFetchApartment from "../../hooks/useFetchApartment"
+import { createOrGetChatRoom } from "../../utils/chatApi";
+import { hyveError } from "../../utils/hyveToast";
 import Header from "./components/layout/Dashboard/Header";
 import Sidebar from "./components/layout/Sidebar/Sidebar"
 import MobileNavigationTab from "./components/layout/MobileNavigation/MobileNavigationTab";
@@ -15,9 +18,29 @@ import { BiChat } from "react-icons/bi";
 const ApartmentDetails = () => {
     // Get apartment Id and fetch apartment details using the id
     const { apartmentID } = useParams();
+    const navigate = useNavigate();
 
     // Call useFetchApartment to fetch apartment details
     const { apartment, isLoading, error } = useFetchApartment(apartmentID);
+
+    // State to track "Chat with Landlord" click in flight
+    const [isOpeningChat, setIsOpeningChat] = useState(false);
+
+    const handleChatWithLandlord = async () => {
+        if (!apartment?.landlord?.id) {
+            hyveError("Can't start chat", "This listing has no landlord on record.");
+            return;
+        }
+        setIsOpeningChat(true);
+        try {
+            const room = await createOrGetChatRoom(apartment.landlord.id);
+            navigate(`/user/conversation/${room.id}`);
+        } catch (err) {
+            hyveError("Couldn't open chat", err.message || "Please try again.");
+        } finally {
+            setIsOpeningChat(false);
+        }
+    };
 
     // State to handle show more/less of apartment description
     const [isExpanded, setIsExpanded] = useState(false);
@@ -155,17 +178,17 @@ const ApartmentDetails = () => {
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-[40px] md:w-[55px]  rounded-full overflow-hidden">
-                                                                <img src={defaultProfile} alt="landlord image profile image" className="object-cover w-full h-full" />
+                                                                <img src={apartment.landlord?.profilePictureUrl || defaultProfile} alt="landlord image profile image" className="object-cover w-full h-full" />
                                                             </div>
                                                             <div>
-                                                                <h4 className="font-medium text-xs sm:text-[16px] font-poppins">Bisola Akanji </h4>
+                                                                <h4 className="font-medium text-xs sm:text-[16px] font-poppins">{`${apartment.landlord?.firstName || ""} ${apartment.landlord?.lastName || ""}`.trim() || "Landlord"} </h4>
                                                                 <p className="text-[#777777] font-normal text-xs md:text-sm">Landlord / Owner</p>
                                                             </div>
                                                         </div>
 
-                                                        <Link to="/user/conversation/1" className="flex items-center gap-1 p-2 border rounded-full text-primary border-primary hover:text-white hover:bg-primary-hover smooth-transition" title="Chat with Landlord">
+                                                        <button type="button" onClick={handleChatWithLandlord} disabled={isOpeningChat} title="Chat with Landlord" className="flex items-center gap-1 p-2 border rounded-full text-primary border-primary hover:text-white hover:bg-primary-hover smooth-transition disabled:opacity-50">
                                                             <BiChat className="text-[16px] md:text-[20px]" />
-                                                        </Link>
+                                                        </button>
                                                     </div>
 
                                                     <div className="bg-[#00000008] rounded-xl px-4 sm:px-8 py-6 mt-8 flex flex-col gap-6">

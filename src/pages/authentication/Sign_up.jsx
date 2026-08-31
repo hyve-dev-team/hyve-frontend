@@ -1,3 +1,4 @@
+
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 
@@ -175,126 +176,34 @@ const Sign_up = () => {
       return;
     }
 
+    // Real backend: POST /api/v1/auth/register — takes the password directly (no
+    // separate set-password step), creates the user, and sends the OTP in one call.
+    // It does NOT accept a role — every account is created as STUDENT on the backend
+    // regardless of which signup path (tenant/landlord) was chosen here. Role-based
+    // routing below is frontend-only until the backend supports it.
     const payload = {
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,
       password: formData.password,
-      countryCode: formData.countryCode,
-      mobile: formData.phone,
-      gender: formData.gender,
-      dateOfBirth: "",
-      ninNumber: "",
-      deviceDetails: {
-        deviceName: "",
-        deviceType: "",
-        deviceToken: "",
-        deviceID: "",
-        appVersion: ""
-      }
     };
 
-    /* User registration logic for 'user' role */
-    if (userRole === "user") {
-      try {
-        const response = await fetch("http://localhost:1909/api/tenant/signup", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+    try {
+      const data = await config.postAPI({ url: "/api/v1/auth/register", params: payload });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          console.error(data.message || "Registration failed");
-          alert(data.error.message || "Registration failed. Please try again.");
-          return;
-        }
-
-        const res = await fetch("http://localhost:1909/api/tenant/send-email-verification", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email: formData.email }),
-        });
-
-        const resData = await res.json();
-
-        if (!res.ok) {
-          console.error(resData.error.message || "Registration failed");
-          alert(resData.error.message || "Registration failed. Please try again.");
-          return;
-        }
-
-        if (resData.payload.success === true) {
-          console.log("Registration successful:", resData);
-          alert("Registration successful! Please verify your email.");
-          localStorage.setItem("userEmail", formData.email);
-          localStorage.setItem("userRole", userRole);
-
-          navigate("/auth/verify");
-        }
-
-      } catch (error) {
-        console.error("Network error:", error);
-        alert("An error occurred. Please try again later.");
+      if (!data?.success) {
+        alert(data?.message || "Registration failed. Please try again.");
+        return;
       }
+
+      localStorage.setItem("userEmail", formData.email);
+      localStorage.setItem("userRole", userRole);
+
+      navigate("/auth/verify");
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("An error occurred. Please try again later.");
     }
-
-    /* User registration logic for 'landlord' role */
-    if (userRole === "landlord") {
-      try {
-        const response = await fetch("http://localhost:1909/api/tenant/signup", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          console.error(data.message || "Registration failed");
-          alert(data.error.message || "Registration failed. Please try again.");
-          return;
-        }
-
-        const res = await fetch("http://localhost:1909/api/tenant/send-email-verification", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email: formData.email }),
-        });
-
-        const resData = await res.json();
-
-        if (!res.ok) {
-          console.error(resData.error.message || "Registration failed");
-          alert(resData.error.message || "Registration failed. Please try again.");
-          return;
-        }
-
-        if (resData.payload.success === true) {
-          console.log("Registration successful:", resData);
-          alert("Registration successful! Please verify your email.");
-          localStorage.setItem("userEmail", formData.email);
-          localStorage.setItem("userRole", userRole);
-
-          navigate("/auth/verify");
-        }
-
-      } catch (error) {
-        console.error("Network error:", error);
-        alert("An error occurred. Please try again later.");
-      }
-    }
-
-
   };
 
 
