@@ -262,6 +262,21 @@ textarea {
     font-size: 28px;
 }
 
+.play-box {
+    width: 105px;
+    height: 105px;
+    background: #fff7f3;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.play-box img {
+    width: 65px;
+    height: 65px;
+}
+
 .media-box img,
 .media-box video {
     width: 100%;
@@ -464,7 +479,11 @@ app.innerHTML = `
                 </div>
 
                 <div class="media-box" data-index="5">
-                    <div class="media-plus">▶</div>
+                    <div class="media-plus">
+                        <div class="play-box">
+                            <img src="play.svg" alt="Play button">
+                        </div>
+                    </div>
                 </div>
 
             </section>
