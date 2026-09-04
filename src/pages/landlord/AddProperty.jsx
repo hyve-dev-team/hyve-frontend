@@ -322,23 +322,35 @@ const AddProperty = () => {
                                                 ? selectedAmenities.join(", ")
                                                 : "Amenities"}
                                         </div>
+                                        <div>
+                                            <h2 className='text-base font-semibold text-[#3D3129] font-poppins'>
+                                                Property Overview
+                                            </h2>
+                                            <p className='text-xs text-[#3D3129]/60'>
+                                                Basic title and category of the accommodation
+                                            </p>
+                                        </div>
+                                    </div>
 
-                                        {amenitiesOpen && (
-                                            <div className='absolute left-0 z-10 w-full p-3 mt-1 bg-white border rounded-xl border-[#0000001A]'>
-                                                {AMENITIES_OPTIONS.map((item) => (
-                                                    <label
-                                                        key={item}
-                                                        className='flex items-center gap-2 py-1 text-sm cursor-pointer'
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedAmenities.includes(item)}
-                                                            onChange={() => toggleAmenity(item)}
-                                                        />
-                                                        {item}
-                                                    </label>
-                                                ))}
-                                            </div>
+                                    {/* Property Title */}
+                                    <div className='mb-5'>
+                                        <label htmlFor='title' className='block text-xs font-semibold text-[#3D3129] uppercase tracking-wider mb-2 font-poppins'>
+                                            Property Title <span className='text-red-500'>*</span>
+                                        </label>
+                                        <input
+                                            type='text'
+                                            id='title'
+                                            name='title'
+                                            value={formData.title}
+                                            onChange={handleChange}
+                                            placeholder='e.g., Luxury Studio Apartment near Unilag Gate'
+                                            className={`w-full px-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${validationErrors.title
+                                                ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                                                : 'border-[#3D3129]/15 focus:border-primary'
+                                                }`}
+                                        />
+                                        {validationErrors.title && (
+                                            <p className='text-xs text-red-500 mt-1.5'>{validationErrors.title}</p>
                                         )}
                                     </div>
 
@@ -355,8 +367,8 @@ const AddProperty = () => {
                                             onChange={handleChange}
                                             placeholder='e.g., Luxury Studio Apartment near Unilag Gate'
                                             className={`w-full px-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${validationErrors.title
-                                                    ? 'border-red-500 focus:ring-1 focus:ring-red-500'
-                                                    : 'border-[#3D3129]/15 focus:border-primary'
+                                                ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                                                : 'border-[#3D3129]/15 focus:border-primary'
                                                 }`}
                                         />
                                         {validationErrors.title && (
@@ -378,8 +390,8 @@ const AddProperty = () => {
                                                         type='button'
                                                         onClick={() => setFormData((prev) => ({ ...prev, propertyType: type.value }))}
                                                         className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer flex items-start justify-between ${isSelected
-                                                                ? 'border-primary bg-[#FFF0E6]/50 ring-1 ring-primary'
-                                                                : 'border-[#3D3129]/15 bg-[#FAF7F5]/30 hover:bg-[#FFF0E6]/20'
+                                                            ? 'border-primary bg-[#FFF0E6]/50 ring-1 ring-primary'
+                                                            : 'border-[#3D3129]/15 bg-[#FAF7F5]/30 hover:bg-[#FFF0E6]/20'
                                                             }`}
                                                     >
                                                         <div>
@@ -435,8 +447,8 @@ const AddProperty = () => {
                                                     onChange={handleChange}
                                                     placeholder='e.g., 650000'
                                                     className={`w-full pl-8 pr-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${validationErrors.priceAnnually
-                                                            ? 'border-red-500 focus:ring-1 focus:ring-red-500'
-                                                            : 'border-[#3D3129]/15 focus:border-primary'
+                                                        ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                                                        : 'border-[#3D3129]/15 focus:border-primary'
                                                         }`}
                                                 />
                                             </div>
@@ -498,8 +510,8 @@ const AddProperty = () => {
                                                 onChange={handleChange}
                                                 placeholder='e.g., 18 St. Finbarrs College Road, Akoka, Yaba (200m from Unilag)'
                                                 className={`w-full pl-9 pr-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${validationErrors.location
-                                                        ? 'border-red-500 focus:ring-1 focus:ring-red-500'
-                                                        : 'border-[#3D3129]/15 focus:border-primary'
+                                                    ? 'border-red-500 focus:ring-1 focus:ring-red-500'
+                                                    : 'border-[#3D3129]/15 focus:border-primary'
                                                     }`}
                                             />
                                         </div>
@@ -535,8 +547,8 @@ const AddProperty = () => {
                                                     type='button'
                                                     onClick={() => toggleAmenity(amenity)}
                                                     className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${isSelected
-                                                            ? 'bg-primary text-white shadow-sm'
-                                                            : 'bg-[#FAF7F5] text-[#3D3129]/75 hover:bg-[#FFF0E6] hover:text-primary border border-[#3D3129]/10'
+                                                        ? 'bg-primary text-white shadow-sm'
+                                                        : 'bg-[#FAF7F5] text-[#3D3129]/75 hover:bg-[#FFF0E6] hover:text-primary border border-[#3D3129]/10'
                                                         }`}
                                                 >
                                                     {isSelected && <IoCheckmarkCircle className='text-sm' />}
@@ -779,5 +791,10 @@ const AddProperty = () => {
         </div>
     );
 };
+<<<<<<< HEAD
+=======
 
 export default AddProperty;
+
+>>>>>>> 5607da7 (Worked on the conversion from JavaScript to React)
+
