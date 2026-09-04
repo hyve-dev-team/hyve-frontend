@@ -38,7 +38,7 @@ const WhichUser = () => {
             </p>
           </div>
 
-          {/* Student */}
+          {/* User */}
           <div className="flex flex-col items-center">
             <Link
               to="/auth/signin/user"
@@ -52,13 +52,13 @@ const WhichUser = () => {
             >
               <img
                 src={userSearchIcon}
-                alt="Student"
+                alt="User"
                 className="w-10 sm:w-14 object-contain"
               />
             </Link>
 
             <p className="mt-4 text-primary font-medium font-montserrat text-sm sm:text-base">
-              Student
+              User
             </p>
           </div>
 

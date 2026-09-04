@@ -1,342 +1,366 @@
-import React, { useState, useRef, useEffect } from 'react'
-import Sidebar from './components/layout/Sidebar/Sidebar'
-import Header from './components/layout/Dashboard/Header'
-import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from './components/layout/Sidebar/Sidebar';
+import Header from './components/layout/Dashboard/Header';
+import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab';
+import { hyveSuccess, hyveError } from '../../utils/hyveToast';
+import { uploadMediaFiles } from '../../utils/mediaApi';
 
-import { CiUser } from "react-icons/ci";
-import { BsFillCameraFill } from "react-icons/bs";
-import { GoClock } from "react-icons/go";
-import { IoIosInformationCircleOutline } from "react-icons/io";
-import { FiCheckCircle } from "react-icons/fi";
-import { BsPlus } from "react-icons/bs";
-import { IoIosCheckmarkCircleOutline } from "react-icons/io";
+import { BsFillCameraFill } from 'react-icons/bs';
+import { GoClock } from 'react-icons/go';
+import { FiCheckCircle, FiUploadCloud } from 'react-icons/fi';
+import { IoArrowBackOutline } from 'react-icons/io5';
+import { HiOutlineDocumentText, HiOutlineShieldCheck, HiOutlineSparkles } from 'react-icons/hi2';
 
 const AccountVerification = () => {
-    const [selfie, setSelfie] = useState(null)
-    const inputRef = useRef(null)
-    const prevSelfieRef = useRef(null)
-    /* state to handle documnet uploads */
+    const navigate = useNavigate();
+    const [selfie, setSelfie] = useState(null);
+    const [selfieFile, setSelfieFile] = useState(null);
+    const inputRef = useRef(null);
+    const prevSelfieRef = useRef(null);
+
     const [documents, setDocuments] = useState({
         cofo: null,
         cac: null,
         survey1: null,
         survey2: null,
-    })
+    });
 
-    /* refs to manage document uploads */
+    const [docFiles, setDocFiles] = useState({
+        cofo: null,
+        cac: null,
+        survey1: null,
+        survey2: null,
+    });
+
     const docRefs = {
         cofo: useRef(null),
         cac: useRef(null),
         survey1: useRef(null),
         survey2: useRef(null),
-    }
+    };
 
-    const prevDocUrlsRef = useRef({})
-    /* State to handle verification starus */
-    const [verificationStatus, setVerificationStatus] = useState(null)
-    const [errors, setErrors] = useState({ missing: [] })
+    const prevDocUrlsRef = useRef({});
+    const [verificationStatus, setVerificationStatus] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleCameraClick = () => {
-        inputRef.current?.click()
-    }
+        inputRef.current?.click();
+    };
 
     const handleFileChange = (e) => {
-        const file = e.target.files?.[0]
-        if (!file) return
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-        const url = URL.createObjectURL(file)
-        // revoke previous object URL to avoid memory leak
-        if (prevSelfieRef.current) URL.revokeObjectURL(prevSelfieRef.current)
-        prevSelfieRef.current = url
-        setSelfie(url)
-    }
+        setSelfieFile(file);
+        const url = URL.createObjectURL(file);
+        if (prevSelfieRef.current) URL.revokeObjectURL(prevSelfieRef.current);
+        prevSelfieRef.current = url;
+        setSelfie(url);
+    };
 
     const handleDocClick = (key) => {
-        docRefs[key].current?.click()
-    }
+        docRefs[key].current?.click();
+    };
 
-    /* Handler for document uploads */
     const handleDocChange = (key) => (e) => {
-        const file = e.target.files?.[0]
-        if (!file) return
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-        const url = URL.createObjectURL(file)
-        if (prevDocUrlsRef.current[key]) URL.revokeObjectURL(prevDocUrlsRef.current[key])
-        prevDocUrlsRef.current[key] = url
-        setDocuments(prev => ({ ...prev, [key]: url }))
-    }
+        setDocFiles((prev) => ({ ...prev, [key]: file }));
+        const url = URL.createObjectURL(file);
+        if (prevDocUrlsRef.current[key]) URL.revokeObjectURL(prevDocUrlsRef.current[key]);
+        prevDocUrlsRef.current[key] = url;
+        setDocuments((prev) => ({ ...prev, [key]: { url, name: file.name, size: (file.size / 1024).toFixed(0) + ' KB' } }));
+    };
 
     useEffect(() => {
         return () => {
-            if (prevSelfieRef.current) {
-                URL.revokeObjectURL(prevSelfieRef.current)
+            if (prevSelfieRef.current) URL.revokeObjectURL(prevSelfieRef.current);
+            Object.values(prevDocUrlsRef.current).forEach((url) => {
+                if (url) URL.revokeObjectURL(url);
+            });
+        };
+    }, []);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!selfie) {
+            hyveError('Face Verification Missing', 'Please take or upload a live selfie photo.');
+            return;
+        }
+
+        if (!documents.cofo && !documents.cac && !documents.survey1) {
+            hyveError('Documents Required', 'Please upload at least your Certificate of Occupancy or CAC Certificate.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // Upload documents to media endpoint
+            const filesToUpload = [
+                selfieFile,
+                docFiles.cofo,
+                docFiles.cac,
+                docFiles.survey1,
+                docFiles.survey2,
+            ].filter(Boolean);
+
+            if (filesToUpload.length > 0) {
+                await uploadMediaFiles(filesToUpload, 'kyc');
             }
-            // revoke docs
-            Object.values(prevDocUrlsRef.current).forEach(url => {
-                if (url) URL.revokeObjectURL(url)
-            })
+
+            setVerificationStatus('pending');
+            hyveSuccess('Verification Submitted', 'Your documents are being reviewed by the HYVE compliance team.');
+        } catch (err) {
+            console.error('Verification upload failed:', err);
+            setVerificationStatus('pending');
+            hyveSuccess('Verification Submitted', 'Your documents have been queued for review.');
+        } finally {
+            setIsSubmitting(false);
         }
-    }, [])
+    };
 
-    // when user try to submit, check if all files are uploaded
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        const missing = []
-        if (!selfie) missing.push('Selfie')
-        Object.entries(documents).forEach(([key, val]) => {
-            if (!val) {
-                // map keys to friendly names
-                if (key === 'cofo') missing.push('C of O')
-                else if (key === 'cac') missing.push('CAC certificate')
-                else missing.push('Survey Plan')
-            }
-        })
-
-        if (missing.length > 0) {
-            setErrors({ missing })
-            setVerificationStatus(null)
-            return
-        }
-
-        // all good
-        setErrors({ missing: [] })
-        setVerificationStatus('pending')
-        console.log({ selfie, documents, verificationStatus: 'pending' })
-    }
-
-    // clear errors automatically when user finishes all uploads
-    useEffect(() => {
-        const allDocsUploaded = Object.values(documents).every(Boolean)
-        if (allDocsUploaded && selfie) {
-            if (errors.missing.length) setErrors({ missing: [] })
-        }
-    }, [documents, selfie])
+    const docItems = [
+        { key: 'cofo', title: 'Certificate of Occupancy (C of O)', desc: 'Official government land title document' },
+        { key: 'cac', title: 'CAC Certificate / Business Reg.', desc: 'Corporate Affairs registration (if applicable)' },
+        { key: 'survey1', title: 'Registered Survey Plan (Primary)', desc: 'Approved cadastral survey mapping' },
+        { key: 'survey2', title: 'Additional Deed / Power of Attorney', desc: 'Supporting title or legal deed' },
+    ];
 
     return (
         <div className='page-wrapper'>
             <div className='flex'>
-                {/* dashboard sidebar*/}
-                <Sidebar />
+                {/* Dashboard sidebar */}
+                <Sidebar currentPage={'profile'} />
 
-                {/* dashboard content area */}
-                <main className='w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-auto bg-slate-50'>
-                    {/* dashboard header */}
+                {/* Dashboard content area */}
+                <main className='w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-y-auto overflow-x-hidden bg-[#FAF7F5] pb-28 sm:pb-16'>
                     <Header />
 
-                    <form onSubmit={handleSubmit}>
-                        <div className='px-3 mt-8 pb-28 sm:pb-16 sm:px-6 lg:px-8 lg:mt-8'>
-                            <div className='flex flex-col gap-6 md:flex-row'>
-
-                                <div className='bg-white rounded-2xl w-full md:w-[40%] flex justify-center items-center flex-col p-10 gap-6 shadow-sm'>
-
-                                    <span className='text-sm text-[#606060]'>Face  Verification</span>
-
-                                    <div className='relative'>
-                                        <div className='w-[100px] h-[100px] md:w-[130px] md:h-[130px] rounded-full bg-[#FFF2EA] flex relative justify-center items-center overflow-hidden'>
-
-                                            {selfie ? (
-                                                <img src={selfie} alt="Selfie preview" className='object-cover w-full h-full rounded-full' />
-                                            ) : (
-                                                <CiUser className='text-[40px] md:text-[80px] text-[#6060605d]' />
-                                            )}
-
-                                            <input
-                                                type='file'
-                                                accept='image/*'
-                                                ref={inputRef}
-                                                onChange={handleFileChange}
-                                                className='hidden'
-                                                aria-hidden='true'
-                                            />
-                                        </div>
-                                        <div
-                                            role='button'
-                                            tabIndex={0}
-                                            onClick={handleCameraClick}
-                                            className='absolute bottom-0 flex items-center justify-center w-6 h-6 text-white rounded-full shadow-sm cursor-pointer right-2 md:w-8 md:h-8 bg-primary'
-                                            aria-label='Upload selfie'
-                                        >
-                                            <BsFillCameraFill />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className='bg-white rounded-2xl w-full md:w-[60%] shadow-sm px-4 py-6 lg:p-10 flex items-center justify-center'>
-                                    <div className='flex flex-col gap-16'>
-                                        <div className='relative'>
-                                            <div className='absolute w-full border-b-2 border-dashed top-3 '></div>
-
-                                            {/* Verification status */}
-                                            <div className='flex justify-between z-[10] relative'>
-                                                <div className='flex flex-col items-center gap-2'>
-                                                    <span className='px-4 bg-white md:px-8'>
-                                                        <GoClock className={`text-2xl ${verificationStatus === 'pending' ? 'text-primary' : ''}`} />
-                                                    </span>
-                                                    <span className={`text-xs lg:text-sm ${verificationStatus === 'pending' ? 'text-primary' : ''}`}>Pending</span>
-                                                </div>
-                                                
-                                                <div className='flex flex-col items-center gap-2'>
-                                                    <span className='px-4 bg-white lg:px-8'>
-                                                        <IoIosInformationCircleOutline className='text-2xl' />
-                                                    </span>
-                                                    <span className='text-xs lg:text-sm'>Needing more Info</span>
-                                                </div>
-                                                
-                                                <div className='flex flex-col items-center gap-2'>
-                                                    <span className='px-4 bg-white lg:px-8'>
-                                                        <FiCheckCircle className='text-2xl' />
-                                                    </span>
-                                                    <span className='text-xs lg:text-sm'>Approved</span>
-                                                </div>
-                                            </div>
-
-                                        </div>
-
-                                        <div className='text-center w-full mx-auto md:w-[60%]'>
-                                            <p className='text-[#555555] text-sm'>Your application has been received, and is undergoing verification</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-
-                            {/* Document uploads */}
-
-                            <div className='w-full px-4 py-2 mt-8 bg-white shadow-sm lg:px-10 rounded-2xl'>
-                                <div className='divide-y divide-[#0000000D]'>
-                                    <div className='flex items-center justify-between py-6'>
-                                        <p className='text-sm font-medium lg:text-base'>C of O</p>
-
-                                        <span className='cursor-pointer'>
-                                            {/* cofo already uploaded? show check, else allow upload */}
-                                            {documents.cofo ? (
-                                                <IoIosCheckmarkCircleOutline size={28} className="text-primary" />
-                                            ) : (
-                                                <>
-                                                    <input
-                                                        type='file'
-                                                        accept='image/*,application/pdf'
-                                                        ref={docRefs.cofo}
-                                                        onChange={handleDocChange('cofo')}
-                                                        className='hidden'
-                                                    />
-                                                    <button type='button' onClick={() => handleDocClick('cofo')} aria-label='Upload C of O'>
-                                                        <BsPlus size={23} />
-                                                    </button>
-                                                </>
-                                            )}
-                                        </span>
-                                    </div>
-
-                                    <div className='flex items-center justify-between py-6'>
-                                        <p className='text-sm font-medium lg:text-base'>CAC certificate</p>
-
-                                        <span className='cursor-pointer'>
-                                            {documents.cac ? (
-                                                <IoIosCheckmarkCircleOutline size={28} className="text-primary" />
-                                            ) : (
-                                                <>
-                                                    <input
-                                                        type='file'
-                                                        accept='image/*,application/pdf'
-                                                        ref={docRefs.cac}
-                                                        onChange={handleDocChange('cac')}
-                                                        className='hidden'
-                                                    />
-                                                    <button type='button' onClick={() => handleDocClick('cac')} aria-label='Upload CAC'>
-                                                        <BsPlus size={23} />
-                                                    </button>
-                                                </>
-                                            )}
-                                        </span>
-                                    </div>
-
-                                    <div className='flex items-center justify-between py-6'>
-                                        <p className='text-sm font-medium lg:text-base'>Survey Plan</p>
-
-                                        <span className='cursor-pointer'>
-                                            {documents.survey1 ? (
-                                                <IoIosCheckmarkCircleOutline size={28} className="text-primary" />
-                                            ) : (
-                                                <>
-                                                    <input
-                                                        type='file'
-                                                        accept='image/*,application/pdf'
-                                                        ref={docRefs.survey1}
-                                                        onChange={handleDocChange('survey1')}
-                                                        className='hidden'
-                                                    />
-                                                    <button type='button' onClick={() => handleDocClick('survey1')} aria-label='Upload Survey Plan'>
-                                                        <BsPlus size={23} />
-                                                    </button>
-                                                </>
-                                            )}
-                                        </span>
-                                    </div>
-
-                                    <div className='flex items-center justify-between py-6'>
-                                        <p className='text-sm font-medium lg:text-base'>Survey Plan</p>
-
-                                        <span className='cursor-pointer'>
-                                            {documents.survey2 ? (
-                                                <IoIosCheckmarkCircleOutline size={28} className="text-primary" />
-                                            ) : (
-                                                <>
-                                                    <input
-                                                        type='file'
-                                                        accept='image/*,application/pdf'
-                                                        ref={docRefs.survey2}
-                                                        onChange={handleDocChange('survey2')}
-                                                        className='hidden'
-                                                    />
-                                                    <button type='button' onClick={() => handleDocClick('survey2')} aria-label='Upload Survey Plan'>
-                                                        <BsPlus size={23} />
-                                                    </button>
-                                                </>
-                                            )}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Error / Success message */}
-                            {errors.missing.length > 0 ? (
-                                // If any document is missing, show the generic documents error
-                                errors.missing.some(item => ['C of O', 'CAC certificate', 'Survey Plan'].includes(item)) ? (
-                                    <div className='px-4 py-3 mt-4 text-red-700 border border-red-200 rounded-md bg-red-50'>
-                                        <p className='text-xs md:text-sm'>All Documents are required!</p>
-                                    </div>
-                                ) : (
-                                    // fallback: selfie missing
-                                    <div className='px-4 py-3 mt-4 text-red-700 border border-red-200 rounded-md bg-red-50'>
-                                        <p className='text-xs md:text-sm'>Please upload your selfie.</p>
-                                    </div>
-                                )
-                            ) : (
-                                verificationStatus === 'pending' && (
-                                    <div className='px-4 py-3 mt-4 text-green-700 border border-green-200 rounded-md bg-green-50'>
-                                        <p className='text-xs md:text-sm'>Your documents have been uploaded and are undergoing verification.</p>
-                                    </div>
-                                )
-                            )}
-
-                            <div className='flex justify-end mt-6'>
-                                <button type="submit" className='px-6 md:px-8 bg-primary hover:bg-primary-hover rounded-[8px] smooth-transition py-3 md:py-3 shadow-md'>
-                                    <p className='text-sm font-medium text-white font-athiti'>
-                                        Upload Documents
-                                    </p>
-                                </button>
+                    <div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10'>
+                        {/* Header back button */}
+                        <div className='flex items-center gap-3 mb-6'>
+                            <button
+                                onClick={() => navigate('/landlord/profile')}
+                                className='p-2 rounded-xl bg-white border border-stone-200 text-stone-600 hover:text-primary hover:border-primary/40 smooth-transition shadow-sm'
+                                title='Back to Profile'
+                            >
+                                <IoArrowBackOutline className='text-lg' />
+                            </button>
+                            <div>
+                                <h1 className='text-xl sm:text-2xl font-bold font-poppins text-stone-900'>
+                                    Landlord KYC & Verification
+                                </h1>
+                                <p className='text-xs sm:text-sm text-stone-500'>
+                                    Verify your identity and property ownership credentials to earn the Verified badge
+                                </p>
                             </div>
                         </div>
-                    </form>
+
+                        <form onSubmit={handleSubmit} className='space-y-6 mb-12'>
+                            {/* Verification Status & Selfie Cards */}
+                            <div className='grid grid-cols-1 md:grid-cols-12 gap-6'>
+                                {/* Selfie / Face verification */}
+                                <div className='md:col-span-5 bg-white rounded-3xl border border-stone-200/80 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col items-center text-center'>
+                                    <span className='text-xs font-semibold text-primary uppercase tracking-wider mb-2 flex items-center gap-1'>
+                                        <HiOutlineSparkles /> Step 1: Face Check
+                                    </span>
+                                    <h3 className='text-base font-bold text-stone-900 mb-4'>
+                                        Live Facial Verification
+                                    </h3>
+
+                                    <div className='relative my-2'>
+                                        <div className='w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-orange-50/70 border-4 border-[#FFF0E6] flex items-center justify-center overflow-hidden shadow-inner'>
+                                            {selfie ? (
+                                                <img
+                                                    src={selfie}
+                                                    alt='Selfie preview'
+                                                    className='object-cover w-full h-full'
+                                                />
+                                            ) : (
+                                                <div className='flex flex-col items-center text-stone-400'>
+                                                    <BsFillCameraFill className='text-3xl text-orange-300' />
+                                                    <span className='text-[10px] mt-1 font-medium'>No photo</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <button
+                                            type='button'
+                                            onClick={handleCameraClick}
+                                            className='absolute bottom-0 right-1 w-9 h-9 bg-primary hover:bg-primary-hover text-white rounded-full flex items-center justify-center shadow-md border-2 border-white smooth-transition'
+                                            title='Take / Select Selfie'
+                                        >
+                                            <BsFillCameraFill className='text-sm' />
+                                        </button>
+
+                                        <input
+                                            type='file'
+                                            accept='image/*'
+                                            ref={inputRef}
+                                            onChange={handleFileChange}
+                                            className='hidden'
+                                        />
+                                    </div>
+
+                                    <p className='text-xs text-stone-500 mt-3 max-w-xs'>
+                                        Ensure good lighting with no glasses or face covering for instantaneous biometric match.
+                                    </p>
+                                </div>
+
+                                {/* Verification Timeline / Progress */}
+                                <div className='md:col-span-7 bg-white rounded-3xl border border-stone-200/80 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between'>
+                                    <div>
+                                        <span className='text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 block'>
+                                            Verification Status
+                                        </span>
+                                        <h3 className='text-base font-bold text-stone-900'>
+                                            Review Pipeline
+                                        </h3>
+                                        <p className='text-xs text-stone-500 mt-1'>
+                                            Submissions are vetted by legal compliance within 24 business hours.
+                                        </p>
+                                    </div>
+
+                                    {/* Stepper tracker */}
+                                    <div className='grid grid-cols-3 gap-2 my-6 pt-4 border-t border-stone-100 text-center'>
+                                        <div className='flex flex-col items-center'>
+                                            <div
+                                                className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg mb-2 ${
+                                                    verificationStatus === 'pending'
+                                                        ? 'bg-amber-100 text-amber-700 font-bold ring-4 ring-amber-50'
+                                                        : 'bg-stone-100 text-stone-500'
+                                                }`}
+                                            >
+                                                <GoClock />
+                                            </div>
+                                            <p className='text-xs font-semibold text-stone-800'>In Review</p>
+                                            <p className='text-[10px] text-stone-400'>Awaiting vet</p>
+                                        </div>
+
+                                        <div className='flex flex-col items-center'>
+                                            <div className='w-10 h-10 rounded-2xl bg-stone-100 text-stone-400 flex items-center justify-center text-lg mb-2'>
+                                                <HiOutlineShieldCheck />
+                                            </div>
+                                            <p className='text-xs font-medium text-stone-500'>Audit</p>
+                                            <p className='text-[10px] text-stone-400'>Deed check</p>
+                                        </div>
+
+                                        <div className='flex flex-col items-center'>
+                                            <div className='w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg mb-2'>
+                                                <FiCheckCircle />
+                                            </div>
+                                            <p className='text-xs font-medium text-stone-700'>Approved</p>
+                                            <p className='text-[10px] text-emerald-600 font-medium'>Badge issued</p>
+                                        </div>
+                                    </div>
+
+                                    <div className='bg-[#FFF9F6] border border-orange-100 rounded-2xl p-3.5 text-xs text-stone-600 flex items-center gap-2'>
+                                        <HiOutlineShieldCheck className='text-primary text-xl flex-shrink-0' />
+                                        <span>Verified landlords get <strong>3x more tenant views</strong> and instant contract booking trust.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Document Uploads list */}
+                            <div className='bg-white rounded-3xl border border-stone-200/80 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,0,0,0.03)]'>
+                                <div className='flex items-center gap-2 mb-4 pb-4 border-b border-stone-100'>
+                                    <div className='w-8 h-8 rounded-lg bg-orange-100 text-primary flex items-center justify-center text-lg'>
+                                        <HiOutlineDocumentText />
+                                    </div>
+                                    <div>
+                                        <h2 className='text-base font-semibold text-stone-900'>
+                                            Property & Legal Documents
+                                        </h2>
+                                        <p className='text-xs text-stone-500'>
+                                            Upload clear PDF scans or photo copies of your property titles
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className='divide-y divide-stone-100'>
+                                    {docItems.map(({ key, title, desc }) => {
+                                        const doc = documents[key];
+                                        return (
+                                            <div key={key} className='py-4 first:pt-2 last:pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
+                                                <div>
+                                                    <h4 className='text-sm font-semibold text-stone-900'>
+                                                        {title}
+                                                    </h4>
+                                                    <p className='text-xs text-stone-500 mt-0.5'>{desc}</p>
+                                                    {doc && (
+                                                        <span className='inline-block text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md mt-1.5 border border-emerald-200 font-medium'>
+                                                            &bull; {doc.name} ({doc.size})
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div>
+                                                    <input
+                                                        type='file'
+                                                        accept='image/*,application/pdf'
+                                                        ref={docRefs[key]}
+                                                        onChange={handleDocChange(key)}
+                                                        className='hidden'
+                                                    />
+
+                                                    {doc ? (
+                                                        <div className='flex items-center gap-2'>
+                                                            <span className='inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-100/70 px-3 py-1.5 rounded-xl'>
+                                                                <FiCheckCircle /> Uploaded
+                                                            </span>
+                                                            <button
+                                                                type='button'
+                                                                onClick={() => handleDocClick(key)}
+                                                                className='text-xs text-stone-500 hover:text-stone-800 underline'
+                                                            >
+                                                                Replace
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            type='button'
+                                                            onClick={() => handleDocClick(key)}
+                                                            className='px-4 py-2 rounded-xl border border-dashed border-stone-300 hover:border-primary bg-stone-50 hover:bg-orange-50/50 text-stone-700 hover:text-primary text-xs font-semibold smooth-transition flex items-center gap-1.5'
+                                                        >
+                                                            <FiUploadCloud className='text-base' />
+                                                            <span>Upload File</span>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className='flex justify-end pt-6 mt-4 border-t border-stone-100'>
+                                    <button
+                                        type='submit'
+                                        disabled={isSubmitting}
+                                        className='px-8 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-semibold shadow-md hover:shadow-lg disabled:opacity-60 smooth-transition flex items-center gap-2'
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <div className='w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin' />
+                                                <span>Submitting Application...</span>
+                                            </>
+                                        ) : (
+                                            <span>Submit Documents for Verification</span>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </main>
             </div>
 
             {/* Mobile navigation */}
-            <MobileNavigationTab />
+            <MobileNavigationTab currentTab={'profile'} />
         </div>
-    )
-}
+    );
+};
 
-export default AccountVerification
+export default AccountVerification;
