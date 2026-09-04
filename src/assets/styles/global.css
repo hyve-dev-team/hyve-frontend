@@ -201,9 +201,8 @@
 
 /* UTILITIES */
 @layer utilities {
-  /* Utility class to center body content, improving resonsiveness on device with screens larger than 1400px */
   .page-wrapper {
-    @apply desktop-lg:max-w-[1400px] mx-auto;
+    @apply w-full;
   }
   /* Utility class to prevent scrolling on the body */
   .no-scroll {

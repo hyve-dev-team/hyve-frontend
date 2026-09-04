@@ -4,6 +4,36 @@ import axios from "axios";
 const baseURL = "https://hyvn-api-production-66db.up.railway.app"
 // const tinyAPIKey = process.env.TINY_API_KEY;
 
+async function parseResponseBody(response) {
+  if (response?.status === 401) {
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("email");
+    localStorage.removeItem("token");
+    if (window.location.pathname !== "/") window.location.href = "/";
+    return null;
+  }
+  const text = await response.text();
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { message: text };
+    }
+  }
+  if (!response.ok) {
+    const message =
+      data?.message ||
+      data?.error ||
+      (typeof data === "string" ? data : `Request failed with status ${response.status}`);
+    const err = new Error(message);
+    err.status = response.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
 const config = {
   baseURL,
   // tinyAPIKey,
@@ -20,25 +50,12 @@ const config = {
           Authorization: retrievedObject ? `Bearer ${retrievedObject}` : "",
         },
       })
-        .then((response) => {
-          if (response?.status === 401) {
-            localStorage.removeItem("user_id");
-            localStorage.removeItem("email");
-            localStorage.removeItem("token");
-            if (window.location.pathname !== "/") window.location.href = "/";
-            return;
-          } else {
-            return response.json();
-          }
-        })
+        .then((response) => parseResponseBody(response))
         .then((data) => {
           resolve(data);
-          return;
         })
         .catch((error) => {
-          // console.log(error)
           reject(error);
-          return;
         });
     });
   },
@@ -55,25 +72,12 @@ const config = {
         },
         body: JSON.stringify({ ...data.params, lang_code: "EN" }),
       })
-        .then((response) => {
-          if (response?.status === 401) {
-            localStorage.removeItem("user_id");
-            localStorage.removeItem("email");
-            localStorage.removeItem("token");
-            if (window.location.pathname !== "/") window.location.href = "/";
-            return;
-          } else {
-            return response.json();
-          }
-        })
+        .then((response) => parseResponseBody(response))
         .then((data) => {
           resolve(data);
-          return;
         })
         .catch((error) => {
-          // console.log(error)
           reject(error);
-          return;
         });
     });
   },
@@ -90,24 +94,12 @@ const config = {
         },
         body: JSON.stringify({ ...data.params, lang_code: "EN" }),
       })
-        .then((response) => {
-          if (response?.status === 401) {
-            localStorage.removeItem("user_id");
-            localStorage.removeItem("email");
-            localStorage.removeItem("token");
-            if (window.location.pathname !== "/") window.location.href = "/";
-            return;
-          } else {
-            return response.json();
-          }
-        })
+        .then((response) => parseResponseBody(response))
         .then((data) => {
           resolve(data);
-          return;
         })
         .catch((error) => {
           reject(error);
-          return;
         });
     });
   },
@@ -123,25 +115,12 @@ const config = {
         },
         body: data.params,
       })
-        .then((response) => {
-          if (response?.status === 401) {
-            localStorage.removeItem("user_id");
-            localStorage.removeItem("email");
-            localStorage.removeItem("token");
-            if (window.location.pathname !== "/") window.location.href = "/";
-            return;
-          } else {
-            return response.json();
-          }
-        })
+        .then((response) => parseResponseBody(response))
         .then((data) => {
           resolve(data);
-          return;
         })
         .catch((error) => {
-          // console.log(error)
           reject(error);
-          return;
         });
     });
   },
@@ -157,25 +136,12 @@ const config = {
         },
         body: data.params,
       })
-        .then((response) => {
-          if (response?.status === 401) {
-            localStorage.removeItem("user_id");
-            localStorage.removeItem("email");
-            localStorage.removeItem("token");
-            // if (window.location.pathname !== "/") window.location.href = "/";
-            return;
-          } else {
-            return response.json();
-          }
-        })
+        .then((response) => parseResponseBody(response))
         .then((data) => {
           resolve(data);
-          return;
         })
         .catch((error) => {
-          // console.log(error)
           reject(error);
-          return;
         });
     });
   },

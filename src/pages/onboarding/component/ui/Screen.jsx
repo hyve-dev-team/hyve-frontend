@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-const Screen = ({ avatar, subText, heading, btnValue }) => {
+const Screen = ({ avatar, subText, heading }) => {
 
     return (
         <div className="flex items-center justify-center min-h-[80svh]">
@@ -48,7 +48,7 @@ export const PreSignupScreen = ({ icon1, icon2 }) => {
                             </div>
                         </Link>
 
-                        <p className='text-primary font-medium mt-4 xs:text-sm font-montserrat'>Student</p>
+                        <p className='text-primary font-medium mt-4 xs:text-sm font-montserrat'>User</p>
                     </div>
 
                 </div>
