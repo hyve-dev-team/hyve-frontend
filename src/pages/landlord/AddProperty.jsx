@@ -791,10 +791,4 @@ const AddProperty = () => {
         </div>
     );
 };
-<<<<<<< HEAD
-=======
-
-export default AddProperty;
-
->>>>>>> 5607da7 (Worked on the conversion from JavaScript to React)
 
