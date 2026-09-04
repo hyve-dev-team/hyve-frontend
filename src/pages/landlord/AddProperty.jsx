@@ -159,6 +159,12 @@ const AddProperty = () => {
             errors.images = 'Please upload at least 1 photo of the property';
         }
 
+        // Validate Video (last slot)
+        if (!uploadedMedia[VIDEO_SLOT_INDEX]) {
+            errors.video = true;
+            isValid = false;
+        }
+
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -295,6 +301,46 @@ const AddProperty = () => {
                                             </p>
                                         </div>
                                     </div>
+                                    <div>
+                                        <input
+                                            type="text"
+                                            id='minRentalPeriod'
+                                            className={getInputClassName('minRentalPeriod')}
+                                            placeholder='Minimum Rental Period (e.g. 6 months)'
+                                            value={formData.minRentalPeriod}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+
+                                    {/* Amenities multi-select dropdown */}
+                                    <div className='relative' ref={amenitiesRef}>
+                                        <div
+                                            onClick={() => setAmenitiesOpen((v) => !v)}
+                                            className={getInputClassName('amenities') + ' cursor-pointer flex items-center'}
+                                        >
+                                            {selectedAmenities.length
+                                                ? selectedAmenities.join(", ")
+                                                : "Amenities"}
+                                        </div>
+
+                                        {amenitiesOpen && (
+                                            <div className='absolute left-0 z-10 w-full p-3 mt-1 bg-white border rounded-xl border-[#0000001A]'>
+                                                {AMENITIES_OPTIONS.map((item) => (
+                                                    <label
+                                                        key={item}
+                                                        className='flex items-center gap-2 py-1 text-sm cursor-pointer'
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedAmenities.includes(item)}
+                                                            onChange={() => toggleAmenity(item)}
+                                                        />
+                                                        {item}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
 
                                     {/* Property Title */}
                                     <div className='mb-5'>
@@ -308,11 +354,10 @@ const AddProperty = () => {
                                             value={formData.title}
                                             onChange={handleChange}
                                             placeholder='e.g., Luxury Studio Apartment near Unilag Gate'
-                                            className={`w-full px-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${
-                                                validationErrors.title
+                                            className={`w-full px-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${validationErrors.title
                                                     ? 'border-red-500 focus:ring-1 focus:ring-red-500'
                                                     : 'border-[#3D3129]/15 focus:border-primary'
-                                            }`}
+                                                }`}
                                         />
                                         {validationErrors.title && (
                                             <p className='text-xs text-red-500 mt-1.5'>{validationErrors.title}</p>
@@ -332,11 +377,10 @@ const AddProperty = () => {
                                                         key={type.value}
                                                         type='button'
                                                         onClick={() => setFormData((prev) => ({ ...prev, propertyType: type.value }))}
-                                                        className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer flex items-start justify-between ${
-                                                            isSelected
+                                                        className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer flex items-start justify-between ${isSelected
                                                                 ? 'border-primary bg-[#FFF0E6]/50 ring-1 ring-primary'
                                                                 : 'border-[#3D3129]/15 bg-[#FAF7F5]/30 hover:bg-[#FFF0E6]/20'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         <div>
                                                             <p className={`text-sm font-semibold ${isSelected ? 'text-primary' : 'text-[#3D3129]'}`}>
@@ -390,11 +434,10 @@ const AddProperty = () => {
                                                     value={formData.priceAnnually}
                                                     onChange={handleChange}
                                                     placeholder='e.g., 650000'
-                                                    className={`w-full pl-8 pr-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${
-                                                        validationErrors.priceAnnually
+                                                    className={`w-full pl-8 pr-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${validationErrors.priceAnnually
                                                             ? 'border-red-500 focus:ring-1 focus:ring-red-500'
                                                             : 'border-[#3D3129]/15 focus:border-primary'
-                                                    }`}
+                                                        }`}
                                                 />
                                             </div>
                                             {monthlyPriceEstimate ? (
@@ -454,11 +497,10 @@ const AddProperty = () => {
                                                 value={formData.location}
                                                 onChange={handleChange}
                                                 placeholder='e.g., 18 St. Finbarrs College Road, Akoka, Yaba (200m from Unilag)'
-                                                className={`w-full pl-9 pr-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${
-                                                    validationErrors.location
+                                                className={`w-full pl-9 pr-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${validationErrors.location
                                                         ? 'border-red-500 focus:ring-1 focus:ring-red-500'
                                                         : 'border-[#3D3129]/15 focus:border-primary'
-                                                }`}
+                                                    }`}
                                             />
                                         </div>
                                         {validationErrors.location && (
@@ -492,11 +534,10 @@ const AddProperty = () => {
                                                     key={amenity}
                                                     type='button'
                                                     onClick={() => toggleAmenity(amenity)}
-                                                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${
-                                                        isSelected
+                                                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${isSelected
                                                             ? 'bg-primary text-white shadow-sm'
                                                             : 'bg-[#FAF7F5] text-[#3D3129]/75 hover:bg-[#FFF0E6] hover:text-primary border border-[#3D3129]/10'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {isSelected && <IoCheckmarkCircle className='text-sm' />}
                                                     <span>{amenity}</span>
