@@ -55,7 +55,7 @@ const Reservation = () => {
                                             Terms and Condition
                                         </h4>
 
-                                        <p className='text-[#2D2D2D] mt-4 text-sm font-light leading-loose text-justify'>HYVE is the modern housing platform that makes finding, renting, and managing properties safer, smarter, andstress-free. By combining technology, verified data, and a strong sense of community, the platform eliminates scams, reduces agent fees, and makes housing more accessible. Whether for students seeking affordable campus accommodation, young professionals looking for verified house listings.</p>
+                                        <p className='text-[#2D2D2D] mt-4 text-sm font-light leading-loose text-justify'>HYVE is the modern housing platform that makes finding, renting, and managing properties safer, smarter, and stress-free. By combining technology, verified data, and a strong sense of community, the platform eliminates scams, reduces agent fees, and makes housing more accessible. Whether for users seeking affordable accommodation, young professionals looking for verified house listings.</p>
 
                                         <div className='flex items-center gap-2 mt-8'>
                                             <input type="checkbox" name="" id="terms" className='w-4 h-4' required />
@@ -71,7 +71,7 @@ const Reservation = () => {
                                             Policies
                                         </h4>
 
-                                        <p className='text-[#2D2D2D] mt-4 text-sm font-light leading-loose text-justify'>HYVE is the modern housing platform that makes finding, renting, and managing properties safer, smarter, andstress-free. By combining technology, verified data, and a strong sense of community, the platform eliminates scams, reduces agent fees, and makes housing more accessible. Whether for students seeking affordable campus accommodation, young professionals looking for verified house listings.</p>
+                                        <p className='text-[#2D2D2D] mt-4 text-sm font-light leading-loose text-justify'>HYVE is the modern housing platform that makes finding, renting, and managing properties safer, smarter, and stress-free. By combining technology, verified data, and a strong sense of community, the platform eliminates scams, reduces agent fees, and makes housing more accessible. Whether for users seeking affordable accommodation, young professionals looking for verified house listings.</p>
 
 
                                         <div className='flex items-center gap-2 mt-8'>

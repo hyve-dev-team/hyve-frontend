@@ -23,7 +23,7 @@ const HowItWorks = () => {
                                 }}>
                                 <div className="text-center">
                                     <h3 className="font-bold text-primary leading-[1.2] text-[16px] md:text-[18px] lg:w-[80%] sm:w-[60%] md:w-[40%] mx-auto">Search &  Discover</h3>
-                                    <p className="sm:font-extralight capitalize text-[14px] mt-2">Students search properties using filters</p>
+                                    <p className="sm:font-extralight capitalize text-[14px] mt-2">Users search properties using filters</p>
                                 </div>
 
                                 {/* avatar */}
@@ -74,7 +74,7 @@ const HowItWorks = () => {
                                 }}>
                                 <div className="text-center">
                                     <h3 className="font-bold text-primary leading-[1.2] text-[16px] md:text-[18px] lg:w-[60%] sm:w-[60%] md:w-[40%] mx-auto">Stay  Updated</h3>
-                                    <p className="sm:font-extralight capitalize text-[14px] mt-2 w-[90%] mx-auto sm:w-full">Renewal reminder sent to students, ensuring smooth tenacy</p>
+                                    <p className="sm:font-extralight capitalize text-[14px] mt-2 w-[90%] mx-auto sm:w-full">Renewal reminder sent to users, ensuring smooth tenancy</p>
                                 </div>
 
                                 {/* avatar */}

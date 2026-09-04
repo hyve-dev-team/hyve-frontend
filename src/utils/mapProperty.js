@@ -39,6 +39,7 @@ export function mapProperty(p) {
         totalReviews: reviews.length,
         reviews: mappedReviews,
         landlord: p.landlord || null,
+        createdAt: p.createdAt || null,
     };
 }
 

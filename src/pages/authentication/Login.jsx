@@ -13,6 +13,7 @@ import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 import { IoIosArrowBack, IoIosAt } from 'react-icons/io';
 import { FcGoogle } from 'react-icons/fc';
 import { TbLockPassword } from 'react-icons/tb';
+import { Loader2 } from 'lucide-react';
 
 
 
@@ -29,6 +30,7 @@ const Login = () => {
   const [formData, setFormData] = useState({ fullname: "", phone: "", email: "", password: "", confirmPassword: "" })
   const [inputError, setInputError] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   /* handle form input change*/
   const handleFormdataChange = (e) => {
@@ -60,6 +62,8 @@ const Login = () => {
 
     if (!validateAll()) return;
 
+    setIsLoading(true);
+
     try {
       const res = await config.postAPI({
         url: "/api/v1/auth/login",
@@ -84,6 +88,8 @@ const Login = () => {
     } catch (error) {
       console.error("Login error:", error);
       alert("An error occurred. Please try again later.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -137,13 +143,30 @@ const Login = () => {
 
                 {/* Action Btn */}
                 <div className='mt-6'>
-                  <button type="submit" className='w-full bg-primary hover:bg-primary-hover rounded-[14px] smooth-transition py-3 md:py-3 shadow-md'>
-                    <p className='text-sm font-athiti text-white font-medium'>
-                      LOG IN
-                    </p>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className='w-full bg-primary hover:bg-primary-hover rounded-[14px] smooth-transition py-3 md:py-3 shadow-md flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed'
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 text-white animate-spin" />
+                        <p className='text-sm font-athiti text-white font-medium'>
+                          LOGGING IN...
+                        </p>
+                      </>
+                    ) : (
+                      <p className='text-sm font-athiti text-white font-medium'>
+                        LOG IN
+                      </p>
+                    )}
                   </button>
 
-                  <button type='button' className='mt-6 w-full border-2 border-[#00000040] hover:bg-gray rounded-[14px] smooth-transition py-3 md:py-3 flex justify-center items-center gap-2 shadow-sm'>
+                  <button
+                    type='button'
+                    disabled={isLoading}
+                    className='mt-6 w-full border-2 border-[#00000040] hover:bg-gray rounded-[14px] smooth-transition py-3 md:py-3 flex justify-center items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed'
+                  >
                     <span><FcGoogle className='text-[18px] md:text-[20px]' /></span>
                     <p className='text-sm font-athiti text-[#00000080] font-medium'>Continue with Google</p>
                   </button>

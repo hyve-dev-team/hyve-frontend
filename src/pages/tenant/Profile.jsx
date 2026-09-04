@@ -33,10 +33,10 @@ const Profile = () => {
     const [user] = useState(
         cachedUser
             ? {
-                  name: `${cachedUser.firstName || ""} ${cachedUser.lastName || ""}`.trim() || "HYVE User",
-                  email: cachedUser.email || "",
-                  profileImage: cachedUser.profilePictureUrl || defaultProfileImage,
-              }
+                name: `${cachedUser.firstName || ""} ${cachedUser.lastName || ""}`.trim() || "HYVE User",
+                email: cachedUser.email || "",
+                profileImage: cachedUser.profilePictureUrl || defaultProfileImage,
+            }
             : { name: "HYVE User", email: "", profileImage: defaultProfileImage }
     );
 
