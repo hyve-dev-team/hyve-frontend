@@ -34,20 +34,20 @@ const Activity = () => {
                                 <div className="flex flex-col mt-6 divide-y divide-[#0000000D]">
                                     <div className="flex items-center justify-between py-4">
                                         <div>
-                                            <h4 className="font-normal font-poppins text-[14px]">Completed Booking at Lorem Apartment</h4>
+                                            <h4 className="font-normal font-poppins text-[14px]">Completed Booking at Wisdom Lodge</h4>
                                             <p className="mt-1 text-xs font-light">2 days ago</p>
                                         </div>
                                         <div className="hidden md:block">
-                                            <p className="text-xs font-light">32 SEP</p>
+                                            <p className="text-xs font-light">22 SEP</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between py-4">
                                         <div>
-                                            <h4 className="font-normal font-poppins text-[14px]">Completed Booking at Lorem Apartment</h4>
+                                            <h4 className="font-normal font-poppins text-[14px]">Completed Booking at Silver Valley Apartment</h4>
                                             <p className="mt-1 text-xs font-light">2 days ago</p>
                                         </div>
                                         <div className="hidden md:block">
-                                            <p className="text-xs font-light">32 SEP</p>
+                                            <p className="text-xs font-light">20 SEP</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between py-4">
@@ -56,7 +56,7 @@ const Activity = () => {
                                             <p className="mt-1 text-xs font-light">2 days ago</p>
                                         </div>
                                         <div className="hidden md:block">
-                                            <p className="text-xs font-light">32 SEP</p>
+                                            <p className="text-xs font-light">18 SEP</p>
                                         </div>
                                     </div>
                                 </div>

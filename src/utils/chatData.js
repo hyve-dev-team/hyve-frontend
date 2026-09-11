@@ -54,7 +54,7 @@ export const conversationData = {
     messages: [
         { 
             id: 1, 
-            text: "Hi Mr. John, this is Peter, I'll like to renew my stay at Lorem Lodge room 3.", 
+            text: "Hi Mr. John, this is Peter, I'll like to renew my stay at Wisdom Lodge room 3.", 
             isSender: false 
         },
         { 

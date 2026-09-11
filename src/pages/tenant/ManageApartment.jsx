@@ -91,7 +91,7 @@ const ManageApartment = () => {
                                     </p>
 
                                     <h3 className="font-poppins text-[16px] md:text-[20px] font-medium  md:max-w-[70%] leading-tight mt-2 text-black/80">
-                                        Wisdom Lodge  Lorem ipsum dolor sit, amet consectetur adipisicing elit.
+                                        Wisdom Lodge, 2-Bedroom Serviced Apartment
                                     </h3>
                                     <div className='mt-4'>
                                         <p className='font-normal text-[12px] sm:text-sm text-black/50'>Moved In Date: 23rd OCT, 2025</p>
