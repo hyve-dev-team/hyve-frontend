@@ -4,6 +4,8 @@ import Sidebar from './components/layout/Sidebar/Sidebar';
 import Header from './components/layout/Dashboard/Header';
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab';
 import ProfileOption from './components/layout/Profile/ProfileOption';
+import LogoutConfirmModal from '../../components/common/LogoutConfirmModal';
+import { performLogout } from '../../utils/auth';
 import defaultProfileImage from '../../assets/images/shared-images/user-1.png';
 
 import { HiOutlineUser, HiOutlineShieldCheck } from 'react-icons/hi2';
@@ -14,6 +16,7 @@ import { MdVerified } from 'react-icons/md';
 
 const LandlordProfile = () => {
     const navigate = useNavigate();
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     // Read authenticated landlord user from localStorage
     const cachedUser = (() => {
@@ -43,10 +46,11 @@ const LandlordProfile = () => {
     });
 
     const handleSignOut = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('userRole');
-        navigate('/');
+        setShowLogoutModal(true);
+    };
+
+    const confirmSignOut = () => {
+        performLogout(navigate);
     };
 
     const initials = user.name
@@ -58,10 +62,16 @@ const LandlordProfile = () => {
         .toUpperCase() || 'L';
 
     return (
-        <div className='page-wrapper'>
-            <div className='flex'>
-                {/* dashboard sidebar*/}
-                <Sidebar currentPage={'profile'} />
+        <>
+            <LogoutConfirmModal
+                isOpen={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+                onConfirm={confirmSignOut}
+            />
+            <div className='page-wrapper'>
+                <div className='flex'>
+                    {/* dashboard sidebar*/}
+                    <Sidebar currentPage={'profile'} />
 
                 {/* dashboard content area */}
                 <main className='w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-y-auto overflow-x-hidden'>
@@ -183,6 +193,7 @@ const LandlordProfile = () => {
             {/* Mobile navigation */}
             <MobileNavigationTab currentTab={'profile'} />
         </div>
+        </>
     );
 };
 

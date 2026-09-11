@@ -1,210 +1,388 @@
-import { useParams, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Sidebar from "../Sidebar/Sidebar";
 import Header from "../Dashboard/Header";
 import MobileNavigationTab from "../MobileNavigation/MobileNavigationTab";
-import { BsPeople } from "react-icons/bs";
-import { IoTimeOutline } from "react-icons/io5";
+import { BsPeople, BsCheck2Circle } from "react-icons/bs";
+import { IoTimeOutline, IoCallOutline, IoShieldCheckmarkOutline } from "react-icons/io5";
+import { FaWhatsapp } from "react-icons/fa";
+import { Users, ArrowLeft } from "lucide-react";
 import useFetchApartment from "../../../../../hooks/useFetchApartment";
+import useQueueStore from "../../../../../hooks/useQueueStore";
+import JoinQueueModal from "../../../../../components/queue/JoinQueueModal";
+import UpgradeTierModal from "../../../../../components/queue/UpgradeTierModal";
+import PayInspectionModal from "../../../../../components/queue/PayInspectionModal";
+import PassSlotModal from "../../../../../components/queue/PassSlotModal";
 import { BiErrorCircle } from "react-icons/bi";
+import { hyveSuccess } from "../../../../../utils/hyveToast";
 
-const ApartmentQueue = () => {
+// Live Countdown
+const CountdownTimer = ({ expiresAt }) => {
+  const [timeLeft, setTimeLeft] = useState("");
 
-    const { apartmentID } = useParams();
-
-    const { apartment, isLoading, error } = useFetchApartment(apartmentID);
-
-    // Queue data (safe now)
-    const queue = {
-        position: 1,
-        // position: 3,
-        queueSize: 7,
-        peopleAhead: 0,
-        // peopleAhead: 2,
-        // status: "WAITING",
-        status: "ACTIVE",
-        timeRemaining: "08:24:15"
+  useEffect(() => {
+    const updateTimer = () => {
+      const diff = expiresAt - Date.now();
+      if (diff <= 0) {
+        setTimeLeft("00:00:00 (Expired)");
+        return;
+      }
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft(
+        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+      );
     };
 
-    return (
-        <>
-            <div className="page-wrapper">
-                <div className="flex">
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
 
-                    {/* Sidebar */}
-                    <Sidebar />
+  return <span>{timeLeft}</span>;
+};
 
-                    {/* Main Content */}
-                    <main className="w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-auto">
+const ApartmentQueue = () => {
+  const { apartmentID } = useParams();
+  const navigate = useNavigate();
 
-                        <Header />
+  const { apartment, isLoading, error } = useFetchApartment(apartmentID);
+  const {
+    capacity,
+    joinQueue,
+    leaveQueue,
+    payInspectionFee,
+    passSlot,
+    upgradeTier,
+    getQueueForApartment,
+  } = useQueueStore();
 
-                        <div className="px-3 mt-8 pb-28 sm:pb-16 sm:px-6 lg:px-[20%]">
+  const userQueue = getQueueForApartment(apartmentID);
 
-                            {/* Title */}
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [payingQueue, setPayingQueue] = useState(null);
+  const [passingQueue, setPassingQueue] = useState(null);
 
-                            <h2 className="font-poppins text-[20px] font-semibold mb-6">
-                                Apartment Queue
-                            </h2>
+  // Fallback demo queue status if user is not in queue
+  const displayQueue = userQueue || {
+    position: null,
+    total: 5,
+    peopleAhead: 5,
+    status: "OPEN",
+    price: apartment?.price || "500,000",
+    property: apartment?.lodgeDesc || "Apartment",
+    image: apartment?.lodgeImage || "/images/apartments/apartment-image-1.png",
+    currentPersonExpiresAt: Date.now() + 14 * 3600 * 1000,
+  };
 
-                            {/* Queue Card */}
-                            {isLoading ?
-                                <>
-                                    <div className="flex flex-col items-center justify-center h-full">
-                                        <div className="spinner w-[30px] h-[30px]"></div>
-                                    </div>
-                                </>
-                                :
-                                /* check for any error after loading */
-                                error ?
+  const handleLeave = () => {
+    if (!userQueue) return;
+    if (window.confirm("Leave this queue? This will free up 1 of your queue slots.")) {
+      leaveQueue(userQueue.id);
+      hyveSuccess("Left Queue", "You have stepped out of the queue.");
+      navigate("/user/apartment/queue");
+    }
+  };
 
-                                    <>
-                                        <div className="flex flex-col items-center justify-center h-full">
-                                            <BiErrorCircle className="text-[30px] text-primary" />
-                                            <small className="mt-4 text-[#AAAAAA]">{error}</small>
-                                        </div>
-                                    </>
-                                    :
-                                    <>
+  return (
+    <>
+      <div className="page-wrapper bg-[#FBFBFB]">
+        <div className="flex">
+          <Sidebar currentPage="queues" />
 
-                                        <div className="border border-[#FF630033] rounded-[8px] p-2 md:p-2">
+          <main className="w-full min-h-[100svh] sm:w-[70%] lg:w-[80%] overflow-auto">
+            <Header />
 
-                                            {/* Image */}
+            <div className="px-4 sm:px-8 lg:px-[18%] py-8 pb-28 sm:pb-16">
+              {/* Back Link */}
+              <div className="flex items-center justify-between mb-6">
+                <Link
+                  to="/user/apartment/queue"
+                  className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-500 hover:text-primary transition-colors"
+                >
+                  <ArrowLeft size={16} />
+                  <span>Back to My Queues</span>
+                </Link>
 
-                                            <div className="rounded-[6px] relative overflow-hidden w-full h-[280px] sm:h-[300px] sm:rounded-[16px]">
+                <Link
+                  to={`/user/apartment/${apartmentID}`}
+                  className="text-xs text-primary font-semibold hover:underline"
+                >
+                  View Listing Details
+                </Link>
+              </div>
 
-                                                <img
-                                                    src={apartment.lodgeImage}
-                                                    alt="apartment"
-                                                    className="object-cover w-full h-full"
-                                                />
+              {/* Title */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                    HYVE Fair Queue
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    Slots: {capacity.currentCount} of {capacity.maxLimit} used
+                  </span>
+                </div>
+                <h2 className="font-montserrat text-2xl font-bold text-gray-900">
+                  Apartment Queue Status
+                </h2>
+              </div>
 
-                                                {/* Status badge */}
+              {/* Loading State */}
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center p-16">
+                  <div className="spinner w-[32px] h-[32px]" />
+                  <p className="mt-4 text-xs text-gray-400">Loading queue details...</p>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center p-16 text-center">
+                  <BiErrorCircle className="text-4xl text-primary mb-2" />
+                  <p className="text-sm text-gray-600">{error}</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-md">
+                  {/* Image */}
+                  <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-gray-100">
+                    <img
+                      src={apartment?.lodgeImage || displayQueue.image}
+                      alt="apartment"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-                                                <span
-                                                    className={`absolute top-4 left-4 px-4 py-[.2rem] text-[10px] rounded-md
-                                                        ${queue.status === "ACTIVE"
-                                                            ? "bg-[#DDFFE7] text-[#1B784D]"
-                                                            : "bg-primary text-white"
-                                                        }`}
-                                                >
-                                                    {queue.status}
-                                                </span>
+                    {/* Status badge */}
+                    <div className="absolute top-4 left-4">
+                      {userQueue?.status === "ACTIVE" ? (
+                        <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-[#1B784D] text-white flex items-center gap-1.5 shadow-md">
+                          <BsCheck2Circle size={14} />
+                          <span>YOUR TURN (POSITION #1)</span>
+                        </span>
+                      ) : userQueue ? (
+                        <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-primary text-white shadow-md">
+                          IN QUEUE: POSITION #{userQueue.position} OF {userQueue.total}
+                        </span>
+                      ) : (
+                        <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-primary/90 text-white shadow-md">
+                          5 PEOPLE IN QUEUE
+                        </span>
+                      )}
+                    </div>
 
-                                            </div>
+                    <div className="absolute bottom-4 left-4 right-4 text-white flex items-end justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold font-montserrat truncate max-w-sm">
+                          {apartment?.lodgeDesc}
+                        </h3>
+                        <p className="text-xs text-white/80 mt-0.5">
+                          {apartment?.location || "Lagos, Nigeria"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-white">
+                          ₦ {apartment?.price}
+                        </p>
+                        <p className="text-[11px] text-white/80">per year</p>
+                      </div>
+                    </div>
+                  </div>
 
-                                            {/* Details */}
-
-                                            <div className="p-3 sm:p-4">
-
-                                                <div className="flex justify-between items-start">
-
-                                                    <h3 className="font-poppins text-[16px] font-medium">
-                                                        {apartment.lodgeDesc}
-                                                    </h3>
-
-                                                    <div className="text-right">
-                                                        <p className="text-primary font-medium">
-                                                            ₦ {apartment.price}
-                                                        </p>
-                                                        <p className="text-[10px]">per year</p>
-                                                    </div>
-
-                                                </div>
-
-                                                {/* Queue info */}
-
-                                                <div className="mt-4 space-y-2">
-
-                                                    <div className="flex items-center gap-2">
-                                                        <BsPeople className="text-primary" />
-                                                        <p className="text-[14px]">
-                                                            Your position:
-                                                            <span className="font-semibold ml-1">
-                                                                #{queue.position}
-                                                            </span>
-                                                            {" "}of {queue.queueSize}
-                                                        </p>
-                                                    </div>
-
-                                                    <p className="text-[12px] text-[#AAAAAA]">
-                                                        {queue.peopleAhead} people ahead of you
-                                                    </p>
-
-                                                </div>
-
-                                                {/* Timer */}
-
-                                                {queue.status === "ACTIVE" && (
-
-                                                    <div className="flex items-center gap-2 mt-4 text-primary">
-
-                                                        <IoTimeOutline />
-
-                                                        <p className="font-semibold text-[14px]">
-                                                            {queue.timeRemaining} remaining
-                                                        </p>
-
-                                                    </div>
-
-                                                )}
-
-                                                {/* Actions */}
-
-                                                <div className="flex gap-3 mt-6">
-
-                                                    {queue.status === "WAITING" && (
-                                                        <button className="w-1/2 py-2 border border-primary text-primary rounded-lg text-[12px]">
-                                                            Leave Queue
-                                                        </button>
-                                                    )}
-
-                                                    {queue.status === "ACTIVE" && (
-                                                        <>
-                                                            <Link
-                                                            to={`/user/apartment/reserve/${queue.id}`}
-                                                            className="flex items-center justify-center w-1/2 py-2 text-white rounded-lg shadow-md bg-primary hover:bg-primary-hover smooth-transition text-[12px] sm:text-[14px]"
-                                                        >
-                                                            Commit
-                                                        </Link>
-
-                                                        <Link  className="flex items-center justify-center w-1/2 py-2 border border-primary text-primary rounded-lg text-[12px]">
-                                                            Pass
-                                                        </Link>
-                                                        </>
-                                                    )}
-
-                                                </div>
-
-                                                {/* View Property */}
-
-                                                <div className="mt-4">
-
-                                                    <Link
-                                                        to={`/user/apartment/${apartment.id}`}
-                                                        className="text-primary text-[12px] underline"
-                                                    >
-                                                        View Apartment Details
-                                                    </Link>
-
-                                                </div>
-
-                                            </div>
-
-                                        </div>
-                                    </>}
+                  {/* Body Content */}
+                  <div className="p-6 space-y-5">
+                    {/* User is in Queue and it's their turn */}
+                    {userQueue?.status === "ACTIVE" ? (
+                      <div className="space-y-4">
+                        {/* Countdown */}
+                        <div className="p-4 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-primary font-semibold text-sm">
+                            <IoTimeOutline size={20} className="animate-pulse" />
+                            <span>Exclusive Decision Window:</span>
+                          </div>
+                          <div className="font-mono font-bold text-lg text-primary">
+                            <CountdownTimer expiresAt={userQueue.expiresAt} />
+                          </div>
                         </div>
 
-                    </main>
+                        {!userQueue.inspectionPaid ? (
+                          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-2">
+                            <p className="text-xs text-gray-600 font-medium">
+                              Pay the inspection fee (₦5,000) to confirm your private tour and unlock direct agent contact.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setPayingQueue(userQueue)}
+                              className="w-full py-3 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-colors"
+                            >
+                              Pay Inspection Fee (₦ 5,000)
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="p-4 rounded-xl bg-green-50 border border-green-200 space-y-3">
+                            <div className="flex items-center justify-between text-xs font-bold text-green-800">
+                              <span className="flex items-center gap-1.5">
+                                <IoShieldCheckmarkOutline size={16} />
+                                <span>Inspection Fee Confirmed</span>
+                              </span>
+                              <span className="text-gray-500 font-normal">
+                                Tour: {userQueue.scheduledTour}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-green-100">
+                              <div>
+                                <p className="text-xs font-bold text-gray-900">
+                                  {userQueue.agentName}
+                                </p>
+                                <p className="text-[11px] text-gray-500">
+                                  {userQueue.agentPhone}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={`tel:${userQueue.agentPhone}`}
+                                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs"
+                                >
+                                  <IoCallOutline size={16} />
+                                </a>
+                                <a
+                                  href={`https://wa.me/${userQueue.agentPhone?.replace(/\D/g, "")}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-xs"
+                                >
+                                  <FaWhatsapp size={16} />
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
+                        <div className="flex items-center gap-3 pt-2">
+                          <Link
+                            to={`/user/apartment/reserve/${apartmentID}`}
+                            className="flex-1 py-3.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-center font-bold text-sm shadow-md transition-all"
+                          >
+                            Commit & Pay Rent (Escrow)
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => setPassingQueue(userQueue)}
+                            className="py-3.5 px-5 border border-gray-300 hover:border-red-400 hover:text-red-600 text-gray-700 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                          >
+                            Pass Turn
+                          </button>
+                        </div>
+                      </div>
+                    ) : userQueue ? (
+                      /* User is in Queue and waiting */
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between text-sm border-b border-gray-100 pb-3">
+                          <span className="text-gray-500">Your Current Position:</span>
+                          <span className="font-bold text-gray-900">
+                            #{userQueue.position} of {userQueue.total}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-sm border-b border-gray-100 pb-3">
+                          <span className="text-gray-500">People Ahead:</span>
+                          <span className="font-bold text-gray-900">
+                            {userQueue.peopleAhead} {userQueue.peopleAhead === 1 ? "person" : "people"}
+                          </span>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500 flex items-center gap-1">
+                              <IoTimeOutline size={14} className="text-primary" />
+                              Estimated Wait Until Your Turn:
+                            </span>
+                            <span className="font-semibold text-gray-800">
+                              ~
+                              <CountdownTimer
+                                expiresAt={userQueue.currentPersonExpiresAt || Date.now() + 12 * 3600 * 1000}
+                              />
+                            </span>
+                          </div>
+                          <div className="flex justify-between pt-1 border-t border-gray-200">
+                            <span className="text-gray-500">
+                              Your Exclusive Window Once It's Your Turn:
+                            </span>
+                            <span className="font-bold text-primary">
+                              24 hours full lock
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={handleLeave}
+                            className="w-full py-3 border border-gray-300 hover:border-red-400 hover:text-red-600 text-gray-600 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                          >
+                            Leave Queue (Free Up Slot)
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* User is NOT yet in this queue */
+                      <div className="space-y-4 text-center">
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          Join the fair queue for this apartment to secure transparent, first-come-first-served viewing rights. Only 1 person inspects and decides at a time.
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowJoinModal(true)}
+                          className="w-full py-3.5 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-xl font-bold text-sm shadow-md shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer transition-all"
+                        >
+                          <Users size={18} />
+                          <span>Book Tour & Join Fair Queue</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-
-                {/* Mobile navigation */}
-
-                {/* <MobileNavigationTab currentTab={"queues"} /> */}
-
+              )}
             </div>
-        </>
-    );
+          </main>
+        </div>
+
+        <MobileNavigationTab currentTab="queues" />
+
+        {/* Modals */}
+        <JoinQueueModal
+          isOpen={showJoinModal}
+          onClose={() => setShowJoinModal(false)}
+          apartment={apartment}
+          capacity={capacity}
+          existingQueue={userQueue}
+          onJoin={joinQueue}
+          onOpenUpgrade={() => setShowUpgradeModal(true)}
+          onViewExistingQueue={() => {}}
+        />
+
+        <UpgradeTierModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          currentTier={capacity.tier}
+          onUpgrade={upgradeTier}
+        />
+
+        <PayInspectionModal
+          isOpen={Boolean(payingQueue)}
+          onClose={() => setPayingQueue(null)}
+          queue={payingQueue}
+          onConfirmPayment={payInspectionFee}
+        />
+
+        <PassSlotModal
+          isOpen={Boolean(passingQueue)}
+          onClose={() => setPassingQueue(null)}
+          queue={passingQueue}
+          onConfirmPass={passSlot}
+        />
+      </div>
+    </>
+  );
 };
 
 export default ApartmentQueue;

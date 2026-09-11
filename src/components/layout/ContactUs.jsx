@@ -34,7 +34,7 @@ const ContactUs = () => {
                             {/* contact us information */}
                             <div>
                                 <h2 className="font-normal leading-tight text-center capitalize heading-responsive text-primary md:text-left">Contact Us</h2>
-                                <p className="mt-3 md:mt-6 w-[90%] mx-auto md:mx-0 md:w-full lg:w-[80%] leading-6 lg:leading-8 paragraph-responsive text-center md:text-left">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do  </p>
+                                <p className="mt-3 md:mt-6 w-[90%] mx-auto md:mx-0 md:w-full lg:w-[80%] leading-6 lg:leading-8 paragraph-responsive text-center md:text-left">Have questions, need assistance, or want to partner with us? Reach out through any of our channels or scan the code to chat with our team directly.</p>
                             </div>
 
                             {/* social icons */}

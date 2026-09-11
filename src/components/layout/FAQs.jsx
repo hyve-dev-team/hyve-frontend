@@ -45,8 +45,8 @@ const FAQs = () => {
                                             initial={false}
                                             animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
                                             transition={{ duration: 0.3, ease: "easeInOut" }}>
-                                            <div className={`flex items-center gap-8 border rounded-md justify-center border-black/20 mt-2 md:px-8 px-3`}>
-                                                <p className="py-4 font-light leading-normal paragraph-responsive md:py-6">
+                                            <div className={`flex items-center gap-8 border rounded-md justify-center border-black/20 mt-2 md:px-8 px-4`}>
+                                                <p className="py-4 font-light leading-relaxed paragraph-responsive md:py-6 whitespace-pre-line">
                                                     {faq.answer}
                                                 </p>
                                             </div>

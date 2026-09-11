@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion';
 import Preloader from '../../components/preloader/Preloader';
 import slideVariants from '../../utils/slideVariant';
@@ -11,8 +11,6 @@ import vector1 from "../../assets/svg/onboarding/vector-1.svg"
 import vector2 from "../../assets/svg/onboarding/vector-2.svg"
 import vector3 from "../../assets/svg/onboarding/vector-3.svg"
 import vector4 from "../../assets/svg/onboarding/vector-4.svg"
-import houseIcon from "../../assets/svg/onboarding/house-icon.svg"
-import userSearchIcon from "../../assets/svg/onboarding/user-icon.svg"
 
 /* icons */
 import { RxTrackNext } from "react-icons/rx";
@@ -20,9 +18,11 @@ import { IoIosArrowDropright } from "react-icons/io";
 import { IoIosArrowBack } from "react-icons/io";
 
 /* onboarding screen content component */
-import Screen, { PreSignupScreen } from './component/ui/Screen'
+import Screen from './component/ui/Screen'
 
 const Onboarding = () => {
+    const navigate = useNavigate();
+
     // creating heading content as variable, so they can be passed as props because they comtain html tags
     const screen1Heading = (
         <>
@@ -61,7 +61,7 @@ const Onboarding = () => {
 
 
     // number of screen/step to be displayed
-    const totalSteps = 5;
+    const totalSteps = 4;
 
     /* if step is less than total steps, increase value of steps by 1 */
     const nextStep = () => {
@@ -71,15 +71,19 @@ const Onboarding = () => {
         }
     };
 
-    /* Skip: subtract  current step from the totalsteps, and add the result to step */
+    /* Skip: directly navigate to signup */
     const skip = () => {
-        let remainingSteps = totalSteps - step;
-        setStep(step + remainingSteps)
+        navigate("/auth/signup");
+    }
+
+    /* Get started on final slide: navigate to signup */
+    const getStarted = () => {
+        navigate("/auth/signup");
     }
 
     // increase progress bar
     useEffect(() => {
-        if (step == 1) {
+        if (step === 1) {
             setProgressBarPercent("w-[25%]")
         } else if (step === 2) {
             setProgressBarPercent("w-[50%]")
@@ -102,41 +106,34 @@ const Onboarding = () => {
                 <img src={vector2} alt="Preload Vector 2" />
                 <img src={vector3} alt="Preload Vector 3" />
                 <img src={vector4} alt="Preload Vector 4" />
-                <img src={houseIcon} alt="Preload House Icon" />
-                <img src={userSearchIcon} alt="Preload User Icon" />
             </div>
 
             <main className="container relative pt-4 pb-12 md:pb-4">
-                {/* conditionally display the top component if user is not on the 5th step screen*/}
-                {step < 5 && (
-                    <>
-                        {/* Top compoent - quick links, progress bar adn skip btn */}
-                        <div className="flex items-center justify-between gap-6 md:gap-10">
-                            <div className='items-center hidden gap-6 lg:flex'>
-                                <Link to="/" className='flex items-center gap-1 hover:text-primary smooth-transition'>
-                                    <IoIosArrowBack />
-                                    <p className='text-sm font-light leading-none'>Home</p>
-                                </Link>
-                            </div>
+                {/* Top component - quick links, progress bar and skip btn */}
+                <div className="flex items-center justify-between gap-6 md:gap-10">
+                    <div className='items-center hidden gap-6 lg:flex'>
+                        <Link to="/" className='flex items-center gap-1 hover:text-primary smooth-transition'>
+                            <IoIosArrowBack />
+                            <p className='text-sm font-light leading-none'>Home</p>
+                        </Link>
+                    </div>
 
-                            {/* onboarding progress bar */}
-                            <div className='relative w-[90%] lg:w-[40%] lg:right-5'>
-                                <div className='absolute w-full h-1 bg-[#D9D9D9] rounded-full'></div>
-                                <div className={`bg-primary absolute h-1 rounded-full ${progressBarPercent} transition-w duration-700`}></div>
-                            </div>
+                    {/* onboarding progress bar */}
+                    <div className='relative w-[90%] lg:w-[40%] lg:right-5'>
+                        <div className='absolute w-full h-1 bg-[#D9D9D9] rounded-full'></div>
+                        <div className={`bg-primary absolute h-1 rounded-full ${progressBarPercent} transition-w duration-700`}></div>
+                    </div>
 
-                            {/* skip button */}
-                            <div>
-                                <button className='flex items-center gap-1 text-[12px] font-normal sm:text-sm md:hover:text-primary smooth-transition' onClick={skip}>
-                                    <span>
-                                        Skip
-                                    </span>
-                                    <span className='relative top-[.7px] md:top-[1.4px]'><RxTrackNext /></span>
-                                </button>
-                            </div>
-                        </div>
-                    </>
-                )}
+                    {/* skip button */}
+                    <div>
+                        <button className='flex items-center gap-1 text-[12px] font-normal sm:text-sm md:hover:text-primary smooth-transition' onClick={skip}>
+                            <span>
+                                Skip
+                            </span>
+                            <span className='relative top-[.7px] md:top-[1.4px]'><RxTrackNext /></span>
+                        </button>
+                    </div>
+                </div>
 
                 {/* Main Screen Content  */}
                 <div className='relative overflow-hidden h-[80vh]'>
@@ -154,40 +151,32 @@ const Onboarding = () => {
                             {step === 2 && <Screen avatar={vector2} subText="Find Your TRIBE" heading={screen2Heading} btnValue="next" />}
                             {step === 3 && <Screen avatar={vector3} subText="Rent Without Stress" heading={screen3Heading} btnValue="next" />}
                             {step === 4 && <Screen avatar={vector4} subText="Move In, Live Better" heading={screen4Heading} btnValue="get started" />}
-                            {step === 5 && <PreSignupScreen icon1={houseIcon} icon2={userSearchIcon} />}
-
                         </motion.div>
                     </AnimatePresence>
                 </div>
 
+                {/* Action Btn - next step */}
+                {step < 4 && (
+                    <div className='absolute w-full pb-10 text-center -bottom-10 md:mt-6 md:pb-0'>
+                        <button
+                            onClick={nextStep}
+                            className='onboardingBtn'>
+                            <span>next</span>
+                            <IoIosArrowDropright className='text-[16px]' />
+                        </button>
+                    </div>
+                )}
 
-                {/* conditionally display the top component if user is not on the 5th step screen*/}
-                {step < 5 && (
-                    <>
-                        {/* Action Btn - next step */}
-                        {step < 4 && (
-                            <div className='absolute w-full pb-10 text-center -bottom-10 md:mt-6 md:pb-0'>
-                                <button
-                                    onClick={nextStep}
-                                    className='onboardingBtn'>
-                                    <span>next</span>
-                                    <IoIosArrowDropright className='text-[16px]' />
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Action Btn -  get started button */}
-                        {step === 4 && (
-                            <div className='absolute w-full pb-10 text-center -bottom-10 md:mt-6 md:pb-0'>
-                                <button
-                                    onClick={nextStep}
-                                    className='onboardingBtn'>
-                                    <span>get started</span>
-                                    <IoIosArrowDropright className='text-[16px]' />
-                                </button>
-                            </div>
-                        )}
-                    </>
+                {/* Action Btn -  get started button */}
+                {step === 4 && (
+                    <div className='absolute w-full pb-10 text-center -bottom-10 md:mt-6 md:pb-0'>
+                        <button
+                            onClick={getStarted}
+                            className='onboardingBtn'>
+                            <span>get started</span>
+                            <IoIosArrowDropright className='text-[16px]' />
+                        </button>
+                    </div>
                 )}
             </main>
         </>

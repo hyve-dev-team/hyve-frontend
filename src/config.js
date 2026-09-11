@@ -9,7 +9,7 @@ async function parseResponseBody(response) {
     localStorage.removeItem("user_id");
     localStorage.removeItem("email");
     localStorage.removeItem("token");
-    if (window.location.pathname !== "/") window.location.href = "/";
+    if (window.location.pathname !== "/auth/signin") window.location.href = "/auth/signin";
     return null;
   }
   const text = await response.text();
@@ -163,7 +163,7 @@ const config = {
           localStorage.removeItem("user_id");
           localStorage.removeItem("email");
           localStorage.removeItem("token");
-          if (window.location.pathname !== "/") window.location.href = "/";
+          if (window.location.pathname !== "/auth/signin") window.location.href = "/auth/signin";
         }
         reject(error);
         return;
@@ -188,7 +188,7 @@ const config = {
           localStorage.removeItem("user_id");
           localStorage.removeItem("email");
           localStorage.removeItem("token");
-          if (window.location.pathname !== "/") window.location.href = "/";
+          if (window.location.pathname !== "/auth/signin") window.location.href = "/auth/signin";
         }
         // Reject with the error response from the server for better debugging
         reject(error.response?.data || error);

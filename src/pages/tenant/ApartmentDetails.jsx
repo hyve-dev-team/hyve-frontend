@@ -12,8 +12,11 @@ import MobileNavigationTab from "./components/layout/MobileNavigation/MobileNavi
 
 import { LuUserRoundCog } from "react-icons/lu"
 import { BiErrorCircle } from "react-icons/bi";
-import { RxCaretDown, RxCaretUp } from "react-icons/rx";
 import { BiChat } from "react-icons/bi";
+import useQueueStore from "../../hooks/useQueueStore";
+import JoinQueueModal from "../../components/queue/JoinQueueModal";
+import UpgradeTierModal from "../../components/queue/UpgradeTierModal";
+import { Users, Clock } from "lucide-react";
 
 const ApartmentDetails = () => {
     // Get apartment Id and fetch apartment details using the id
@@ -22,6 +25,12 @@ const ApartmentDetails = () => {
 
     // Call useFetchApartment to fetch apartment details
     const { apartment, isLoading, error } = useFetchApartment(apartmentID);
+
+    // Queue system hooks & state
+    const { capacity, joinQueue, upgradeTier, getQueueForApartment } = useQueueStore();
+    const existingQueue = getQueueForApartment(apartmentID);
+    const [showJoinQueueModal, setShowJoinQueueModal] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     // State to track "Chat with Landlord" click in flight
     const [isOpeningChat, setIsOpeningChat] = useState(false);
@@ -151,22 +160,33 @@ const ApartmentDetails = () => {
                                                         </div>
 
                                                         {/* Action Btns: hidden on smaller screens */}
-                                                        <div className="justify-center hidden w-full gap-2 mt-8 lg:flex sm:gap-4 md:mt-16">
-                                                            {/* <Link to={`/user/apartment/reserve/${apartment.id}`}
-                                                                className="w-full py-3 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-[12px] sm:text-[14px] text-center"
-                                                            > */}
-                                                            <Link to={`/user/apartment/${apartment.id}/queue`}
-                                                                className="w-full py-3 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-[12px] sm:text-[14px] text-center"
+                                                        <div className="flex flex-col w-full gap-3 mt-8 lg:flex sm:gap-4 md:mt-10">
+                                                            {/* Queue Status / Join Button */}
+                                                            {existingQueue ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => navigate(`/user/apartment/${apartment.id}/queue`)}
+                                                                    className="w-full py-3.5 text-white rounded-lg md:rounded-xl shadow-md bg-[#1B784D] hover:bg-[#15603d] smooth-transition text-xs sm:text-[14px] font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <Users size={18} />
+                                                                    <span>In Queue (Position #{existingQueue.position} of {existingQueue.total}) — View Status</span>
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setShowJoinQueueModal(true)}
+                                                                    className="w-full py-3.5 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover active:scale-[0.99] smooth-transition text-xs sm:text-[14px] font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <Users size={18} />
+                                                                    <span>Book Tour & Join Fair Queue</span>
+                                                                </button>
+                                                            )}
+
+                                                            <Link
+                                                                to={`/user/apartment/review/${apartment.id}`}
+                                                                className="w-full py-3 text-black bg-transparent border-2 rounded-lg md:rounded-xl shadow-sm border-primary/40 hover:border-primary hover:bg-gray smooth-transition text-[12px] sm:text-[14px] text-center"
                                                             >
-                                                                <button type="button">
-                                                                    Join Queue
-                                                                </button>
-                                                            </Link>
-                                                            <Link to={`/user/apartment/review/${apartment.id}`}
-                                                                className="w-full py-3 text-black bg-transparent border-2 rounded-lg md:rounded-xl shadow-md border-primary hover:bg-gray smooth-transition text-[12px] sm:text-[14px] text-center">
-                                                                <button type="button">
-                                                                    Check reviews
-                                                                </button>
+                                                                Check Reviews
                                                             </Link>
                                                         </div>
                                                     </div>
@@ -241,22 +261,32 @@ const ApartmentDetails = () => {
                                                 </div>
 
                                                 {/* Action Btns: visible on smaller screens */}
-                                                <div className="flex justify-center w-full gap-2 mt-2 lg:hidden sm:gap-4">
-                                                    {/* <Link to={`/user/apartment/reserve/${apartment.id}`}
-                                                        className="w-full py-3 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-sm sm:text-[14px] text-center"
-                                                    > */}
-                                                    <Link to={`/user/apartment/${apartment.id}/queue`}
-                                                        className="w-full py-3 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-sm sm:text-[14px] text-center"
+                                                <div className="flex flex-col justify-center w-full gap-2.5 mt-4 lg:hidden sm:gap-3">
+                                                    {existingQueue ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => navigate(`/user/apartment/${apartment.id}/queue`)}
+                                                            className="w-full py-3 text-white rounded-lg md:rounded-xl shadow-md bg-[#1B784D] hover:bg-[#15603d] smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
+                                                        >
+                                                            <Users size={16} />
+                                                            <span>In Queue (Position #{existingQueue.position}) — View</span>
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowJoinQueueModal(true)}
+                                                            className="w-full py-3 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
+                                                        >
+                                                            <Users size={16} />
+                                                            <span>Book Tour & Join Fair Queue</span>
+                                                        </button>
+                                                    )}
+
+                                                    <Link
+                                                        to={`/user/apartment/review/${apartment.id}`}
+                                                        className="w-full py-2.5 text-black bg-transparent border-2 rounded-lg md:rounded-xl shadow-sm border-primary/40 hover:bg-gray smooth-transition text-xs sm:text-sm text-center font-medium"
                                                     >
-                                                        <button type="button">
-                                                            Join Queue
-                                                        </button>
-                                                    </Link>
-                                                    <Link to={`/user/apartment/review/${apartment.id}`}
-                                                        className="w-full py-3 text-black bg-transparent border-2 rounded-lg md:rounded-xl shadow-md border-primary hover:bg-gray smooth-transition text-sm sm:text-[14px] text-center">
-                                                        <button type="button">
-                                                            Check reviews
-                                                        </button>
+                                                        Check reviews
                                                     </Link>
                                                 </div>
                                             </div>
@@ -268,6 +298,25 @@ const ApartmentDetails = () => {
 
                 {/* Mobile navigation */}
                 <MobileNavigationTab />
+
+                {/* Queue Modals */}
+                <JoinQueueModal
+                    isOpen={showJoinQueueModal}
+                    onClose={() => setShowJoinQueueModal(false)}
+                    apartment={apartment}
+                    capacity={capacity}
+                    existingQueue={existingQueue}
+                    onJoin={joinQueue}
+                    onOpenUpgrade={() => setShowUpgradeModal(true)}
+                    onViewExistingQueue={(qId) => navigate(`/user/apartment/${apartment.id}/queue`)}
+                />
+
+                <UpgradeTierModal
+                    isOpen={showUpgradeModal}
+                    onClose={() => setShowUpgradeModal(false)}
+                    currentTier={capacity.tier}
+                    onUpgrade={upgradeTier}
+                />
             </div>
         </>
     )
