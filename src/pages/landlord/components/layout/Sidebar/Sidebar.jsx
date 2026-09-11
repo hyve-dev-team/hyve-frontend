@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import Navitem from './Navitem';
 import hyveLogo from "../../../../../assets/svg/logo/hyve-logo.svg"
+import LogoutConfirmModal from '../../../../../components/common/LogoutConfirmModal';
+import { performLogout } from '../../../../../utils/auth';
 
 import { FaHouse } from "react-icons/fa6";
 import { HiUser } from "react-icons/hi2";
@@ -11,6 +14,7 @@ import { IoLogOutOutline } from "react-icons/io5";
 const Sidebar = ({ currentPage }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const getActiveTab = () => {
         const path = location.pathname;
@@ -37,14 +41,21 @@ const Sidebar = ({ currentPage }) => {
     const userEmail = cachedUser?.email || "landlord@hyve.com";
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        localStorage.removeItem("userRole");
-        navigate("/");
+        setShowLogoutModal(true);
+    };
+
+    const confirmLogout = () => {
+        performLogout(navigate);
     };
 
     return (
-        <aside className='bg-[#FFF0E6] hidden sm:flex flex-col justify-between flex-1 min-w-[210px] max-w-[270px] lg:max-w-[290px] h-[100svh] overflow-y-auto [&::-webkit-scrollbar]:hidden px-4 py-6 border-r border-[#FF6300]/10 select-none'>
+        <>
+            <LogoutConfirmModal
+                isOpen={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+                onConfirm={confirmLogout}
+            />
+            <aside className='bg-[#FFF0E6] hidden sm:flex flex-col justify-between flex-1 min-w-[210px] max-w-[270px] lg:max-w-[290px] h-[100svh] overflow-y-auto [&::-webkit-scrollbar]:hidden px-4 py-6 border-r border-[#FF6300]/10 select-none'>
             {/* Top area: Logo & Nav items */}
             <div className='flex flex-col'>
                 {/* Logo & Portal Badge */}
@@ -142,6 +153,7 @@ const Sidebar = ({ currentPage }) => {
                 </button>
             </div>
         </aside>
+        </>
     )
 }
 

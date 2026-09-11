@@ -6,18 +6,20 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import featuredLodges from '../../utils/featuredLodges'
 import { setCurrentLodge } from '../../utils/currentLodge'
+import { getQueues, commitAndPayRent } from '../../utils/queueStore'
+import { BsShieldCheck } from 'react-icons/bs'
+import { IoCheckmarkCircle, IoKeyOutline } from 'react-icons/io5'
 
 const Reservation = () => {
     const { apartmentID } = useParams();
     const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
 
+    const lodge = featuredLodges.find((l) => l.id === Number(apartmentID));
+
     const handlePayment = (e) => {
         e.preventDefault()
 
-        // On real payment success, record this as the tenant's current lodge so
-        // CurrentLodgeCard (dashboard) and ManageApartment reflect a real booking
-        // instead of the previous always-on "Lid Lodge" placeholder.
-        const lodge = featuredLodges.find((l) => l.id === Number(apartmentID));
+        // On real payment success, record this as the tenant's current lodge
         const rentExpiry = new Date();
         rentExpiry.setFullYear(rentExpiry.getFullYear() + 1);
 
@@ -27,11 +29,17 @@ const Reservation = () => {
             rentExpiryDate: rentExpiry.toISOString(),
         });
 
+        // If tenant joined the queue for this apartment, close/commit that queue
+        const activeQueues = getQueues();
+        const matchedQueue = activeQueues.find((q) => Number(q.apartmentId) === Number(apartmentID));
+        if (matchedQueue) {
+            commitAndPayRent(matchedQueue.id);
+        }
+
         setIsPaymentSuccessful(true)
     }
 
     return (
-
         <div className='page-wrapper'>
             <div className='flex'>
                 {/* dashboard sidebar*/}
@@ -45,47 +53,88 @@ const Reservation = () => {
                     <div className='px-3 mt-8 pb-28 sm:pb-16 sm:px-6 lg:px-8 lg:mt-8'>
                         <div className='mb-4'>
                             <p className='text-sm text-[#9B9B9B]'>Apartment Reservations</p>
+                            <h2 className='text-xl sm:text-2xl font-bold font-montserrat text-gray-900 mt-1'>
+                                Finalize Rent & Escrow Protection
+                            </h2>
                         </div>
+
+                        {/* Property summary banner */}
+                        {lodge && (
+                            <div className='bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm'>
+                                <div className='flex items-center gap-4'>
+                                    <img
+                                        src={lodge.image}
+                                        alt={lodge.lodgeDesc}
+                                        className='w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover'
+                                    />
+                                    <div>
+                                        <div className='flex items-center gap-2'>
+                                            <span className='px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#1B784D]/10 text-[#1B784D] inline-flex items-center gap-1'>
+                                                <BsShieldCheck size={12} /> HYVE Escrow Protected
+                                            </span>
+                                        </div>
+                                        <h3 className='font-bold text-gray-900 text-base sm:text-lg mt-1'>{lodge.lodgeDesc}</h3>
+                                        <p className='text-xs text-gray-500'>{lodge.lodgeLocation}</p>
+                                    </div>
+                                </div>
+                                <div className='sm:text-right w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0'>
+                                    <p className='text-xs text-gray-400'>Annual Rent</p>
+                                    <p className='text-xl sm:text-2xl font-bold text-primary font-montserrat'>
+                                        ₦ {lodge.lodgePrice}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         <form onSubmit={handlePayment} method='POST'>
                             <div className='flex flex-col gap-6 lg:mt-4 lg:flex-row'>
                                 <div className='w-full'>
-                                    <div className='bg-[#F4F4F4] rounded-[14px] py-6 lg:py-10 px-4 lg:px-16'>
-                                        <h4 className='font-medium text-sm lg:text-[18px] text-center font-poppins '>
-                                            Terms and Condition
+                                    <div className='bg-[#F4F4F4] rounded-[14px] py-6 lg:py-8 px-4 lg:px-10'>
+                                        <h4 className='font-semibold text-sm lg:text-[18px] text-center font-poppins text-gray-900'>
+                                            Escrow Terms & Key Handover
                                         </h4>
 
-                                        <p className='text-[#2D2D2D] mt-4 text-sm font-light leading-loose text-justify'>HYVE is the modern housing platform that makes finding, renting, and managing properties safer, smarter, and stress-free. By combining technology, verified data, and a strong sense of community, the platform eliminates scams, reduces agent fees, and makes housing more accessible. Whether for users seeking affordable accommodation, young professionals looking for verified house listings.</p>
+                                        <p className='text-[#2D2D2D] mt-4 text-xs sm:text-sm font-light leading-relaxed text-justify'>
+                                            Your annual rent payment will be deposited into HYVE Escrow. Funds are never disbursed directly to the landlord or agent until you have conducted your physical key handover and verified that the apartment matches the agreed condition. If any discrepancy occurs, HYVE Escrow guarantees a prompt dispute review and resolution.
+                                        </p>
 
-                                        <div className='flex items-center gap-2 mt-8'>
-                                            <input type="checkbox" name="" id="terms" className='w-4 h-4' required />
-                                            <label htmlFor="terms" className='font-light text-[#2D2D2D] text-sm lg:text-[16px]'>I agree to Hyve terms and conditions</label>
+                                        <div className='flex items-center gap-2.5 mt-6'>
+                                            <input type="checkbox" name="" id="terms" className='w-4 h-4 accent-primary cursor-pointer' required />
+                                            <label htmlFor="terms" className='font-medium text-[#2D2D2D] text-xs sm:text-sm cursor-pointer'>
+                                                I agree to HYVE Escrow protection terms and rental conditions
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
-
 
                                 <div className='w-full'>
-                                    <div className='bg-[#F4F4F4] rounded-[14px] py-6 lg:py-10 px-4 lg:px-16'>
-                                        <h4 className='font-medium text-center font-poppins text-sm lg:text-[18px]'>
-                                            Policies
+                                    <div className='bg-[#F4F4F4] rounded-[14px] py-6 lg:py-8 px-4 lg:px-10'>
+                                        <h4 className='font-semibold text-center font-poppins text-sm lg:text-[18px] text-gray-900'>
+                                            Cancellation & Queue Policy
                                         </h4>
 
-                                        <p className='text-[#2D2D2D] mt-4 text-sm font-light leading-loose text-justify'>HYVE is the modern housing platform that makes finding, renting, and managing properties safer, smarter, and stress-free. By combining technology, verified data, and a strong sense of community, the platform eliminates scams, reduces agent fees, and makes housing more accessible. Whether for users seeking affordable accommodation, young professionals looking for verified house listings.</p>
+                                        <p className='text-[#2D2D2D] mt-4 text-xs sm:text-sm font-light leading-relaxed text-justify'>
+                                            By completing this payment, your 24-hour exclusive queue lock concludes and the property is officially reserved under your account. Other waiting queue applicants will be notified that the apartment is taken. You will receive immediate access to the landlord's verified move-in checklist and key handover schedule.
+                                        </p>
 
-
-                                        <div className='flex items-center gap-2 mt-8'>
-                                            <input type="checkbox" name="" id="policy" className='w-4 h-4' required />
-                                            <label htmlFor="policy" className='font-light text-[#2D2D2D] text-sm lg:text-[16px]'>I agree to Hyve terms and conditions</label>
+                                        <div className='flex items-center gap-2.5 mt-6'>
+                                            <input type="checkbox" name="" id="policy" className='w-4 h-4 accent-primary cursor-pointer' required />
+                                            <label htmlFor="policy" className='font-medium text-[#2D2D2D] text-xs sm:text-sm cursor-pointer'>
+                                                I agree to HYVE cancellation and fair queue reservation policy
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className='flex justify-center mt-4'>
-                                <button type='submit' className='w-full lg:w-[40%] mt-6 lg:mt-6 text-center text-white bg-primary rounded-[14px] py-3 lg:py-4 cursor-pointer lg:hover:bg-primary-hover smooth-transition'>Proceed to make Booking Payment</button>
+                            <div className='flex justify-center mt-6'>
+                                <button
+                                    type='submit'
+                                    className='w-full lg:w-[45%] text-center text-white bg-primary rounded-xl py-3.5 sm:py-4 font-semibold text-sm sm:text-base cursor-pointer hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all'
+                                >
+                                    Proceed to Make Escrow Payment
+                                </button>
                             </div>
-
                         </form>
                     </div>
                 </main>
@@ -95,22 +144,50 @@ const Reservation = () => {
             <MobileNavigationTab />
 
             {/* Payment confirmation Modal */}
-            <div className={`fixed top-0 bottom-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm offset ${isPaymentSuccessful ? 'block' : 'hidden'}`}>
-                <div className='centralizeContent'>
-                    <div className='bg-white w-[90%] sm:w-[60%] lg:w-[35%] desktop-lg:w-[30%] py-10 px-4 lg:py-14 lg:px-10 rounded-[30px] lg:rounded-[40px] flex items-center flex-col shadow-md'>
+            <div className={`fixed top-0 bottom-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm ${isPaymentSuccessful ? 'flex' : 'hidden'} items-center justify-center p-4`}>
+                <div className='bg-white w-full max-w-lg p-6 sm:p-8 rounded-3xl flex items-center flex-col shadow-2xl animate-in fade-in zoom-in duration-200'>
+                    <div className='w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4'>
+                        <IoCheckmarkCircle size={44} />
+                    </div>
 
-                        <div className='text-center'>
-                            <h3 className='font-bold leading-none uppercase font-poppins text-base lg:text-[30px]'>Payment <br /> Received</h3>
-                            <p className='px-4 mt-6 text-xs font-light md:text-sm'>Schedule Tour to Inspect the Apartment</p>
+                    <div className='text-center'>
+                        <span className='inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#1B784D]/10 text-[#1B784D] mb-2'>
+                            <BsShieldCheck size={13} /> Escrow Protected
+                        </span>
+                        <h3 className='font-bold text-gray-900 font-montserrat text-xl sm:text-2xl mt-1'>
+                            Payment Received & Apartment Secured!
+                        </h3>
+                        <p className='mt-3 text-xs sm:text-sm text-gray-600 leading-relaxed max-w-md'>
+                            Congratulations! Your rent is safely deposited into HYVE Escrow. The listing queue has been closed and the apartment is yours. Next step is key collection and move-in!
+                        </p>
+                    </div>
+
+                    <div className='w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 my-6 flex items-center gap-3 text-left'>
+                        <div className='w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0'>
+                            <IoKeyOutline size={22} />
                         </div>
+                        <div>
+                            <p className='text-xs font-bold text-gray-900'>Move-in & Key Pickup</p>
+                            <p className='text-[11px] text-gray-500'>Your landlord has been notified. Funds remain in escrow until key confirmation.</p>
+                        </div>
+                    </div>
 
-                        <Link to={`/user/apartment/schedule-tour/${1}`} className="relative w-[90%] lg:w-[80%] py-3 lg:py-4 mt-8 text-center text-white rounded-full  bg-primary hover:bg-primary-hover smooth-transition">
-                            <button className='text-sm '>Schedule Tour</button>
+                    <div className='w-full flex flex-col sm:flex-row gap-3'>
+                        <Link
+                            to='/user/apartment/my-apartment'
+                            className="flex-1 py-3 sm:py-3.5 text-center text-white rounded-xl bg-primary hover:bg-primary-hover font-semibold text-xs sm:text-sm shadow-md shadow-primary/20 transition-all"
+                        >
+                            View My Apartment
+                        </Link>
+                        <Link
+                            to='/user/dashboard'
+                            className="py-3 sm:py-3.5 px-6 text-center text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold text-xs sm:text-sm transition-all"
+                        >
+                            Go to Dashboard
                         </Link>
                     </div>
                 </div>
             </div>
-
         </div>
     )
 }

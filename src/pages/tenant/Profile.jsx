@@ -5,12 +5,15 @@ import Sidebar from './components/layout/Sidebar/Sidebar'
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
 import Header from './components/layout/Dashboard/Header'
 import ProfileOption from './components/layout/Profile/ProfileOption'
+import LogoutConfirmModal from '../../components/common/LogoutConfirmModal'
+import { performLogout } from '../../utils/auth'
 import { GrTransaction } from "react-icons/gr";
 import { HiUser } from "react-icons/hi2";
 import defaultProfileImage from "../../assets/images/shared-images/user-1.png";
 
 const Profile = () => {
     const navigate = useNavigate();
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     // Start with whatever was cached at login (see Login.jsx / Verification.jsx),
     // so the page has something to show instantly, then refresh from the real
@@ -41,14 +44,20 @@ const Profile = () => {
     );
 
     const handleSignOut = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        localStorage.removeItem("userRole");
-        navigate("/");
+        setShowLogoutModal(true);
+    };
+
+    const confirmSignOut = () => {
+        performLogout(navigate);
     };
 
     return (
         <>
+            <LogoutConfirmModal
+                isOpen={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+                onConfirm={confirmSignOut}
+            />
             <div className='page-wrapper'>
                 <div className='flex'>
                     {/* dashboard sidebar*/}

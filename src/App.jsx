@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom"
 import MainLayout from "./components/layout/MainLayout"
 
 /* Landing page */
@@ -66,11 +66,13 @@ function App() {
           {/* Onboarding screens route */}
           <Route path="/onboarding" element={<Onboarding />} />
 
-          {/* Sign up page route */}
+          {/* Sign up and Sign in routes */}
+          <Route path="/auth/signup" element={<Sign_up />} />
           <Route path="/auth/signup/:userRole" element={<Sign_up />} />
+          <Route path="/auth/signin" element={<Login />} />
           <Route path="/auth/signin/:userRole" element={<Login />} />
           <Route path="/auth/verify" element={<Verification />} />
-          <Route path="/auth/pre-login" element={<WhichUser />} />
+          <Route path="/auth/pre-login" element={<Navigate to="/auth/signin" replace />} />
 
 
 

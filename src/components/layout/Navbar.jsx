@@ -54,7 +54,7 @@ const Navbar = () => {
                                     <li className='nav-link'>FAQ</li>
                                 </a>
 
-                                <Link to="/auth/pre-login">
+                                <Link to="/auth/signin">
                                     <li className='nav-link'>SIGN IN</li>
                                 </Link>
                             </ul>
@@ -94,7 +94,7 @@ const Navbar = () => {
                         <a href="#faq" onClick={() => toggleMobileMenu()}>
                             <li className='py-4 text-xs nav-link text-gray'>FAQ</li>
                         </a>
-                        <Link to="/auth/pre-login" onClick={() => toggleMobileMenu()}>
+                        <Link to="/auth/signin" onClick={() => toggleMobileMenu()}>
                             <li className='py-4 text-xs nav-link text-gray'>SIGN IN</li>
                         </Link>
                     </ul>

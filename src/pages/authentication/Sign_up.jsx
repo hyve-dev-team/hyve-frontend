@@ -1,34 +1,32 @@
-
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 
-/*  */
+/* assets */
 import signupPageSideImage from "../../assets/images/need-a-new-apartment.png";
 import hyveLogo from "../../assets/svg/logo/hyve-logo.svg";
+import houseIcon from "../../assets/svg/onboarding/house-icon.svg";
+import userSearchIcon from "../../assets/svg/onboarding/user-icon.svg";
 
 /* icons */
-import { IoIosArrowBack } from "react-icons/io";
+import { IoIosArrowBack, IoIosAt } from "react-icons/io";
 import { FaCircleUser } from "react-icons/fa6";
 import { LuPhone } from "react-icons/lu";
-import { IoIosAt } from "react-icons/io";
 import { TbLockPassword } from "react-icons/tb";
-import { IoEyeOutline } from "react-icons/io5";
-import { IoEyeOffOutline } from "react-icons/io5";
+import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
 import { FcGoogle } from "react-icons/fc";
+import { Loader2 } from "lucide-react";
+
+/* config & toast */
 import config from "../../config";
-
-
+import { hyveSuccess, hyveError } from "../../utils/hyveToast";
 
 const Sign_up = () => {
-  /* 
-    Get user's Role: (landlord) or (user) 
-    Stricly check to ensure only these 2 paramenter was recieved.
-    Anything except those 2, redirect to login page 
-    */
   const { userRole } = useParams();
   const navigate = useNavigate();
+  const [selectedRole, setSelectedRole] = useState(
+    userRole === "landlord" ? "landlord" : "user"
+  );
 
-  // inline style object
   const backgroundStyle = {
     backgroundImage: `url(${signupPageSideImage})`,
   };
@@ -47,30 +45,45 @@ const Sign_up = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setConfirmShowPassword] = useState(false);
   const [inputError, setInputError] = useState({
-    firstName: "",
-    lastName: "",
-    countryCode: "",
-    phone: "",
-    gender: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    firstName: false,
+    lastName: false,
+    phone: false,
+    gender: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
   });
   const [isMatch, setIsMatch] = useState(true);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  /* handle form input change*/
+  /* Check if all fields are fully filled */
+  const isFormFilled = Boolean(
+    formData.firstName?.trim() &&
+    formData.lastName?.trim() &&
+    formData.email?.trim() &&
+    formData.phone?.trim() &&
+    formData.gender?.trim() &&
+    formData.password?.trim() &&
+    formData.confirmPassword?.trim() &&
+    agreedToTerms
+  );
+
+  /* handle form input change */
   const handleFormdataChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (inputError[e.target.name]) {
+      setInputError({ ...inputError, [e.target.name]: false });
+    }
   };
 
   /* validate all input logic */
   const isEmptyOrWhitespace = (str) => !str || str.trim().length === 0;
+
   const validateAll = () => {
     const newErrors = {
-      // true if it IS empty, false if it IS NOT empty
       firstName: isEmptyOrWhitespace(formData.firstName),
       lastName: isEmptyOrWhitespace(formData.lastName),
-      countryCode: isEmptyOrWhitespace(formData.countryCode),
       phone: isEmptyOrWhitespace(formData.phone),
       gender: isEmptyOrWhitespace(formData.gender),
       email: isEmptyOrWhitespace(formData.email),
@@ -79,195 +92,263 @@ const Sign_up = () => {
     };
 
     setInputError(newErrors);
-
-    /* check if  all input are not empty */
-    const hasAnyError = Object.values(newErrors).some(
-      (error) => error === true
-    );
-
-    // Returns true if validation passed
-    return !hasAnyError;
+    return !Object.values(newErrors).some((error) => error === true);
   };
 
   /* check if passwords match onKeyUp */
   const handleIsPasswordsMatch = (e) => {
-    if (e.target.value === formData.password) {
-      setIsMatch(true);
-      return true;
-    } else {
-      setIsMatch(false);
-      return false;
-    }
+    const match = e.target.value === formData.password;
+    setIsMatch(match);
+    return match;
   };
 
-
   /* User Registration Logic */
-  // const handleRegistration = (e) => {
-  //   e.preventDefault();
-
-  //   /* Validate all inputs */
-  //   if (validateAll()) {
-  //     // check if password and confirm password match
-  //     if (formData.confirmPassword === formData.password) {
-  //       // Get user's Role and strictly check
-  //       if (userRole === "user") {
-  //         // if routes match, proceed with registartion
-  //         const payload = {
-  //           url: "/api/tenant/signup",
-  //           params: {
-  //             firstName: formData.firstName,
-  //             lastName: formData.lastName,
-  //             email: formData.email,
-  //             password: formData.password,
-  //             countryCode: formData.countryCode,
-  //             mobile: formData.phone,
-  //             gender: formData.gender
-  //           }
-  //         }
-
-  //         try {
-  //           fetch(`http://localhost:1909${payload.url}`, {
-  //             method: "put",
-  //             headers: {
-  //               contentType: "application/json",
-  //               // Authorization: retrievedObject ? retrievedObject : "",
-  //             },
-  //             body: JSON.stringify(payload.params),
-  //           })
-
-  //         } catch (error) {
-  //           console.log(error)
-  //         }
-
-
-
-  //         console.log("proceed with registration", userRole);
-  //         navigate("/auth/verify");
-  //       } else {
-  //         // if route does not match, redirect user back to landing page
-  //         // navigate("/");
-  //       }
-
-
-  //       if (userRole === "landlord") {
-  //         // if routes match, proceed with registartion
-  //         console.log("proceed with registration", userRole);
-  //         navigate("/auth/verify");
-  //       } else {
-  //         // if route does not match, redirect user back to landing page
-  //         navigate("/");
-  //       }
-  //     }
-  //   }
-  // };
   const handleRegistration = async (e) => {
     e.preventDefault();
 
-    if (!validateAll()) return;
+    if (!validateAll()) {
+      hyveError("Missing Information", "Please fill in all required fields.");
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
-      console.log("Passwords do not match");
+      setIsMatch(false);
+      hyveError("Passwords Mismatch", "Passwords do not match. Please re-check.");
       return;
     }
 
-    // Strict role check
-    if (userRole !== "user" && userRole !== "landlord") {
-      navigate("/");
+    if (formData.password.length < 6) {
+      hyveError("Weak Password", "Password should be at least 6 characters.");
       return;
     }
 
-    // Real backend: POST /api/v1/auth/register — takes the password directly (no
-    // separate set-password step), creates the user, and sends the OTP in one call.
-    // It does NOT accept a role — every account is created as STUDENT on the backend
-    // regardless of which signup path (tenant/landlord) was chosen here. Role-based
-    // routing below is frontend-only until the backend supports it.
+    const activeRole = selectedRole === "landlord" ? "landlord" : "user";
+    setIsLoading(true);
+
     const payload = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      email: formData.email.trim().toLowerCase(),
       password: formData.password,
     };
 
     try {
-      const data = await config.postAPI({ url: "/api/v1/auth/register", params: payload });
+      const data = await config.postAPI({
+        url: "/api/v1/auth/register",
+        params: payload,
+      });
 
       if (!data?.success) {
-        alert(data?.message || "Registration failed. Please try again.");
+        hyveError(
+          "Registration Failed",
+          data?.message || "Registration failed. Please try again."
+        );
         return;
       }
 
-      localStorage.setItem("userEmail", formData.email);
-      localStorage.setItem("userRole", userRole);
+      localStorage.setItem("userEmail", formData.email.trim().toLowerCase());
+      localStorage.setItem("userRole", activeRole);
 
+      hyveSuccess("Account Created!", "Check your email for your verification OTP.");
       navigate("/auth/verify");
     } catch (error) {
       console.error("Network error:", error);
-      alert("An error occurred. Please try again later.");
+      hyveError(
+        "Connection Error",
+        "An unexpected error occurred. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
-
-
   return (
-    <>
-      <main>
-        {/* Left and Right components Wrapper */}
-        <div className="h-[100%] md:h-[100svh] flex">
-          {/* left component */}
-          <div className="relative w-full px-4 overflow-y-auto bg-white md:w-1/2 sm:px-10 centralizeContent scrollbar-hidden">
-            <div className="w-full sm:w-[70%] md:w-full lg:w-[70%] pt-16 pb-16 lg:mt-[250px] lg:py-24  desktop-lg:mt-0">
-              {/* Logo */}
-              <div className="w-[90px] sm:w-[110px] lg:mt-[30%]">
-                <Link to={"/"}>
-                  <img
-                    src={hyveLogo}
-                    alt="Hyve-logo"
-                    className="object-cover w-full"
-                  />
-                </Link>
-              </div>
+    <main className="min-h-screen bg-[#FAFAFA]">
+      <div className="min-h-screen flex flex-col md:flex-row">
+        {/* Left Column - Form */}
+        <div className="w-full md:w-1/2 min-h-screen overflow-y-auto bg-white flex flex-col justify-between px-6 sm:px-12 lg:px-16 py-8 md:py-10">
+          <div className="w-full max-w-lg mx-auto">
+            {/* Header: Logo & Back Link */}
+            <div className="flex items-center justify-between mb-6">
+              <Link to="/" className="inline-block transition-transform hover:scale-105">
+                <img src={hyveLogo} alt="HYVE" className="h-8 md:h-9 object-contain" />
+              </Link>
+              <Link
+                to="/"
+                className="md:hidden flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-primary transition-colors"
+              >
+                <IoIosArrowBack size={14} />
+                <span>Home</span>
+              </Link>
+            </div>
 
-              <div className="mt-8 md:mt-12">
-                <h4 className="xs:text-[16px] font-medium">Welcome to HYVE</h4>
-              </div>
+            {/* Title & Subtitle */}
+            <div className="mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 font-montserrat tracking-tight">
+                Create an account
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Join HYVE for safer, escrow-protected rentals in Lagos.
+              </p>
+            </div>
 
-              <form className="flex flex-col gap-5 mt-6" method="POST" onSubmit={handleRegistration}>
-                {/* form group - First Name */}
-                <div className={`form-group ${inputError.firstName ? "border-red-400" : ""}`}>
-                  <span>
-                    <FaCircleUser className="text-[18px] md:text-[20px] text-[#808080]" />
-                  </span>
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleFormdataChange}
-                    className="form-input"
-                    placeholder="First Name"
-                  />
+            {/* Role Selection: Which are you? */}
+            <div className="mb-6">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2.5 font-montserrat">
+                Which are you?
+              </label>
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                {/* User / Tenant Option */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole("user")}
+                  className={`group relative flex items-center gap-3 p-3.5 sm:p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer text-left ${
+                    selectedRole === "user"
+                      ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50"
+                  }`}
+                >
+                  <div
+                    className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-200 ${
+                      selectedRole === "user"
+                        ? "border-primary bg-white shadow-sm scale-105"
+                        : "border-gray-200 bg-gray-50"
+                    }`}
+                  >
+                    <img
+                      src={userSearchIcon}
+                      alt="User"
+                      className="w-6 h-6 object-contain"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`font-semibold text-sm ${
+                          selectedRole === "user" ? "text-primary" : "text-gray-900"
+                        }`}
+                      >
+                        User
+                      </span>
+                      {selectedRole === "user" && (
+                        <span className="w-2 h-2 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                      Rent an apartment
+                    </p>
+                  </div>
+                </button>
+
+                {/* Landlord Option */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole("landlord")}
+                  className={`group relative flex items-center gap-3 p-3.5 sm:p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer text-left ${
+                    selectedRole === "landlord"
+                      ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50"
+                  }`}
+                >
+                  <div
+                    className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border transition-all duration-200 ${
+                      selectedRole === "landlord"
+                        ? "border-primary bg-white shadow-sm scale-105"
+                        : "border-gray-200 bg-gray-50"
+                    }`}
+                  >
+                    <img
+                      src={houseIcon}
+                      alt="Landlord"
+                      className="w-6 h-6 object-contain"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`font-semibold text-sm ${
+                          selectedRole === "landlord" ? "text-primary" : "text-gray-900"
+                        }`}
+                      >
+                        Landlord
+                      </span>
+                      {selectedRole === "landlord" && (
+                        <span className="w-2 h-2 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                      List your property
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Registration Form */}
+            <form className="flex flex-col gap-4" onSubmit={handleRegistration}>
+              {/* Name Fields (2 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                    First Name
+                  </label>
+                  <div
+                    className={`form-group ${
+                      inputError.firstName ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                    } transition-colors`}
+                  >
+                    <span>
+                      <FaCircleUser className="text-[17px] text-[#808080]" />
+                    </span>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleFormdataChange}
+                      className="form-input text-gray-900"
+                      placeholder="e.g. John"
+                    />
+                  </div>
                 </div>
 
-                {/* form group - Last Name */}
-                <div className={`form-group ${inputError.lastName ? "border-red-400" : ""}`}>
-                  <span>
-                    <FaCircleUser className="text-[18px] md:text-[20px] text-[#808080]" />
-                  </span>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleFormdataChange}
-                    className="form-input"
-                    placeholder="Last Name"
-                  />
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                    Last Name
+                  </label>
+                  <div
+                    className={`form-group ${
+                      inputError.lastName ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                    } transition-colors`}
+                  >
+                    <span>
+                      <FaCircleUser className="text-[17px] text-[#808080]" />
+                    </span>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleFormdataChange}
+                      className="form-input text-gray-900"
+                      placeholder="e.g. Doe"
+                    />
+                  </div>
                 </div>
+              </div>
 
-                {/* form group - Email Address */}
-                <div className={`form-group ${inputError.email ? "border-red-400" : ""}`}>
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  Email Address
+                </label>
+                <div
+                  className={`form-group ${
+                    inputError.email ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                  } transition-colors`}
+                >
                   <span>
-                    <IoIosAt className="text-[18px] md:text-[20px] text-[#808080]" />
+                    <IoIosAt className="text-[19px] text-[#808080]" />
                   </span>
                   <input
                     type="email"
@@ -275,199 +356,278 @@ const Sign_up = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleFormdataChange}
-                    className="form-input"
-                    placeholder="Email address"
+                    className="form-input text-gray-900"
+                    placeholder="name@example.com"
                   />
                 </div>
-
-                {/* form group - Phone Number */}
-                <div className={`form-group flex items-center gap-2 ${inputError.phone ? "border-red-400" : ""}`}>
-                  {/* PHONE ICON */}
-                  <span className="pl-1">
-                    <LuPhone className="text-[16px] md:text-[18px] text-[#808080]" />
-                  </span>
-                  {/* COUNTRY CODE DROPDOWN */}
-                  <select
-                    name="countryCode"
-                    value={formData.countryCode}
-                    onChange={handleFormdataChange}
-                    className="bg-transparent text-gray-300 outline-none border-none px-1 focus:ring-0 text-sm md:text-base">
-                    <option value="+234">🇳🇬 +234</option>
-                  </select>
-                  {/* PHONE NUMBER INPUT */}
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleFormdataChange}
-                    placeholder="Phone Number"
-                    className="
-                                    form-input
-                                    flex-1 
-                                    bg-transparent 
-                                    text-gray-100 
-                                    outline-none 
-                                    border-none 
-                                    focus:ring-0 
-                                    placeholder-gray-500
-                                    "
-                    maxLength={10}
-                  />
-                </div>
-
-                {/* form group - Gender */}
-                <div className={`form-group flex items-center gap-2 ${inputError.gender ? "border-red-400" : ""}`}>
-                  {/* Label / Icon (Optional) */}
-                  <span className="text-gray-400 text-sm md:text-base">
-                    <FaCircleUser className="text-[18px] md:text-[20px] text-[#808080]" />
-                  </span>
-                  {/* GENDER SELECT */}
-                  <select
-                    id="gender"
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleFormdataChange}
-                    placeholder="Gender"
-                    className="flex-1 bg-transparent text-gray-100 outline-none border-none px-1 focus:ring-0 text-sm md:text-base placeholder-gray-500">
-                    <option value="" className="text-gray-700">
-                      Select Gender
-                    </option>
-                    <option value="male" className="text-black">
-                      Male
-                    </option>
-                    <option value="female" className="text-black">
-                      Female
-                    </option>
-                    <option value="other" className="text-black">
-                      Other
-                    </option>
-                  </select>
-                </div>
-
-                {/* form group - Password*/}
-                <div className={`form-group ${inputError.password ? "border-red-400" : ""}`}>
-                  <span>
-                    <TbLockPassword className="text-[18px] md:text-[20px] text-[#808080]" />
-                  </span>
-                  <input
-                    type={`${showPassword ? "text" : "password"}`}
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleFormdataChange}
-                    className="form-input"
-                    placeholder="Password"
-                  />
-
-                  {/* show  and hide password toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-[18px] md:text-[20px] text-[#808080] cursor-pointer"
-                  >
-                    {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
-                  </button>
-                </div>
-
-                {/* form group - ConfirmPassword */}
-                <div className={`form-group ${inputError.confirmPassword ? "border-red-400" : ""} ${isMatch ? "" : "border-red-400"}`}>
-                  <span>
-                    <TbLockPassword className="text-[18px] md:text-[20px] text-[#808080]" />
-                  </span>
-                  <input
-                    type={`${showConfirmPassword ? "text" : "password"}`}
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleFormdataChange}
-                    onKeyUp={handleIsPasswordsMatch}
-                    className="form-input"
-                    placeholder="Confirm Password"
-                  />
-
-                  {/* show  and hide password toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setConfirmShowPassword(!showConfirmPassword)}
-                    className="text-[18px] md:text-[20px] text-[#808080] cursor-pointer"
-                  >
-                    {showConfirmPassword ? (
-                      <IoEyeOffOutline />
-                    ) : (
-                      <IoEyeOutline />
-                    )}
-                  </button>
-                </div>
-
-                {/* tersm and policy  */}
-                <div className="flex items-center gap-2 mt-8">
-                  <input
-                    type="checkbox"
-                    id="terms-policy"
-                    name="terms-policy"
-                    required
-                  />
-                  <label
-                    htmlFor="terms-policy"
-                    className="text-sm font-athiti font-regular text-[#00000080]"
-                  >
-                    I agree with <Link className="text-primary">Terms</Link> and{" "}
-                    <Link className="text-primary">Privacy</Link>
-                  </label>
-                </div>
-
-                {/* Action Btn */}
-                <div className="">
-                  <button type="submit" className="w-full bg-primary hover:bg-primary-hover rounded-[14px] smooth-transition py-3 md:py-3 shadow-md">
-                    <p className="text-sm font-medium text-white font-athiti">
-                      SIGN UP
-                    </p>
-                  </button>
-
-                  <button type="button" className="mt-6 w-full border-2 border-[#00000040] hover:bg-gray rounded-[14px] smooth-transition py-3 md:py-3 flex justify-center items-center gap-2 shadow-sm">
-                    <span>
-                      <FcGoogle className="text-[18px] md:text-[20px]" />
-                    </span>
-                    <p className="text-sm font-athiti text-[#00000080] font-medium">
-                      Sign Up with Google
-                    </p>
-                  </button>
-                </div>
-              </form>
-
-              {/* already have an account  */}
-              <div className="mt-10 text-center">
-                <p className="font-athiti font-medium text-[#00000080] text-sm md:text-[16px]">
-                  Already have an account?{" "}
-                  <Link to="/auth/pre-login" className="text-primary">
-                    Log In
-                  </Link>
-                </p>
               </div>
+
+              {/* Phone & Gender (2 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Phone */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                    Phone Number
+                  </label>
+                  <div
+                    className={`form-group ${
+                      inputError.phone ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                    } transition-colors`}
+                  >
+                    <span className="pl-1">
+                      <LuPhone className="text-[16px] text-[#808080]" />
+                    </span>
+                    <select
+                      name="countryCode"
+                      value={formData.countryCode}
+                      onChange={handleFormdataChange}
+                      className="bg-transparent text-gray-800 text-xs sm:text-sm font-medium outline-none border-none pr-1 focus:ring-0 cursor-pointer"
+                    >
+                      <option value="+234">🇳🇬 +234</option>
+                    </select>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleFormdataChange}
+                      placeholder="801 234 5678"
+                      className="form-input text-gray-900 placeholder:text-gray-400"
+                      maxLength={11}
+                    />
+                  </div>
+                </div>
+
+                {/* Gender */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                    Gender
+                  </label>
+                  <div
+                    className={`form-group ${
+                      inputError.gender ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                    } transition-colors`}
+                  >
+                    <select
+                      id="gender"
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleFormdataChange}
+                      className="form-input text-gray-900 bg-transparent cursor-pointer"
+                    >
+                      <option value="" disabled className="text-gray-400">
+                        Select Gender
+                      </option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Password & Confirm Password (2 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                    Password
+                  </label>
+                  <div
+                    className={`form-group ${
+                      inputError.password ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                    } transition-colors`}
+                  >
+                    <span>
+                      <TbLockPassword className="text-[18px] text-[#808080]" />
+                    </span>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleFormdataChange}
+                      className="form-input text-gray-900"
+                      placeholder="At least 6 chars"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-[#808080] hover:text-gray-700 transition-colors p-1 cursor-pointer"
+                      aria-label="Toggle password"
+                    >
+                      {showPassword ? <IoEyeOffOutline size={18} /> : <IoEyeOutline size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                    Confirm Password
+                  </label>
+                  <div
+                    className={`form-group ${
+                      inputError.confirmPassword || !isMatch
+                        ? "border-red-400 bg-red-50/20"
+                        : "border-gray-200 focus-within:border-primary"
+                    } transition-colors`}
+                  >
+                    <span>
+                      <TbLockPassword className="text-[18px] text-[#808080]" />
+                    </span>
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleFormdataChange}
+                      onKeyUp={handleIsPasswordsMatch}
+                      className="form-input text-gray-900"
+                      placeholder="Re-enter password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setConfirmShowPassword(!showConfirmPassword)}
+                      className="text-[#808080] hover:text-gray-700 transition-colors p-1 cursor-pointer"
+                      aria-label="Toggle confirm password"
+                    >
+                      {showConfirmPassword ? <IoEyeOffOutline size={18} /> : <IoEyeOutline size={18} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {!isMatch && formData.confirmPassword && (
+                <p className="text-xs text-red-500 -mt-2">Passwords do not match</p>
+              )}
+
+              {/* Terms and policy */}
+              <div className="flex items-center gap-2.5 mt-1">
+                <input
+                  type="checkbox"
+                  id="terms-policy"
+                  name="terms-policy"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="w-4 h-4 rounded text-primary accent-primary focus:ring-primary cursor-pointer"
+                />
+                <label
+                  htmlFor="terms-policy"
+                  className="text-xs sm:text-sm text-gray-600 cursor-pointer select-none"
+                >
+                  I agree to HYVE's{" "}
+                  <Link to="#" className="text-primary hover:underline font-medium">
+                    Terms
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="#" className="text-primary hover:underline font-medium">
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-2 flex flex-col gap-3">
+                <button
+                  type="submit"
+                  disabled={!isFormFilled || !isMatch || isLoading}
+                  className="w-full bg-primary hover:bg-primary-hover active:scale-[0.99] rounded-xl py-3.5 shadow-md shadow-primary/20 flex items-center justify-center gap-2 smooth-transition disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:hover:bg-primary cursor-pointer"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 text-white animate-spin" />
+                      <span className="text-sm font-semibold text-white tracking-wide">
+                        CREATING ACCOUNT...
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-sm font-semibold text-white tracking-wide">
+                      CREATE ACCOUNT
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  className="w-full border border-gray-200 hover:bg-gray-50 active:scale-[0.99] rounded-xl py-3 flex justify-center items-center gap-2.5 shadow-sm smooth-transition cursor-pointer disabled:opacity-50"
+                >
+                  <FcGoogle className="text-[20px]" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Sign up with Google
+                  </span>
+                </button>
+              </div>
+            </form>
+
+            {/* Already have an account */}
+            <div className="mt-8 text-center pt-4 border-t border-gray-100">
+              <p className="text-sm text-gray-600">
+                Already have an account?{" "}
+                <Link to="/auth/signin" className="text-primary font-semibold hover:underline">
+                  Log in
+                </Link>
+              </p>
             </div>
           </div>
 
-          {/* right component - to be displayed only on large screens */}
-          <div
-            className="relative hidden w-1/2 bg-center bg-no-repeat bg-cover md:block"
-            style={backgroundStyle}
-          >
-            <div className="top-0 left-0 w-full h-full absoute bg-black/60"></div>
-
-            <div className="absolute top-12 right-16">
-              <Link
-                to="/"
-                className="flex items-center gap-1 text-white hover:text-primary smooth-transition"
-              >
-                <IoIosArrowBack />
-                <p className="text-sm font-light leading-none">back Home</p>
-              </Link>
-            </div>
+          <div className="w-full max-w-lg mx-auto text-center pt-6 text-xs text-gray-400">
+            © {new Date().getFullYear()} HYVE Technologies. All rights reserved.
           </div>
         </div>
-      </main>
-    </>
+
+        {/* Right Column - Hero Side Panel */}
+        <div
+          className="relative hidden md:flex md:w-1/2 bg-cover bg-center min-h-screen items-end p-8 lg:p-14"
+          style={backgroundStyle}
+        >
+          {/* Subtle gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/30 backdrop-blur-[1px]" />
+
+          {/* Floating Back Home Button */}
+          <div className="absolute top-8 right-10 z-10">
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 text-white/90 hover:text-white bg-white/15 hover:bg-white/25 backdrop-blur-md px-4 py-2 rounded-full text-xs font-medium border border-white/20 smooth-transition"
+            >
+              <IoIosArrowBack />
+              <span>Back Home</span>
+            </Link>
+          </div>
+
+          {/* Trust Highlights Card */}
+          <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-white shadow-2xl">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary text-white tracking-wider uppercase">
+                Why HYVE
+              </span>
+              <span className="text-xs text-white/80 font-light">Built for Lagos rentals</span>
+            </div>
+            <h3 className="text-xl font-bold font-montserrat leading-snug">
+              Rent with complete confidence and protection.
+            </h3>
+            <ul className="mt-4 space-y-2.5 text-xs sm:text-sm text-white/90">
+              <li className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                  ✓
+                </span>
+                <span>Verified apartments and authenticated landlords</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                  ✓
+                </span>
+                <span>Protected escrow payments released only after inspection</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                  ✓
+                </span>
+                <span>Transparent digital agreements and real-time records</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 };
 
