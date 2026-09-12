@@ -87,7 +87,7 @@ const ManageApartment = () => {
                             <div className='flex flex-col items-center justify-between lg:flex-row'>
                                 <div className='w-full'>
                                     <p className="text-sm sm:text-[18px] font-semibold text-[#FF6300] ">
-                                        ₦ 320000
+                                        ₦ 320,000 <span className="text-xs sm:text-sm font-normal text-[#888888]">/ month</span>
                                     </p>
 
                                     <h3 className="font-poppins text-[16px] md:text-[20px] font-medium  md:max-w-[70%] leading-tight mt-2 text-black/80">

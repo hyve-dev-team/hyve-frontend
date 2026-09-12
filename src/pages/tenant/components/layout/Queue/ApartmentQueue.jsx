@@ -180,9 +180,9 @@ const ApartmentQueue = () => {
                       </div>
                       <div className="text-right">
                         <p className="text-xl font-bold text-white">
-                          ₦ {apartment?.price}
+                          ₦ {Number(apartment?.price || 0).toLocaleString()}
                         </p>
-                        <p className="text-[11px] text-white/80">per year</p>
+                        <p className="text-[11px] text-white/80">per month</p>
                       </div>
                     </div>
                   </div>

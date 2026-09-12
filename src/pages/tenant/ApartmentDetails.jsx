@@ -108,7 +108,7 @@ const ApartmentDetails = () => {
                                             <div>
                                                 <div>
                                                     <p className="text-sm sm:text-[18px] font-semibold text-[#FF6300] ">
-                                                        ₦ {apartment.price}
+                                                        ₦ {Number(apartment.price || 0).toLocaleString()} <span className="text-xs sm:text-sm font-normal text-[#888888]">/ month</span>
                                                     </p>
 
                                                     <h3 className="font-poppins text-[16px] md:text-[22px] font-medium ">

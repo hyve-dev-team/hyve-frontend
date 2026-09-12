@@ -210,7 +210,7 @@ const JoinQueueModal = ({
               {apartment?.lodgeDesc || "Apartment"}
             </h4>
             <p className="text-primary font-bold text-sm">
-              ₦ {typeof apartment?.price === "number" ? apartment.price.toLocaleString() : apartment?.price || "500,000"} <span className="text-[10px] text-gray-400 font-normal">/ year</span>
+              ₦ {typeof apartment?.price === "number" ? apartment.price.toLocaleString() : apartment?.price || "0"} <span className="text-[10px] text-gray-400 font-normal">/ month</span>
             </p>
           </div>
         </div>
