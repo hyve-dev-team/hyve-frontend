@@ -112,7 +112,7 @@ const AccountVerification = () => {
             }
 
             setVerificationStatus('pending');
-            hyveSuccess('Verification Submitted', 'Your documents are being reviewed by the HYVE compliance team.');
+            hyveSuccess('Verification Submitted', 'Your documents are being reviewed by the Hyve Haven compliance team.');
         } catch (err) {
             console.error('Verification upload failed:', err);
             setVerificationStatus('pending');

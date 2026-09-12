@@ -153,7 +153,7 @@ const Login = () => {
         {/* Top Header / Logo */}
         <div className="flex items-center justify-between">
           <Link to="/" className="inline-block">
-            <img src={hyveLogo} alt="HYVE" className="h-8 sm:h-9 w-auto object-contain" />
+            <img src={hyveLogo} alt="Hyve Haven" className="h-8 sm:h-9 w-auto object-contain" />
           </Link>
           <Link
             to="/"

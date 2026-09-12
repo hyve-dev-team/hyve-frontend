@@ -171,7 +171,7 @@ const Sign_up = () => {
             {/* Header: Logo & Back Link */}
             <div className="flex items-center justify-between mb-6">
               <Link to="/" className="inline-block transition-transform hover:scale-105">
-                <img src={hyveLogo} alt="HYVE" className="h-8 md:h-9 object-contain" />
+                <img src={hyveLogo} alt="Hyve Haven" className="h-8 md:h-9 object-contain" />
               </Link>
               <Link
                 to="/"

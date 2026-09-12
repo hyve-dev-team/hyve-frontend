@@ -36,11 +36,11 @@ const Profile = () => {
     const [user] = useState(
         cachedUser
             ? {
-                name: `${cachedUser.firstName || ""} ${cachedUser.lastName || ""}`.trim() || "HYVE User",
+                name: `${cachedUser.firstName || ""} ${cachedUser.lastName || ""}`.trim() || "Hyve Haven User",
                 email: cachedUser.email || "",
                 profileImage: cachedUser.profilePictureUrl || defaultProfileImage,
             }
-            : { name: "HYVE User", email: "", profileImage: defaultProfileImage }
+            : { name: "Hyve Haven User", email: "", profileImage: defaultProfileImage }
     );
 
     const handleSignOut = () => {

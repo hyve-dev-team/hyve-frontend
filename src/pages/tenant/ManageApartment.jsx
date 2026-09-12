@@ -1297,7 +1297,7 @@ const ManageApartment = () => {
                         </button>
 
                         <div className="text-center pb-5 border-b border-[#EAEAEA]">
-                            <span className="text-[11px] font-bold tracking-widest uppercase text-primary">HYVE ESCROW PAYMENT RECEIPT</span>
+                            <span className="text-[11px] font-bold tracking-widest uppercase text-primary">HYVE HAVEN ESCROW PAYMENT RECEIPT</span>
                             <h2 className="text-lg font-bold font-poppins text-[#1F2937] mt-1">Official Rent Payment Receipt</h2>
                             <p className="text-xs text-[#059669] font-medium mt-0.5">✓ 100% Escrow Verified & Cleared</p>
                         </div>

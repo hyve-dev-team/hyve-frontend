@@ -74,7 +74,7 @@ const ResetPassword = () => {
       {/* Brand Logo */}
       <div className="mb-8 text-center">
         <Link to="/" className="inline-block">
-          <img src={hyveLogo} alt="HYVE" className="h-9 w-auto object-contain mx-auto" />
+          <img src={hyveLogo} alt="Hyve Haven" className="h-9 w-auto object-contain mx-auto" />
         </Link>
       </div>
 
@@ -109,7 +109,7 @@ const ResetPassword = () => {
                 {email ? (
                   <>Resetting password for <strong className="text-gray-800">{email}</strong></>
                 ) : (
-                  "Enter a strong new password for your HYVE account."
+                  "Enter a strong new password for your Hyve Haven account."
                 )}
               </p>
             </div>
@@ -226,7 +226,7 @@ const ResetPassword = () => {
 
       {/* Footer copyright */}
       <p className="mt-8 text-xs text-gray-400 text-center">
-        © 2026 HYVE Haven Inc. • Modern Student Living
+        © 2026 Hyve Haven Inc. • Modern Student Living
       </p>
     </main>
   )

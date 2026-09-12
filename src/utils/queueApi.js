@@ -3,8 +3,8 @@ import config from "../config";
 
 export const TIER_LIMITS = {
   FREE: { name: "Free Tier", limit: 3, price: 0, decisionWindowHours: 24 },
-  PREMIUM: { name: "HYVE Plus", limit: 6, price: 4999, decisionWindowHours: 24 },
-  PRO: { name: "HYVE Pro", limit: 10, price: 9999, decisionWindowHours: 36 },
+  PREMIUM: { name: "Hyve Haven Plus", limit: 6, price: 4999, decisionWindowHours: 24 },
+  PRO: { name: "Hyve Haven Pro", limit: 10, price: 9999, decisionWindowHours: 36 },
 };
 
 export async function getMyQueuesApi() {
@@ -113,7 +113,7 @@ export function mapBackendQueue(bq) {
 // Maps backend QueueCapacityResponse to frontend capacity shape
 export function mapBackendCapacity(bc) {
   if (!bc) return null;
-  const tierName = bc.tier === "PRO" ? "HYVE Pro" : bc.tier === "PREMIUM" ? "HYVE Plus" : "Free Tier";
+  const tierName = bc.tier === "PRO" ? "Hyve Haven Pro" : bc.tier === "PREMIUM" ? "Hyve Haven Plus" : "Free Tier";
   return {
     canJoin: bc.canJoin,
     currentCount: bc.currentCount,
