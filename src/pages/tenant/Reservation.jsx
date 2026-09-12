@@ -4,7 +4,6 @@ import Header from './components/layout/Dashboard/Header'
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import featuredLodges from '../../utils/featuredLodges'
 import defaultApartmentImage from '../../assets/images/apartments/apartment-image-2.png'
 import useFetchApartment from '../../hooks/useFetchApartment'
 import { setCurrentLodge } from '../../utils/currentLodge'
@@ -23,9 +22,7 @@ const Reservation = () => {
 
     const isReadyToPay = hasAgreedTerms && hasAgreedPolicy;
 
-    const { apartment: apiApartment } = useFetchApartment(apartmentID);
-    const fallbackLodge = featuredLodges.find((l) => l.id === Number(apartmentID));
-    const lodge = apiApartment || fallbackLodge;
+    const { apartment: lodge, isLoading: isApartmentLoading } = useFetchApartment(apartmentID);
 
     const handlePayment = (e) => {
         e.preventDefault();
