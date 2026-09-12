@@ -157,11 +157,10 @@ const Reservation = () => {
                                 <button
                                     type='submit'
                                     disabled={!isReadyToPay}
-                                    className={`w-full lg:w-[45%] text-center font-semibold text-sm sm:text-base rounded-xl py-3.5 sm:py-4 transition-all ${
-                                        isReadyToPay
+                                    className={`w-full lg:w-[45%] text-center font-semibold text-sm sm:text-base rounded-xl py-3.5 sm:py-4 transition-all ${isReadyToPay
                                             ? 'text-white bg-primary hover:bg-primary-hover cursor-pointer shadow-lg shadow-primary/20'
-                                            : 'text-gray-400 bg-gray-200 cursor-not-allowed shadow-none'
-                                    }`}
+                                            : 'text-gray-400 bg-primary/50 cursor-not-allowed shadow-none'
+                                        }`}
                                 >
                                     Proceed to Make Escrow Payment
                                 </button>
