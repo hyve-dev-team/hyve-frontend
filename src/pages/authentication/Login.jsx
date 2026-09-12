@@ -127,12 +127,20 @@ const Login = () => {
 
     setIsForgotLoading(true)
     try {
-      // Simulate/trigger password reset request
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setForgotSent(true)
-      hyveSuccess("Reset Link Sent", `Instructions sent to ${forgotEmail}`)
+      const res = await config.postAPI({
+        url: "/api/v1/auth/forgot-password",
+        params: { email: forgotEmail.trim() },
+      })
+
+      if (res?.success) {
+        setForgotSent(true)
+        hyveSuccess("Reset Link Sent", res?.message || `Instructions sent to ${forgotEmail}`)
+      } else {
+        hyveError("Request Failed", res?.message || "Could not send reset link. Try again.")
+      }
     } catch (err) {
-      hyveError("Request Failed", "Could not send reset link. Try again.")
+      console.error("Forgot password error:", err)
+      hyveError("Request Failed", err?.message || "Could not send reset link. Please try again.")
     } finally {
       setIsForgotLoading(false)
     }

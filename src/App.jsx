@@ -14,6 +14,7 @@ import ViewingLinkPage from "./pages/public/ViewingLinkPage"
 import Sign_up from "./pages/authentication/Sign_up"
 import Login from "./pages/authentication/Login"
 import Verification from "./pages/authentication/Verification"
+import ResetPassword from "./pages/authentication/ResetPassword"
 import WhichUser from "./pages/authentication/WhichUser"
 
 /* Tenant dashboard */
@@ -80,6 +81,7 @@ function App() {
           <Route path="/auth/signin" element={<Login />} />
           <Route path="/auth/signin/:userRole" element={<Login />} />
           <Route path="/auth/verify" element={<Verification />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/auth/pre-login" element={<Navigate to="/auth/signin" replace />} />
 
 
