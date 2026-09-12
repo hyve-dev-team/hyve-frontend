@@ -182,7 +182,7 @@ const Verification = () => {
         <div className="w-full md:w-[60%] text-center">
           <div>
             <h3 className="font-normal text-[18px] md:text-[24px]">
-              Welcome to HYVE
+              Welcome to Hyve Haven
             </h3>
             <p className="font-light text-[#707070] text-sm md:text-[16px]">
               We’ve sent a 6-digit code to your email

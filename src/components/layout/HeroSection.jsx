@@ -8,17 +8,17 @@ const HeroSection = () => {
             <div className="flex gap-4 flex-col lg:w-[90%] mx-auto md:flex-row md:items-center">
                 {/* left component */}
                 <div className="w-full md:pr-4 md:w-[50%] ">
-                    {/* Welcome To HYVE */}
+                    {/* Welcome To Hyve Haven */}
                     <h1 className="text-[24px] sm:text-[40px] font-normal leading-tight">
                         Welcome To <br />
-                        <span className="font-semibold text-primary">HYVE</span>
+                        <span className="font-semibold text-primary">Hyve Haven</span>
                     </h1>
 
                     {/* Sub-text */}
                     <p className="mt-6 sm:mt-8 capitalize text-[14px] sm:text-[1rem]">
                         Search & Discover <span className="text-primary">Apartments</span>
                         <br />
-                        Near Your Community.
+                        In Your Community.
                     </p>
 
                     {/* Hero section CTA button */}

@@ -134,7 +134,7 @@ const ApartmentQueue = () => {
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                    HYVE Fair Queue
+                    Hyve Haven Fair Queue
                   </span>
                   <span className="text-xs text-gray-400">
                     Slots: {capacity.currentCount} of {capacity.maxLimit} used

@@ -80,7 +80,7 @@ const UpgradeTierModal = ({ isOpen, onClose, currentTier, onUpgrade }) => {
             </div>
           </div>
 
-          {/* HYVE Plus Tier */}
+          {/* Hyve Haven Plus Tier */}
           <div
             className={`border-2 rounded-xl p-4 flex items-center justify-between transition-all cursor-pointer relative overflow-hidden ${
               currentTier === "PREMIUM"
@@ -94,7 +94,7 @@ const UpgradeTierModal = ({ isOpen, onClose, currentTier, onUpgrade }) => {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-gray-900 flex items-center gap-1.5">
                   <Zap size={16} className="text-primary" />
-                  HYVE Plus
+                  Hyve Haven Plus
                 </span>
                 <span className="text-[10px] uppercase tracking-wider font-bold bg-primary text-white px-2 py-0.5 rounded-full">
                   Popular
@@ -127,7 +127,7 @@ const UpgradeTierModal = ({ isOpen, onClose, currentTier, onUpgrade }) => {
             </div>
           </div>
 
-          {/* HYVE Pro Tier */}
+          {/* Hyve Haven Pro Tier */}
           <div
             className={`border-2 rounded-xl p-4 flex items-center justify-between transition-all cursor-pointer relative overflow-hidden ${
               currentTier === "PRO"
@@ -140,7 +140,7 @@ const UpgradeTierModal = ({ isOpen, onClose, currentTier, onUpgrade }) => {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-gray-900 flex items-center gap-1.5">
                   <Crown size={16} className="text-purple-600" />
-                  HYVE Pro
+                  Hyve Haven Pro
                 </span>
                 <span className="text-[10px] uppercase tracking-wider font-bold bg-purple-600 text-white px-2 py-0.5 rounded-full">
                   Maximum Access
@@ -157,7 +157,7 @@ const UpgradeTierModal = ({ isOpen, onClose, currentTier, onUpgrade }) => {
                 </li>
                 <li className="flex items-center gap-1.5">
                   <Check size={14} className="text-purple-600" />
-                  <span>Dedicated HYVE verified concierge agent</span>
+                  <span>Dedicated Hyve Haven verified concierge agent</span>
                 </li>
               </ul>
             </div>
@@ -176,7 +176,7 @@ const UpgradeTierModal = ({ isOpen, onClose, currentTier, onUpgrade }) => {
 
         <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-center gap-2 text-xs text-gray-400">
           <Shield size={14} />
-          <span>All subscriptions protected by HYVE Money-Back Guarantee</span>
+          <span>All subscriptions protected by Hyve Haven Money-Back Guarantee</span>
         </div>
       </div>
     </div>

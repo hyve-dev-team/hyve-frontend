@@ -352,7 +352,7 @@ const Login = () => {
 
         {/* Footer */}
         <div className="w-full max-w-md mx-auto text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} HYVE Technologies. All rights reserved.
+          © {new Date().getFullYear()} Hyve Haven Inc. All rights reserved.
         </div>
       </div>
 
@@ -379,7 +379,7 @@ const Login = () => {
         <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-white shadow-2xl space-y-4">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary text-white tracking-wider uppercase">
-              HYVE Guarantee
+              Hyve Haven Guarantee
             </span>
           </div>
 

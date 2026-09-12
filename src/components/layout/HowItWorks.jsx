@@ -40,7 +40,7 @@ const HowItWorks = () => {
                                 }}>
                                 <div className="text-center">
                                     <h3 className="font-bold text-primary leading-[1.2] text-[16px] md:text-[18px]">Book & Pay <br /> securely </h3>
-                                    <p className="sm:font-extralight capitalize text-[14px] mt-2 w-[80%] mx-auto sm:w-full">Rent handled through Hyve’s secure Payment Method</p>
+                                    <p className="sm:font-extralight capitalize text-[14px] mt-2 w-[80%] mx-auto sm:w-full">Rent handled through Hyve Haven’s secure Payment Method</p>
                                 </div>
 
                                 {/* avatar */}

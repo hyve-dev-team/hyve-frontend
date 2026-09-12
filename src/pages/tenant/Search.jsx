@@ -158,6 +158,9 @@ const Search = () => {
     const results = useMemo(() => {
         let list = allLodges;
 
+        // 0. Only show ACTIVE (vacant) apartments — hide RENTED, INACTIVE, SOLD
+        list = list.filter((lodge) => lodge.rawStatus === "ACTIVE");
+
         // 1. Text Query Filter (Checks full description, title, propertyType, location, and amenities with normalization)
         if (query.trim()) {
             const normalizedQ = normalizeSearchText(query);
@@ -292,6 +295,21 @@ const Search = () => {
                             onClearAll={clearAllFilters}
                             hasActiveFilters={hasActiveFilters}
                         />
+
+                        {/* Section Heading: Apartments in your community */}
+                        <div className="flex items-center justify-between mb-4 mt-6">
+                            <div>
+                                <h2 className="text-lg sm:text-xl font-bold text-gray-900 font-montserrat">
+                                    Apartments in your community
+                                </h2>
+                                <p className="text-xs sm:text-sm text-gray-500">
+                                    Explore verified student and residential apartments near you
+                                </p>
+                            </div>
+                            <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                                {results.length} {results.length === 1 ? "apartment" : "apartments"}
+                            </span>
+                        </div>
 
                         {/* Available Lodges */}
                         {isLoading ? (

@@ -25,9 +25,9 @@ const Preloader = ({ isLoading }) => {
       style={backgroundStyle}
     >
 
-      {/* Hyve Logo */}
+      {/* Hyve Haven Logo */}
       <div className='w-[100px] md:w-[140px] overflow-hidden inline-block'>
-        <img src={hyveLogo} alt="Welcome To HYVE, Loading" />
+        <img src={hyveLogo} alt="Welcome To Hyve Haven, Loading" />
       </div>
     </div>
   )

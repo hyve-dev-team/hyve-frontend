@@ -69,7 +69,7 @@ const PayInspectionModal = ({ isOpen, onClose, queue, onConfirmPayment }) => {
         <div className="flex items-start gap-2.5 p-3 rounded-lg bg-green-50 border border-green-200 text-xs text-green-800 mb-6">
           <ShieldCheck size={18} className="text-green-600 shrink-0 mt-0.5" />
           <p>
-            <strong>HYVE Anti-Fraud Guarantee:</strong> Inspection fees on HYVE are strictly regulated. The agent only gets paid when you confirm the viewing.
+            <strong>Hyve Haven Anti-Fraud Guarantee:</strong> Inspection fees on Hyve Haven are strictly regulated. The agent only gets paid when you confirm the viewing.
           </p>
         </div>
 

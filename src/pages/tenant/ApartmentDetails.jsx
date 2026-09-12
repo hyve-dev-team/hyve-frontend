@@ -141,8 +141,8 @@ const ApartmentDetails = () => {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: apartment?.lodgeDesc || "HYVE Apartment",
-                    text: `Check out this verified listing on HYVE: ${apartment?.lodgeDesc}`,
+                    title: apartment?.lodgeDesc || "Hyve Haven Apartment",
+                    text: `Check out this verified listing on Hyve Haven: ${apartment?.lodgeDesc}`,
                     url: window.location.href,
                 });
             } catch {
@@ -489,7 +489,7 @@ const ApartmentDetails = () => {
                                                     </h4>
                                                     <ShieldCheck className="w-4 h-4 text-[#10B981] shrink-0" title="Identity Verified" />
                                                 </div>
-                                                <p className="text-xs text-gray-500">Property Host • Verified on HYVE</p>
+                                                <p className="text-xs text-gray-500">Property Host • Verified on Hyve Haven</p>
                                             </div>
                                         </div>
 
@@ -530,7 +530,13 @@ const ApartmentDetails = () => {
 
                                         {/* Action Buttons Container */}
                                         <div className="flex flex-col gap-2.5">
-                                            {existingQueue ? (
+                                            {apartment.rawStatus !== "ACTIVE" ? (
+                                                // Apartment is RENTED or INACTIVE — no queue allowed
+                                                <div className="w-full py-3.5 bg-gray-100 border border-gray-200 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-gray-500 cursor-not-allowed select-none">
+                                                    <Users className="w-4 h-4" />
+                                                    <span>Apartment Taken</span>
+                                                </div>
+                                            ) : existingQueue ? (
                                                 <button
                                                     type="button"
                                                     onClick={() => navigate(`/user/apartment/${apartment.id}/queue`)}

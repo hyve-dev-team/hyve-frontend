@@ -63,7 +63,7 @@ const Footer = () => {
 
             {/* copyright */}
             <div className='flex justify-center pt-8 pb-10 mt-16 border-t md:pb-14 border-white/10'>
-                <p className='text-white/80 font-sora font-light text-[12px] md:text-sm'>© {new Date().getFullYear()} HYVE. All rights reserved.</p>
+                <p className='text-white/80 font-sora font-light text-[12px] md:text-sm'>© {new Date().getFullYear()} Hyve Haven. All rights reserved.</p>
             </div>
 
         </section>

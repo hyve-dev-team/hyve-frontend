@@ -142,6 +142,9 @@ const TenantDashboard = () => {
     const filteredResults = useMemo(() => {
         let list = allLodges;
 
+        // 0. Only show ACTIVE (vacant) apartments — hide RENTED, INACTIVE, SOLD
+        list = list.filter((lodge) => lodge.rawStatus === "ACTIVE");
+
         // 1. Text Query (Checks title, description, propertyType, location, amenities with normalization)
         if (query.trim()) {
             const normalizedQ = normalizeSearchText(query);
@@ -265,7 +268,7 @@ const TenantDashboard = () => {
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <h3 className="text-sm sm:text-base font-bold text-[#1F2937]">
-                                            {isGpsMode ? "Lodges Near Your Phone Location" : "Apartment Recommendations Near You"}
+                                            {isGpsMode ? "Apartments Near Your Location" : "Apartments in your community"}
                                         </h3>
                                         {isGpsMode && (
                                             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]">
@@ -275,8 +278,8 @@ const TenantDashboard = () => {
                                     </div>
                                     <p className="text-xs text-[#6B7280] mt-0.5">
                                         {isGpsMode
-                                            ? "Showing verified apartments closest to your GPS coordinates first."
-                                            : "Discover verified community lodges closest to your current location using device GPS."}
+                                            ? "Showing verified apartments in your community closest to your GPS coordinates first."
+                                            : "Discover verified apartments in your community closest to your current location using device GPS."}
                                     </p>
                                 </div>
                             </div>
@@ -323,6 +326,21 @@ const TenantDashboard = () => {
                             onClearAll={clearAllFilters}
                             hasActiveFilters={hasActiveFilters}
                         />
+
+                        {/* Section Heading: Apartments in your community */}
+                        <div className="flex items-center justify-between mb-4 mt-6">
+                            <div>
+                                <h2 className="text-lg sm:text-xl font-bold text-gray-900 font-montserrat">
+                                    Apartments in your community
+                                </h2>
+                                <p className="text-xs sm:text-sm text-gray-500">
+                                    Explore verified student and residential apartments near you
+                                </p>
+                            </div>
+                            <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                                {filteredResults.length} {filteredResults.length === 1 ? "apartment" : "apartments"}
+                            </span>
+                        </div>
 
                         {/* Available Lodges */}
                         {isLoading ? (

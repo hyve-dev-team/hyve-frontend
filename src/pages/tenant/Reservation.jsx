@@ -76,7 +76,7 @@ const Reservation = () => {
 
             setIsProcessing(false);
             setIsPaymentSuccessful(true);
-            hyveSuccess("Payment Received!", "Your rent has been safely placed in HYVE Escrow.");
+            hyveSuccess("Payment Received!", "Your rent has been safely placed in Hyve Haven Escrow.");
         }, 800);
     }
 
@@ -115,7 +115,7 @@ const Reservation = () => {
                                     <div>
                                         <div className='flex items-center gap-2'>
                                             <span className='px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#1B784D]/10 text-[#1B784D] inline-flex items-center gap-1'>
-                                                <BsShieldCheck size={12} /> HYVE Escrow Protected
+                                                <BsShieldCheck size={12} /> Hyve Haven Escrow Protected
                                             </span>
                                         </div>
                                         <h3 className='font-bold text-gray-900 text-base sm:text-lg mt-1'>{lodge.lodgeDesc}</h3>
@@ -140,7 +140,7 @@ const Reservation = () => {
                                         </h4>
 
                                         <p className='text-[#2D2D2D] mt-4 text-xs sm:text-sm font-light leading-relaxed text-justify'>
-                                            Your annual rent payment will be deposited into HYVE Escrow. Funds are never disbursed directly to the landlord or agent until you have conducted your physical key handover and verified that the apartment matches the agreed condition. If any discrepancy occurs, HYVE Escrow guarantees a prompt dispute review and resolution.
+                                            Your annual rent payment will be deposited into Hyve Haven Escrow. Funds are never disbursed directly to the landlord or agent until you have conducted your physical key handover and verified that the apartment matches the agreed condition. If any discrepancy occurs, Hyve Haven Escrow guarantees a prompt dispute review and resolution.
                                         </p>
 
                                         <div className='flex items-center gap-2.5 mt-6'>
@@ -153,7 +153,7 @@ const Reservation = () => {
                                                 required
                                             />
                                             <label htmlFor="terms" className='font-medium text-[#2D2D2D] text-xs sm:text-sm cursor-pointer'>
-                                                I agree to HYVE Escrow protection terms and rental conditions
+                                                I agree to Hyve Haven Escrow protection terms and rental conditions
                                             </label>
                                         </div>
                                     </div>
@@ -179,7 +179,7 @@ const Reservation = () => {
                                                 required
                                             />
                                             <label htmlFor="policy" className='font-medium text-[#2D2D2D] text-xs sm:text-sm cursor-pointer'>
-                                                I agree to HYVE cancellation and fair queue reservation policy
+                                                I agree to Hyve Haven cancellation and fair queue reservation policy
                                             </label>
                                         </div>
                                     </div>
@@ -229,7 +229,7 @@ const Reservation = () => {
                             Payment Received & Apartment Secured!
                         </h3>
                         <p className='mt-3 text-xs sm:text-sm text-gray-600 leading-relaxed max-w-md'>
-                            Congratulations! Your rent is safely deposited into HYVE Escrow. The listing queue has been closed and the apartment is yours. Next step is key collection and move-in!
+                            Congratulations! Your rent is safely deposited into Hyve Haven Escrow. The listing queue has been closed and the apartment is yours. Next step is key collection and move-in!
                         </p>
                     </div>
 

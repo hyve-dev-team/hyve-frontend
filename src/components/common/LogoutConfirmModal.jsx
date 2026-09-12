@@ -17,7 +17,7 @@ const LogoutConfirmModal = ({ isOpen, onClose, onConfirm, isLoading = false }) =
 
         {/* Title & Description */}
         <h3 className="text-lg sm:text-xl font-bold font-montserrat text-gray-900">
-          Log Out of HYVE?
+          Log Out of Hyve Haven?
         </h3>
         <p className="mt-2 text-xs sm:text-sm text-gray-500 leading-relaxed">
           Are you sure you want to end your session? You will be redirected to the sign-in page.

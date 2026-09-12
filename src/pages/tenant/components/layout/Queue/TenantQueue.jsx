@@ -171,7 +171,7 @@ const MyQueues = () => {
                 <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-orange-50/90 via-amber-50/70 to-emerald-50/80 border border-primary/20 shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="flex items-center gap-2 font-bold text-gray-900 text-sm mb-3">
                     <Sparkles size={18} className="text-primary" />
-                    <span>The HYVE 3-Pillar Fair Queue Guarantee</span>
+                    <span>The Hyve Haven 3-Pillar Fair Queue Guarantee</span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs text-gray-700">
                     <div className="bg-white/80 p-3 rounded-xl border border-orange-100 shadow-2xs">
@@ -189,7 +189,7 @@ const MyQueues = () => {
                     <div className="bg-white/80 p-3 rounded-xl border border-emerald-100 shadow-2xs">
                       <p className="font-bold text-[#1B784D] mb-0.5">3. 100% Escrow Protection</p>
                       <p className="text-gray-500 leading-relaxed">
-                        Rent is safely held in HYVE Escrow until physical key handover and inspection confirmation.
+                        Rent is safely held in Hyve Haven Escrow until physical key handover and inspection confirmation.
                       </p>
                     </div>
                   </div>

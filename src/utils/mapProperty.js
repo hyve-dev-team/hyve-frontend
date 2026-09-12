@@ -43,6 +43,9 @@ export function mapProperty(item) {
         images: p.images && p.images.length ? p.images : [placeholderImage],
         amenities: (p.amenities || []).join(", ") || "No amenities listed",
         amenitiesList: p.amenities || [],
+        // rawStatus: the exact backend enum value (ACTIVE, INACTIVE, RENTED, SOLD)
+        rawStatus: p.status || "ACTIVE",
+        // status: display value used by UI badge / filter
         status: p.status === "ACTIVE" ? "open" : "closed",
         propertyType: p.propertyType || "",
         starRating: avgRating,

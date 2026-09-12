@@ -136,7 +136,7 @@ const JoinQueueModal = ({
         location: apartment?.location || "Lagos, Nigeria",
         tourDate: tourDate || "As soon as possible",
         tourTime: tourTime || "Daylight hours",
-        agentName: apartment?.landlord ? `${apartment.landlord.firstName || ""} ${apartment.landlord.lastName || ""}`.trim() : "HYVE Verified Agent",
+        agentName: apartment?.landlord ? `${apartment.landlord.firstName || ""} ${apartment.landlord.lastName || ""}`.trim() : "Hyve Haven Verified Agent",
         agentPhone: apartment?.landlord?.phone || "+234 800 498 3200",
       });
 
@@ -184,7 +184,7 @@ const JoinQueueModal = ({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
-              HYVE Fair Queue
+              Hyve Haven Fair Queue
             </span>
             <span className="text-xs text-gray-500">
               Slots: {capacity.currentCount} of {capacity.maxLimit} used
@@ -219,7 +219,7 @@ const JoinQueueModal = ({
         <div className="mt-4 p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-2 text-xs text-gray-700">
           <div className="flex items-center gap-2 font-semibold text-primary">
             <ShieldCheck size={16} />
-            <span>How the HYVE Fair Queue Protects You</span>
+            <span>How the Hyve Haven Fair Queue Protects You</span>
           </div>
           <ul className="space-y-1.5 pl-5 list-disc text-gray-600">
             <li><strong>Exclusive Access</strong>: Only 1 person inspects and decides at a time. No agent bidding games.</li>

@@ -188,7 +188,7 @@ const Sign_up = () => {
                 Create an account
               </h2>
               <p className="text-sm text-gray-500 mt-1">
-                Join HYVE for safer, escrow-protected rentals in Lagos.
+                Join Hyve Haven for safer, escrow-protected rentals in Lagos.
               </p>
             </div>
 
@@ -513,7 +513,7 @@ const Sign_up = () => {
                   htmlFor="terms-policy"
                   className="text-xs sm:text-sm text-gray-600 cursor-pointer select-none"
                 >
-                  I agree to HYVE's{" "}
+                  I agree to Hyve Haven's{" "}
                   <Link to="#" className="text-primary hover:underline font-medium">
                     Terms
                   </Link>{" "}
@@ -570,7 +570,7 @@ const Sign_up = () => {
           </div>
 
           <div className="w-full max-w-lg mx-auto text-center pt-6 text-xs text-gray-400">
-            © {new Date().getFullYear()} HYVE Technologies. All rights reserved.
+            © {new Date().getFullYear()} Hyve Haven Inc. All rights reserved.
           </div>
         </div>
 
@@ -597,7 +597,7 @@ const Sign_up = () => {
           <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-white shadow-2xl">
             <div className="flex items-center gap-2 mb-3">
               <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary text-white tracking-wider uppercase">
-                Why HYVE
+                Why Hyve Haven
               </span>
               <span className="text-xs text-white/80 font-light">Built for Lagos rentals</span>
             </div>

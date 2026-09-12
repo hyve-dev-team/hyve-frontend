@@ -51,7 +51,7 @@ const About = () => {
                             <div className='w-full mt-0 sm:mt-2 md:w-1/2 md:mt-0'>
                                 <h2 className="font-normal leading-tight capitalize heading-responsive text-primary">About Us</h2>
 
-                                <p className="mt-3 md:mt-8 w-full lg:w-[80%] leading-6 lg:leading-8 paragraph-responsive">HYVE is a Lagos-based proptech company focused on making rental transactions safer and more accountable. We are building a platform where verification, protected payments, and clear records are standard — not optional extras.</p>
+                                <p className="mt-3 md:mt-8 w-full lg:w-[80%] leading-6 lg:leading-8 paragraph-responsive">Hyve Haven is a Lagos-based proptech company focused on making rental transactions safer and more accountable. We are building a platform where verification, protected payments, and clear records are standard — not optional extras.</p>
 
                                 <button onClick={() => handleReadMoreModal()}>
                                     <p className="mt-4 font-medium md:mt-4 paragraph-responsive hover:text-primary smooth-transition">Read More</p>
@@ -95,10 +95,10 @@ const About = () => {
                                             <h3 className="text-xl md:text-2xl font-semibold text-primary mb-3">About Us</h3>
                                             <h4 className="text-base md:text-lg font-semibold text-black/90 mb-2">Who We Are</h4>
                                             <p className="paragraph-responsive leading-relaxed">
-                                                HYVE is a Lagos-based proptech company focused on making rental transactions safer and more accountable.
+                                                Hyve Haven is a Lagos-based proptech company focused on making rental transactions safer and more accountable.
                                             </p>
                                             <p className="mt-3 paragraph-responsive leading-relaxed">
-                                                The idea was born from direct experience. We've lived through the difficulty of finding decent housing and watched people close to us lose significant money to unreliable agents and opaque processes. HYVE was created because the current system fails too many ordinary renters and, in many cases, landlords too.
+                                                The idea was born from direct experience. We've lived through the difficulty of finding decent housing and watched people close to us lose significant money to unreliable agents and opaque processes. Hyve Haven was created because the current system fails too many ordinary renters and, in many cases, landlords too.
                                             </p>
                                             <p className="mt-3 paragraph-responsive leading-relaxed">
                                                 We are building a platform where verification, protected payments, and clear records are standard — not optional extras.
@@ -137,7 +137,7 @@ const About = () => {
 
                                         <div className="pt-2">
                                             <p className="font-semibold text-primary text-base md:text-lg">
-                                                Welcome to HYVE.
+                                                Welcome to Hyve Haven.
                                             </p>
                                         </div>
                                     </div>
