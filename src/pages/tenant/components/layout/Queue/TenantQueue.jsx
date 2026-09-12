@@ -297,14 +297,14 @@ const MyQueues = () => {
               </div>
 
               {/* Filter Tabs */}
-              <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
+              <div className="flex items-center gap-2.5 mb-6 overflow-x-auto pb-1">
                 <button
                   type="button"
                   onClick={() => setActiveFilter("ALL")}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shrink-0 ${
+                  className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shrink-0 border ${
                     activeFilter === "ALL"
-                      ? "bg-gray-900 text-white shadow-sm"
-                      : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                      ? "bg-[#1E1E1E] text-white border-[#1E1E1E] shadow-sm"
+                      : "bg-white text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#111827] border-[#D1D5DB]"
                   }`}
                 >
                   All Queues ({queues.length})
@@ -313,16 +313,16 @@ const MyQueues = () => {
                 <button
                   type="button"
                   onClick={() => setActiveFilter("ACTIVE")}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shrink-0 ${
+                  className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shrink-0 border ${
                     activeFilter === "ACTIVE"
-                      ? "bg-[#1B784D] text-white shadow-sm"
-                      : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                      ? "bg-[#1B784D] text-white border-[#1B784D] shadow-sm"
+                      : "bg-white text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#111827] border-[#D1D5DB]"
                   }`}
                 >
                   <span>Your Turn (#1)</span>
                   {activeTurnsCount > 0 && (
                     <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                         activeFilter === "ACTIVE"
                           ? "bg-white text-[#1B784D]"
                           : "bg-[#1B784D] text-white"
@@ -336,10 +336,10 @@ const MyQueues = () => {
                 <button
                   type="button"
                   onClick={() => setActiveFilter("WAITING")}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shrink-0 ${
+                  className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shrink-0 border ${
                     activeFilter === "WAITING"
-                      ? "bg-primary text-white shadow-sm"
-                      : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                      ? "bg-primary text-white border-primary shadow-sm"
+                      : "bg-white text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#111827] border-[#D1D5DB]"
                   }`}
                 >
                   Waiting in Line ({waitingCount})
@@ -603,19 +603,19 @@ const MyQueues = () => {
                                 </div>
 
                                 {/* Actions for waiting queue */}
-                                <div className="flex items-center gap-2.5 pt-1">
+                                <div className="flex items-center gap-3 pt-2">
                                   <Link
                                     to={`/user/apartment/${queue.apartmentId}`}
-                                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-semibold text-center transition-colors flex items-center justify-center gap-1"
+                                    className="flex-1 py-3 px-4 bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#1F2937] border border-[#E5E7EB] rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 shadow-2xs"
                                   >
                                     <span>View Listing</span>
-                                    <ArrowRight size={13} />
+                                    <ArrowRight size={14} className="shrink-0" />
                                   </Link>
 
                                   <button
                                     type="button"
                                     onClick={() => handleLeave(queue.id, queue.property)}
-                                    className="py-2.5 px-4 border border-gray-200 hover:border-red-300 hover:bg-red-50/50 hover:text-red-600 text-gray-600 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                                    className="flex-1 py-3 px-4 bg-white hover:bg-red-50/60 border border-[#E5E7EB] hover:border-red-300 text-[#4B5563] hover:text-red-600 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center"
                                   >
                                     Leave Queue
                                   </button>

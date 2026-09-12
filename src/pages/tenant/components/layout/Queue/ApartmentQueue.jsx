@@ -6,7 +6,7 @@ import MobileNavigationTab from "../MobileNavigation/MobileNavigationTab";
 import { BsPeople, BsCheck2Circle } from "react-icons/bs";
 import { IoTimeOutline, IoCallOutline, IoShieldCheckmarkOutline } from "react-icons/io5";
 import { FaWhatsapp } from "react-icons/fa";
-import { Users, ArrowLeft } from "lucide-react";
+import { Users, ArrowLeft, ExternalLink } from "lucide-react";
 import useFetchApartment from "../../../../../hooks/useFetchApartment";
 import useQueueStore from "../../../../../hooks/useQueueStore";
 import JoinQueueModal from "../../../../../components/queue/JoinQueueModal";
@@ -108,9 +108,10 @@ const ApartmentQueue = () => {
 
                 <Link
                   to={`/user/apartment/${apartmentID}`}
-                  className="text-xs text-primary font-semibold hover:underline"
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-primary font-semibold hover:underline"
                 >
-                  View Listing Details
+                  <span>View Listing Details</span>
+                  <ExternalLink size={14} className="shrink-0" />
                 </Link>
               </div>
 
