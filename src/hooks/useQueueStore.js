@@ -1,27 +1,64 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  getQueues,
-  checkQueueCapacity,
-  getSubscriptionTier,
-  joinQueue as joinQueueStore,
-  leaveQueue as leaveQueueStore,
-  payInspectionFee as payInspectionFeeStore,
-  passSlot as passSlotStore,
-  commitAndPayRent as commitAndPayRentStore,
-  setSubscriptionTier as setSubscriptionTierStore,
-  getQueueForApartment as getQueueForApartmentStore,
+  getMyQueuesApi,
+  getQueueCapacityApi,
+  joinQueueApi,
+  payInspectionFeeApi,
+  passTurnApi,
+  leaveQueueApi,
+  commitAndPayRentApi,
+  upgradeTierApi,
+  mapBackendQueue,
+  mapBackendCapacity,
+} from "../utils/queueApi";
+import {
+  getQueues as getLocalQueues,
+  checkQueueCapacity as getLocalCapacity,
+  getSubscriptionTier as getLocalTier,
+  joinQueue as joinQueueLocal,
+  leaveQueue as leaveQueueLocal,
+  payInspectionFee as payInspectionFeeLocal,
+  passSlot as passSlotLocal,
+  commitAndPayRent as commitAndPayRentLocal,
+  setSubscriptionTier as setSubscriptionTierLocal,
+  getQueueForApartment as getQueueForApartmentLocal,
 } from "../utils/queueStore";
 
 export const useQueueStore = () => {
-  const [queues, setQueues] = useState(getQueues());
-  const [capacity, setCapacity] = useState(checkQueueCapacity());
+  const [queues, setQueues] = useState(getLocalQueues());
+  const [capacity, setCapacity] = useState(getLocalCapacity());
+  const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => {
-    setQueues(getQueues());
-    setCapacity(checkQueueCapacity());
+  const refresh = useCallback(async () => {
+    try {
+      const [backendQueues, backendCapacity] = await Promise.all([
+        getMyQueuesApi().catch(() => null),
+        getQueueCapacityApi().catch(() => null),
+      ]);
+
+      if (backendQueues && Array.isArray(backendQueues)) {
+        setQueues(backendQueues.map(mapBackendQueue));
+      } else {
+        setQueues(getLocalQueues());
+      }
+
+      if (backendCapacity) {
+        setCapacity(mapBackendCapacity(backendCapacity));
+      } else {
+        setCapacity(getLocalCapacity());
+      }
+    } catch (err) {
+      console.warn("Notice: Falling back to local queue store:", err?.message);
+      setQueues(getLocalQueues());
+      setCapacity(getLocalCapacity());
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
+    refresh();
+
     const handleUpdate = () => {
       refresh();
     };
@@ -35,50 +72,125 @@ export const useQueueStore = () => {
     };
   }, [refresh]);
 
-  const joinQueue = useCallback((params) => {
-    const result = joinQueueStore(params);
-    refresh();
-    return result;
-  }, [refresh]);
+  const joinQueue = useCallback(
+    async (params) => {
+      try {
+        const propId = params.apartmentId || params.propertyId;
+        const res = await joinQueueApi({
+          propertyId: propId,
+          tourDate: params.tourDate,
+          tourTime: params.tourTime,
+        });
+        await refresh();
+        return { success: true, queue: mapBackendQueue(res) };
+      } catch (err) {
+        // Fallback to local store if offline or server rejected
+        console.warn("Backend joinQueue failed, using local store fallback:", err?.message);
+        const localRes = joinQueueLocal(params);
+        refresh();
+        return localRes;
+      }
+    },
+    [refresh]
+  );
 
-  const leaveQueue = useCallback((queueId) => {
-    const result = leaveQueueStore(queueId);
-    refresh();
-    return result;
-  }, [refresh]);
+  const leaveQueue = useCallback(
+    async (queueId) => {
+      try {
+        await leaveQueueApi(queueId);
+        await refresh();
+        return { success: true };
+      } catch (err) {
+        console.warn("Backend leaveQueue failed, using local store fallback:", err?.message);
+        const localRes = leaveQueueLocal(queueId);
+        refresh();
+        return localRes;
+      }
+    },
+    [refresh]
+  );
 
-  const payInspectionFee = useCallback((queueId) => {
-    const result = payInspectionFeeStore(queueId);
-    refresh();
-    return result;
-  }, [refresh]);
+  const payInspectionFee = useCallback(
+    async (queueId) => {
+      try {
+        const res = await payInspectionFeeApi(queueId);
+        await refresh();
+        return { success: true, queue: mapBackendQueue(res) };
+      } catch (err) {
+        console.warn("Backend payInspectionFee failed, using local store fallback:", err?.message);
+        const localRes = payInspectionFeeLocal(queueId);
+        refresh();
+        return localRes;
+      }
+    },
+    [refresh]
+  );
 
-  const passSlot = useCallback((queueId) => {
-    const result = passSlotStore(queueId);
-    refresh();
-    return result;
-  }, [refresh]);
+  const passSlot = useCallback(
+    async (queueId) => {
+      try {
+        await passTurnApi(queueId);
+        await refresh();
+        return { success: true };
+      } catch (err) {
+        console.warn("Backend passSlot failed, using local store fallback:", err?.message);
+        const localRes = passSlotLocal(queueId);
+        refresh();
+        return localRes;
+      }
+    },
+    [refresh]
+  );
 
-  const commitAndPayRent = useCallback((queueId) => {
-    const result = commitAndPayRentStore(queueId);
-    refresh();
-    return result;
-  }, [refresh]);
+  const commitAndPayRent = useCallback(
+    async (queueId) => {
+      try {
+        await commitAndPayRentApi(queueId);
+        await refresh();
+        return { success: true };
+      } catch (err) {
+        console.warn("Backend commitAndPayRent failed, using local store fallback:", err?.message);
+        const localRes = commitAndPayRentLocal(queueId);
+        refresh();
+        return localRes;
+      }
+    },
+    [refresh]
+  );
 
-  const upgradeTier = useCallback((tier) => {
-    const result = setSubscriptionTierStore(tier);
-    refresh();
-    return result;
-  }, [refresh]);
+  const upgradeTier = useCallback(
+    async (tier) => {
+      try {
+        const res = await upgradeTierApi(tier);
+        await refresh();
+        return { success: true, capacity: mapBackendCapacity(res) };
+      } catch (err) {
+        console.warn("Backend upgradeTier failed, using local store fallback:", err?.message);
+        const localRes = setSubscriptionTierLocal(tier);
+        refresh();
+        return localRes;
+      }
+    },
+    [refresh]
+  );
 
-  const getQueueForApartment = useCallback((apartmentId) => {
-    return getQueueForApartmentStore(apartmentId);
-  }, []);
+  const getQueueForApartment = useCallback(
+    (apartmentId) => {
+      // Look up in active state first
+      const found = queues.find(
+        (q) => Number(q.apartmentId) === Number(apartmentId)
+      );
+      if (found) return found;
+      return getQueueForApartmentLocal(apartmentId);
+    },
+    [queues]
+  );
 
   return {
     queues,
     capacity,
-    tier: getSubscriptionTier(),
+    tier: capacity?.tier || getLocalTier(),
+    isLoading,
     joinQueue,
     leaveQueue,
     payInspectionFee,

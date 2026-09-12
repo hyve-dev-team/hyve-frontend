@@ -8,6 +8,7 @@ import featuredLodges from '../../utils/featuredLodges'
 import defaultApartmentImage from '../../assets/images/apartments/apartment-image-2.png'
 import useFetchApartment from '../../hooks/useFetchApartment'
 import { setCurrentLodge } from '../../utils/currentLodge'
+import { createLease } from '../../utils/leaseApi'
 import { getQueues, commitAndPayRent } from '../../utils/queueStore'
 import { BsShieldCheck } from 'react-icons/bs'
 import { IoCheckmarkCircle, IoKeyOutline } from 'react-icons/io5'
@@ -32,16 +33,39 @@ const Reservation = () => {
 
         setIsProcessing(true);
 
-        setTimeout(() => {
-            // On real payment success, record this as the tenant's current lodge
+        setTimeout(async () => {
+            // Calculate rent expiry (1 year from now)
             const rentExpiry = new Date();
             rentExpiry.setFullYear(rentExpiry.getFullYear() + 1);
 
-            setCurrentLodge({
-                apartmentId: Number(apartmentID),
-                name: lodge ? lodge.lodgeDesc : "Your Apartment",
-                rentExpiryDate: rentExpiry.toISOString(),
-            });
+            // Attempt to persist the lease to the backend database
+            try {
+                const lease = await createLease({
+                    propertyId: Number(apartmentID),
+                    durationMonths: 12,
+                });
+                if (lease?.property) {
+                    setCurrentLodge({
+                        apartmentId: Number(apartmentID),
+                        name: lease.property.title || (lodge ? lodge.lodgeDesc : "Your Apartment"),
+                        rentExpiryDate: lease.rentExpiryDate || rentExpiry.toISOString(),
+                        leaseId: lease.id,
+                    });
+                } else {
+                    setCurrentLodge({
+                        apartmentId: Number(apartmentID),
+                        name: lodge ? lodge.lodgeDesc : "Your Apartment",
+                        rentExpiryDate: rentExpiry.toISOString(),
+                    });
+                }
+            } catch (err) {
+                console.warn("Notice: Could not persist lease to backend directly, saving locally:", err?.message);
+                setCurrentLodge({
+                    apartmentId: Number(apartmentID),
+                    name: lodge ? lodge.lodgeDesc : "Your Apartment",
+                    rentExpiryDate: rentExpiry.toISOString(),
+                });
+            }
 
             // If tenant joined the queue for this apartment, close/commit that queue
             const activeQueues = getQueues();
