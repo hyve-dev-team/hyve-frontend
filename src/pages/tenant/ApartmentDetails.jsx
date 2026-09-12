@@ -38,6 +38,13 @@ const ApartmentDetails = () => {
     const { apartmentID } = useParams();
     const navigate = useNavigate();
 
+    // Redirect my-apartment or manage aliases to /user/apartment/manage
+    useEffect(() => {
+        if (apartmentID === "my-apartment" || apartmentID === "manage") {
+            navigate("/user/apartment/manage", { replace: true });
+        }
+    }, [apartmentID, navigate]);
+
     // Fetch real apartment data from backend
     const { apartment, isLoading, error } = useFetchApartment(apartmentID);
 
@@ -47,7 +54,10 @@ const ApartmentDetails = () => {
     const [isLoadingQueue, setIsLoadingQueue] = useState(true);
 
     const fetchPropertyQueueStatus = async () => {
-        if (!apartmentID) return;
+        if (!apartmentID || isNaN(Number(apartmentID))) {
+            setIsLoadingQueue(false);
+            return;
+        }
         setIsLoadingQueue(true);
         try {
             const data = await getPropertyQueueApi(apartmentID);
@@ -60,7 +70,9 @@ const ApartmentDetails = () => {
     };
 
     useEffect(() => {
-        fetchPropertyQueueStatus();
+        if (apartmentID && !isNaN(Number(apartmentID))) {
+            fetchPropertyQueueStatus();
+        }
     }, [apartmentID]);
 
     const existingQueue = propertyQueue || getQueueForApartment(apartmentID);

@@ -88,9 +88,11 @@ function App() {
 
           {/* Tenant Dashboard Routes*/}
           <Route path="/user/dashboard" element={<ProtectedRoute><TenantDashboard /></ProtectedRoute>} /> {/* User dashboard */}
+          <Route path="/user/apartment/manage" element={<ProtectedRoute><ManageApartment /></ProtectedRoute>} /> {/* Manage booked apartment */}
+          <Route path="/user/apartment/my-apartment" element={<Navigate to="/user/apartment/manage" replace />} />
+          <Route path="/user/my-apartment" element={<Navigate to="/user/apartment/manage" replace />} />
           <Route path="/user/apartment/:apartmentID" element={<ProtectedRoute><ApartmentDetails /></ProtectedRoute>} /> {/* View apartment details */}
           <Route path="/user/apartment/review/:apartmentID" element={<ProtectedRoute><ApartmentReviews /></ProtectedRoute>} /> {/* Review an aprtment */}
-          <Route path="/user/apartment/manage" element={<ProtectedRoute><ManageApartment /></ProtectedRoute>} /> {/* Managae booked apartment */}
           <Route path="/user/apartment/saved" element={<ProtectedRoute><SavedApartments /></ProtectedRoute>} /> {/* View saved apartments */}
 
           <Route path="/user/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} /> {/* Notification page */}

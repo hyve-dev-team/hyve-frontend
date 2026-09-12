@@ -245,7 +245,7 @@ const Reservation = () => {
 
                     <div className='w-full flex flex-col sm:flex-row gap-3'>
                         <Link
-                            to='/user/apartment/my-apartment'
+                            to='/user/apartment/manage'
                             className="flex-1 py-3 sm:py-3.5 text-center text-white rounded-xl bg-primary hover:bg-primary-hover font-semibold text-xs sm:text-sm shadow-md shadow-primary/20 transition-all"
                         >
                             View My Apartment

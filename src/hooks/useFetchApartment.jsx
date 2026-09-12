@@ -12,8 +12,12 @@ const useFetchApartment = (apartmentID) => {
         setIsLoading(true);
         setError(null);
 
-        if (!apartmentID) {
-            setError("No apartment ID found in the URL.");
+        if (!apartmentID || isNaN(Number(apartmentID))) {
+            if (apartmentID === "my-apartment" || apartmentID === "manage") {
+                setError(null);
+            } else {
+                setError("No valid apartment ID found in the URL.");
+            }
             setIsLoading(false);
             return;
         }
