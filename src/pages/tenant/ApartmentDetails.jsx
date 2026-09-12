@@ -1,11 +1,12 @@
 "use client"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import defaultProfile from "../../assets/images/shared-images/user-1.png";
 import placeholderImage from "../../assets/images/apartments/apartment-image-1.png";
 import useFetchApartment from "../../hooks/useFetchApartment";
 import { createOrGetChatRoom } from "../../utils/chatApi";
 import { saveProperty, unsaveProperty } from "../../utils/propertiesApi";
+import { getPropertyQueueApi, mapBackendQueue } from "../../utils/queueApi";
 import useSavedPropertyIds from "../../hooks/useSavedPropertyIds";
 import { hyveError, hyveSuccess } from "../../utils/hyveToast";
 import Header from "./components/layout/Dashboard/Header";
@@ -42,7 +43,36 @@ const ApartmentDetails = () => {
 
     // Queue system hooks & state
     const { capacity, joinQueue, upgradeTier, getQueueForApartment } = useQueueStore();
-    const existingQueue = getQueueForApartment(apartmentID);
+    const [propertyQueue, setPropertyQueue] = useState(null);
+    const [isLoadingQueue, setIsLoadingQueue] = useState(true);
+
+    const fetchPropertyQueueStatus = async () => {
+        if (!apartmentID) return;
+        setIsLoadingQueue(true);
+        try {
+            const data = await getPropertyQueueApi(apartmentID);
+            setPropertyQueue(data ? mapBackendQueue(data) : null);
+        } catch {
+            setPropertyQueue(null);
+        } finally {
+            setIsLoadingQueue(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPropertyQueueStatus();
+    }, [apartmentID]);
+
+    const existingQueue = propertyQueue || getQueueForApartment(apartmentID);
+
+    const handleJoinQueue = async (params) => {
+        const res = await joinQueue(params);
+        if (res?.success && res.queue) {
+            setPropertyQueue(res.queue);
+        }
+        return res;
+    };
+
     const [showJoinQueueModal, setShowJoinQueueModal] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
@@ -581,7 +611,7 @@ const ApartmentDetails = () => {
                 apartment={apartment}
                 capacity={capacity}
                 existingQueue={existingQueue}
-                onJoin={joinQueue}
+                onJoin={handleJoinQueue}
                 onOpenUpgrade={() => setShowUpgradeModal(true)}
                 onViewExistingQueue={(qId) => navigate(`/user/apartment/${apartment?.id}/queue`)}
             />

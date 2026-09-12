@@ -8,7 +8,7 @@ import defaultApartmentImage from '../../assets/images/apartments/apartment-imag
 import useFetchApartment from '../../hooks/useFetchApartment'
 import { setCurrentLodge } from '../../utils/currentLodge'
 import { createLease } from '../../utils/leaseApi'
-import { getQueues, commitAndPayRent } from '../../utils/queueStore'
+import { getPropertyQueueApi, commitAndPayRentApi } from '../../utils/queueApi'
 import { BsShieldCheck } from 'react-icons/bs'
 import { IoCheckmarkCircle, IoKeyOutline } from 'react-icons/io5'
 import { hyveSuccess } from '../../utils/hyveToast'
@@ -64,11 +64,14 @@ const Reservation = () => {
                 });
             }
 
-            // If tenant joined the queue for this apartment, close/commit that queue
-            const activeQueues = getQueues();
-            const matchedQueue = activeQueues.find((q) => Number(q.apartmentId) === Number(apartmentID));
-            if (matchedQueue) {
-                commitAndPayRent(matchedQueue.id);
+            // If tenant joined the queue for this apartment, close/commit that queue via API
+            try {
+                const propertyQueue = await getPropertyQueueApi(apartmentID);
+                if (propertyQueue?.id) {
+                    await commitAndPayRentApi(propertyQueue.id);
+                }
+            } catch (queueErr) {
+                console.warn("Queue commit notice:", queueErr?.message);
             }
 
             setIsProcessing(false);

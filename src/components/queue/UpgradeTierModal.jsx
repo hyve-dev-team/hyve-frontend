@@ -1,7 +1,7 @@
 import React from "react";
 import { CgClose } from "react-icons/cg";
 import { Check, Zap, Crown, Shield } from "lucide-react";
-import { TIER_LIMITS } from "../../utils/queueStore";
+import { TIER_LIMITS } from "../../utils/queueApi";
 import { hyveSuccess } from "../../utils/hyveToast";
 
 const UpgradeTierModal = ({ isOpen, onClose, currentTier, onUpgrade }) => {

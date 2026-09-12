@@ -1,6 +1,12 @@
 // Real API calls against the live Spring Boot backend for Fair Queues
 import config from "../config";
 
+export const TIER_LIMITS = {
+  FREE: { name: "Free Tier", limit: 3, price: 0, decisionWindowHours: 24 },
+  PREMIUM: { name: "HYVE Plus", limit: 6, price: 4999, decisionWindowHours: 24 },
+  PRO: { name: "HYVE Pro", limit: 10, price: 9999, decisionWindowHours: 36 },
+};
+
 export async function getMyQueuesApi() {
   const res = await config.getAPI({ url: "/api/v1/queue/my-queues" });
   if (!res?.success) throw new Error(res?.message || "Failed to load queues");

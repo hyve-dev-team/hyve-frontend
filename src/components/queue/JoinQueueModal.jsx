@@ -123,12 +123,12 @@ const JoinQueueModal = ({
     );
   }
 
-  const handleJoin = (e) => {
+  const handleJoin = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const res = onJoin({
+      const res = await onJoin({
         apartmentId: apartment?.id,
         propertyTitle: apartment?.lodgeDesc || "Verified Apartment",
         price: apartment?.price,
@@ -143,20 +143,20 @@ const JoinQueueModal = ({
       if (res?.success) {
         hyveSuccess(
           "Joined Queue!",
-          `You've been assigned Position #${res.queue.position} for this apartment.`
+          `You've been assigned Position #${res.queue?.position || 1} for this apartment.`
         );
         onClose();
         if (onViewExistingQueue) {
-          onViewExistingQueue(res.queue.id);
+          onViewExistingQueue(res.queue?.id);
         }
       } else if (res?.limitReached) {
         onOpenUpgrade();
       } else {
-        hyveError("Error", "Could not join queue. Please try again.");
+        hyveError("Could Not Join Queue", res?.message || "Please try again.");
       }
     } catch (err) {
       console.error(err);
-      hyveError("Error", "Unexpected error joining queue.");
+      hyveError("Could Not Join Queue", err?.message || "Unexpected error joining queue.");
     } finally {
       setIsSubmitting(false);
     }

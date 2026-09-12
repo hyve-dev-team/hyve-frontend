@@ -9,6 +9,8 @@ import { FaWhatsapp } from "react-icons/fa";
 import { Users, ArrowLeft, ExternalLink } from "lucide-react";
 import useFetchApartment from "../../../../../hooks/useFetchApartment";
 import useQueueStore from "../../../../../hooks/useQueueStore";
+import { getPropertyQueueApi, mapBackendQueue } from "../../../../../utils/queueApi";
+import placeholderImage from "../../../../../assets/images/apartments/apartment-image-1.png";
 import JoinQueueModal from "../../../../../components/queue/JoinQueueModal";
 import UpgradeTierModal from "../../../../../components/queue/UpgradeTierModal";
 import PayInspectionModal from "../../../../../components/queue/PayInspectionModal";
@@ -58,29 +60,42 @@ const ApartmentQueue = () => {
     getQueueForApartment,
   } = useQueueStore();
 
-  const userQueue = getQueueForApartment(apartmentID);
+  const [propertyQueue, setPropertyQueue] = useState(null);
+  const [isQueueLoading, setIsQueueLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!apartmentID) return;
+    setIsQueueLoading(true);
+    getPropertyQueueApi(apartmentID)
+      .then((data) => {
+        if (cancelled) return;
+        setPropertyQueue(data ? mapBackendQueue(data) : null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPropertyQueue(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsQueueLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apartmentID]);
+
+  const userQueue = propertyQueue || getQueueForApartment(apartmentID);
 
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [payingQueue, setPayingQueue] = useState(null);
   const [passingQueue, setPassingQueue] = useState(null);
 
-  // Fallback demo queue status if user is not in queue
-  const displayQueue = userQueue || {
-    position: null,
-    total: 5,
-    peopleAhead: 5,
-    status: "OPEN",
-    price: apartment?.price || "500,000",
-    property: apartment?.lodgeDesc || "Apartment",
-    image: apartment?.lodgeImage || "/images/apartments/apartment-image-1.png",
-    currentPersonExpiresAt: Date.now() + 14 * 3600 * 1000,
-  };
-
   const handleLeave = () => {
     if (!userQueue) return;
     if (window.confirm("Leave this queue? This will free up 1 of your queue slots.")) {
       leaveQueue(userQueue.id);
+      setPropertyQueue(null);
       hyveSuccess("Left Queue", "You have stepped out of the queue.");
       navigate("/user/apartment/queue");
     }
@@ -131,7 +146,7 @@ const ApartmentQueue = () => {
               </div>
 
               {/* Loading State */}
-              {isLoading ? (
+              {(isLoading || isQueueLoading) ? (
                 <div className="flex flex-col items-center justify-center p-16">
                   <div className="spinner w-[32px] h-[32px]" />
                   <p className="mt-4 text-xs text-gray-400">Loading queue details...</p>
@@ -146,9 +161,10 @@ const ApartmentQueue = () => {
                   {/* Image */}
                   <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-gray-100">
                     <img
-                      src={apartment?.lodgeImage || displayQueue.image}
+                      src={apartment?.lodgeImage || apartment?.images?.[0] || placeholderImage}
                       alt="apartment"
                       className="w-full h-full object-cover"
+                      onError={(e) => { e.target.src = placeholderImage; }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
 
@@ -164,8 +180,8 @@ const ApartmentQueue = () => {
                           IN QUEUE: POSITION #{userQueue.position} OF {userQueue.total}
                         </span>
                       ) : (
-                        <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-primary/90 text-white shadow-md">
-                          5 PEOPLE IN QUEUE
+                        <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-white/90 text-gray-800 shadow-md backdrop-blur-xs">
+                          ● OPEN FOR TOUR & QUEUE
                         </span>
                       )}
                     </div>
@@ -356,9 +372,15 @@ const ApartmentQueue = () => {
           apartment={apartment}
           capacity={capacity}
           existingQueue={userQueue}
-          onJoin={joinQueue}
+          onJoin={async (params) => {
+            const res = await joinQueue(params);
+            if (res?.success && res.queue) {
+              setPropertyQueue(res.queue);
+            }
+            return res;
+          }}
           onOpenUpgrade={() => setShowUpgradeModal(true)}
-          onViewExistingQueue={() => {}}
+          onViewExistingQueue={() => setShowJoinModal(false)}
         />
 
         <UpgradeTierModal

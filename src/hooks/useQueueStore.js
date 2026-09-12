@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   getMyQueuesApi,
   getQueueCapacityApi,
+  getPropertyQueueApi,
   joinQueueApi,
   payInspectionFeeApi,
   passTurnApi,
@@ -10,23 +11,28 @@ import {
   upgradeTierApi,
   mapBackendQueue,
   mapBackendCapacity,
+  TIER_LIMITS,
 } from "../utils/queueApi";
-import {
-  getQueues as getLocalQueues,
-  checkQueueCapacity as getLocalCapacity,
-  getSubscriptionTier as getLocalTier,
-  joinQueue as joinQueueLocal,
-  leaveQueue as leaveQueueLocal,
-  payInspectionFee as payInspectionFeeLocal,
-  passSlot as passSlotLocal,
-  commitAndPayRent as commitAndPayRentLocal,
-  setSubscriptionTier as setSubscriptionTierLocal,
-  getQueueForApartment as getQueueForApartmentLocal,
-} from "../utils/queueStore";
+
+// Purge any old mockup queue data stored previously in local storage
+try {
+  localStorage.removeItem("hyve_tenant_queues");
+  localStorage.removeItem("hyve_subscription_tier");
+} catch {
+  // Ignore storage errors
+}
+
+const DEFAULT_CAPACITY = {
+  canJoin: true,
+  currentCount: 0,
+  maxLimit: 3,
+  tier: "FREE",
+  tierDetails: TIER_LIMITS.FREE,
+};
 
 export const useQueueStore = () => {
-  const [queues, setQueues] = useState(getLocalQueues());
-  const [capacity, setCapacity] = useState(getLocalCapacity());
+  const [queues, setQueues] = useState([]);
+  const [capacity, setCapacity] = useState(DEFAULT_CAPACITY);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -39,18 +45,18 @@ export const useQueueStore = () => {
       if (backendQueues && Array.isArray(backendQueues)) {
         setQueues(backendQueues.map(mapBackendQueue));
       } else {
-        setQueues(getLocalQueues());
+        setQueues([]);
       }
 
       if (backendCapacity) {
         setCapacity(mapBackendCapacity(backendCapacity));
       } else {
-        setCapacity(getLocalCapacity());
+        setCapacity(DEFAULT_CAPACITY);
       }
     } catch (err) {
-      console.warn("Notice: Falling back to local queue store:", err?.message);
-      setQueues(getLocalQueues());
-      setCapacity(getLocalCapacity());
+      console.warn("Could not load queues from API:", err?.message);
+      setQueues([]);
+      setCapacity(DEFAULT_CAPACITY);
     } finally {
       setIsLoading(false);
     }
@@ -64,124 +70,82 @@ export const useQueueStore = () => {
     };
 
     window.addEventListener("hyve_queue_updated", handleUpdate);
-    window.addEventListener("storage", handleUpdate);
 
     return () => {
       window.removeEventListener("hyve_queue_updated", handleUpdate);
-      window.removeEventListener("storage", handleUpdate);
     };
   }, [refresh]);
 
   const joinQueue = useCallback(
     async (params) => {
-      try {
-        const propId = params.apartmentId || params.propertyId;
-        const res = await joinQueueApi({
-          propertyId: propId,
-          tourDate: params.tourDate,
-          tourTime: params.tourTime,
-        });
-        await refresh();
-        return { success: true, queue: mapBackendQueue(res) };
-      } catch (err) {
-        // Fallback to local store if offline or server rejected
-        console.warn("Backend joinQueue failed, using local store fallback:", err?.message);
-        const localRes = joinQueueLocal(params);
-        refresh();
-        return localRes;
-      }
+      const propId = params.apartmentId || params.propertyId;
+      const res = await joinQueueApi({
+        propertyId: propId,
+        tourDate: params.tourDate,
+        tourTime: params.tourTime,
+      });
+      await refresh();
+      window.dispatchEvent(new Event("hyve_queue_updated"));
+      return { success: true, queue: mapBackendQueue(res) };
     },
     [refresh]
   );
 
   const leaveQueue = useCallback(
     async (queueId) => {
-      try {
-        await leaveQueueApi(queueId);
-        await refresh();
-        return { success: true };
-      } catch (err) {
-        console.warn("Backend leaveQueue failed, using local store fallback:", err?.message);
-        const localRes = leaveQueueLocal(queueId);
-        refresh();
-        return localRes;
-      }
+      await leaveQueueApi(queueId);
+      await refresh();
+      window.dispatchEvent(new Event("hyve_queue_updated"));
+      return { success: true };
     },
     [refresh]
   );
 
   const payInspectionFee = useCallback(
     async (queueId) => {
-      try {
-        const res = await payInspectionFeeApi(queueId);
-        await refresh();
-        return { success: true, queue: mapBackendQueue(res) };
-      } catch (err) {
-        console.warn("Backend payInspectionFee failed, using local store fallback:", err?.message);
-        const localRes = payInspectionFeeLocal(queueId);
-        refresh();
-        return localRes;
-      }
+      const res = await payInspectionFeeApi(queueId);
+      await refresh();
+      window.dispatchEvent(new Event("hyve_queue_updated"));
+      return { success: true, queue: mapBackendQueue(res) };
     },
     [refresh]
   );
 
   const passSlot = useCallback(
     async (queueId) => {
-      try {
-        await passTurnApi(queueId);
-        await refresh();
-        return { success: true };
-      } catch (err) {
-        console.warn("Backend passSlot failed, using local store fallback:", err?.message);
-        const localRes = passSlotLocal(queueId);
-        refresh();
-        return localRes;
-      }
+      await passTurnApi(queueId);
+      await refresh();
+      window.dispatchEvent(new Event("hyve_queue_updated"));
+      return { success: true };
     },
     [refresh]
   );
 
   const commitAndPayRent = useCallback(
     async (queueId) => {
-      try {
-        await commitAndPayRentApi(queueId);
-        await refresh();
-        return { success: true };
-      } catch (err) {
-        console.warn("Backend commitAndPayRent failed, using local store fallback:", err?.message);
-        const localRes = commitAndPayRentLocal(queueId);
-        refresh();
-        return localRes;
-      }
+      await commitAndPayRentApi(queueId);
+      await refresh();
+      window.dispatchEvent(new Event("hyve_queue_updated"));
+      return { success: true };
     },
     [refresh]
   );
 
   const upgradeTier = useCallback(
     async (tier) => {
-      try {
-        const res = await upgradeTierApi(tier);
-        await refresh();
-        return { success: true, capacity: mapBackendCapacity(res) };
-      } catch (err) {
-        console.warn("Backend upgradeTier failed, using local store fallback:", err?.message);
-        const localRes = setSubscriptionTierLocal(tier);
-        refresh();
-        return localRes;
-      }
+      const res = await upgradeTierApi(tier);
+      await refresh();
+      window.dispatchEvent(new Event("hyve_queue_updated"));
+      return { success: true, capacity: mapBackendCapacity(res) };
     },
     [refresh]
   );
 
   const getQueueForApartment = useCallback(
     (apartmentId) => {
-      // Look up in active state first
-      const found = queues.find(
-        (q) => Number(q.apartmentId) === Number(apartmentId)
-      );
-      if (found) return found;
-      return getQueueForApartmentLocal(apartmentId);
+      if (!apartmentId) return null;
+      const idNum = Number(apartmentId);
+      return queues.find((q) => Number(q.apartmentId) === idNum && q.status !== "CLOSED" && q.status !== "PASSED") || null;
     },
     [queues]
   );
@@ -189,7 +153,7 @@ export const useQueueStore = () => {
   return {
     queues,
     capacity,
-    tier: capacity?.tier || getLocalTier(),
+    tier: capacity?.tier || "FREE",
     isLoading,
     joinQueue,
     leaveQueue,
@@ -198,6 +162,7 @@ export const useQueueStore = () => {
     commitAndPayRent,
     upgradeTier,
     getQueueForApartment,
+    fetchPropertyQueue: getPropertyQueueApi,
     refresh,
   };
 };

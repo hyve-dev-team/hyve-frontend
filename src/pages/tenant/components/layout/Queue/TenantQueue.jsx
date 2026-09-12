@@ -96,6 +96,7 @@ const MyQueues = () => {
     payInspectionFee,
     passSlot,
     upgradeTier,
+    isLoading,
   } = useQueueStore();
 
   const [activeFilter, setActiveFilter] = useState("ALL"); // ALL, ACTIVE, WAITING
@@ -195,8 +196,38 @@ const MyQueues = () => {
                 </div>
               )}
 
-              {/* Dashboard Metrics Overview Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4 mb-6">
+              {/* Dashboard Metrics Overview & Queues Section */}
+              {isLoading ? (
+                <div className="space-y-6">
+                  {/* Skeleton Metrics */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4 animate-pulse">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs">
+                        <div className="h-4 bg-gray-200 rounded w-28 mb-3" />
+                        <div className="h-8 bg-gray-200 rounded w-16 mb-2" />
+                        <div className="h-3 bg-gray-100 rounded w-40" />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Skeleton Queue Cards */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse mt-6">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-sm">
+                        <div className="h-60 sm:h-64 bg-gray-200" />
+                        <div className="p-6 space-y-3">
+                          <div className="h-5 bg-gray-200 rounded w-3/4" />
+                          <div className="h-4 bg-gray-100 rounded w-1/2" />
+                          <div className="h-10 bg-gray-100 rounded-xl w-full mt-4" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Dashboard Metrics Overview Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4 mb-6">
                 {/* Metric 1: Ready to Decide */}
                 <div
                   className={`p-4 rounded-2xl border transition-all ${
@@ -629,7 +660,9 @@ const MyQueues = () => {
                   })}
                 </div>
               )}
-            </div>
+            </>
+          )}
+        </div>
           </main>
         </div>
 
