@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom"
 import MainLayout from "./components/layout/MainLayout"
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/react"
 
 /* Landing page */
 import Homepage from "./pages/Homepage"
