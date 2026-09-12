@@ -149,7 +149,7 @@ const ApartmentQueue = () => {
                       alt="apartment"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
 
                     {/* Status badge */}
                     <div className="absolute top-4 left-4">
@@ -169,17 +169,17 @@ const ApartmentQueue = () => {
                       )}
                     </div>
 
-                    <div className="absolute bottom-4 left-4 right-4 text-white flex items-end justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold font-montserrat truncate max-w-sm">
+                    <div className="absolute bottom-4 left-4 right-4 text-white flex items-end justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-xl font-bold font-montserrat leading-snug break-words">
                           {apartment?.lodgeDesc}
                         </h3>
-                        <p className="text-xs text-white/80 mt-0.5">
+                        <p className="text-xs text-white/80 mt-0.5 truncate">
                           {apartment?.location || "Lagos, Nigeria"}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-white">
+                      <div className="text-right shrink-0">
+                        <p className="text-base sm:text-xl font-bold text-white whitespace-nowrap">
                           ₦ {Number(apartment?.price || 0).toLocaleString()}
                         </p>
                         <p className="text-[11px] text-white/80">per month</p>

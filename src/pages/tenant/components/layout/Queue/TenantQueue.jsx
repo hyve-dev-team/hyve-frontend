@@ -240,18 +240,18 @@ const MyQueues = () => {
                           </div>
 
                           {/* Price Tag Overlay */}
-                          <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white">
-                            <div>
-                              <p className="text-xs text-white/80 flex items-center gap-1">
-                                <IoLocationOutline />
-                                <span>{queue.location}</span>
+                          <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3 text-white">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-white/80 flex items-center gap-1 mb-0.5">
+                                <IoLocationOutline className="shrink-0" />
+                                <span className="truncate">{queue.location}</span>
                               </p>
-                              <h3 className="text-lg sm:text-xl font-bold font-montserrat truncate max-w-xs">
+                              <h3 className="text-base sm:text-xl font-bold font-montserrat leading-snug break-words">
                                 {queue.property}
                               </h3>
                             </div>
                             <div className="text-right shrink-0">
-                              <p className="text-lg sm:text-xl font-bold text-white">
+                              <p className="text-base sm:text-xl font-bold text-white whitespace-nowrap">
                                 ₦ {typeof queue.price === "number" ? queue.price.toLocaleString() : queue.price}
                               </p>
                               <p className="text-[11px] text-white/80">per month</p>
