@@ -9,7 +9,7 @@ import { hyveSuccess, hyveError } from '../../utils/hyveToast'
 import { getPropertyById, addReview } from '../../utils/propertiesApi'
 import { getActiveLease } from '../../utils/leaseApi'
 import { mapProperty } from '../../utils/mapProperty'
-import { getCurrentLodge, subscribeToCurrentLodgeChanges } from '../../utils/currentLodge'
+import { getCurrentLodge, clearCurrentLodge, subscribeToCurrentLodgeChanges } from '../../utils/currentLodge'
 import { createOrGetChatRoom } from '../../utils/chatApi'
 import { FaWhatsapp } from 'react-icons/fa'
 import {
@@ -59,14 +59,18 @@ const ManageApartment = () => {
     const [lease, setLease] = useState(null);
     const [property, setProperty] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [fetchError, setFetchError] = useState(null);
 
     // Synchronize active lease from backend (with local fallback)
     const loadTenancy = useCallback(async () => {
         setIsLoading(true);
-        setFetchError(null);
         try {
-            const activeLease = await getActiveLease().catch(() => null);
+            // 1. Check live lease on backend
+            let activeLease = null;
+            try {
+                activeLease = await getActiveLease();
+            } catch {
+                activeLease = null;
+            }
 
             if (activeLease && activeLease.property) {
                 setLease(activeLease);
@@ -75,27 +79,36 @@ const ManageApartment = () => {
                 return;
             }
 
+            // 2. Check local fallback if user previously booked
             const localLodge = getCurrentLodge();
             if (localLodge?.apartmentId) {
-                const propRes = await getPropertyById(localLodge.apartmentId);
-                setProperty(mapProperty(propRes));
-                setLease({
-                    id: localLodge.leaseId || localLodge.apartmentId,
-                    referenceNumber: `HYV-LS-2026-${localLodge.apartmentId}`,
-                    moveInDate: localLodge.movedInDate || new Date().toISOString(),
-                    rentExpiryDate: localLodge.rentExpiryDate,
-                    status: "ACTIVE",
-                    property: propRes,
-                });
-            } else {
-                setLease(null);
-                setProperty(null);
+                try {
+                    const propRes = await getPropertyById(localLodge.apartmentId);
+                    if (propRes) {
+                        setProperty(mapProperty(propRes));
+                        setLease({
+                            id: localLodge.leaseId || localLodge.apartmentId,
+                            referenceNumber: `HYV-LS-2026-${localLodge.apartmentId}`,
+                            moveInDate: localLodge.movedInDate || new Date().toISOString(),
+                            rentExpiryDate: localLodge.rentExpiryDate,
+                            status: "ACTIVE",
+                            property: propRes,
+                        });
+                        setIsLoading(false);
+                        return;
+                    }
+                } catch {
+                    // Stale or forbidden property ID - clear it smoothly
+                    clearCurrentLodge();
+                }
             }
-        } catch (err) {
-            console.error("Failed to load tenancy:", err);
-            setFetchError(err?.message || "Could not retrieve apartment details from the backend.");
-            setProperty(null);
+
+            // 3. User does not have an active apartment
             setLease(null);
+            setProperty(null);
+        } catch {
+            setLease(null);
+            setProperty(null);
         } finally {
             setIsLoading(false);
         }
@@ -302,34 +315,8 @@ const ManageApartment = () => {
                             </div>
                         )}
 
-                        {/* CASE 2: BACKEND ERROR */}
-                        {!isLoading && fetchError && (
-                            <div className="bg-white rounded-2xl border border-[#FECACA] p-8 text-center max-w-lg mx-auto shadow-sm my-8">
-                                <AlertCircle className="w-12 h-12 text-[#DC2626] mx-auto mb-3" />
-                                <h3 className="text-lg font-bold text-[#1F2937]">Unable to Retrieve Tenancy</h3>
-                                <p className="text-xs sm:text-sm text-[#6B7280] mt-2 mb-6 leading-relaxed">
-                                    {fetchError}
-                                </p>
-                                <div className="flex items-center justify-center gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={loadTenancy}
-                                        className="px-4 py-2.5 rounded-xl text-xs font-semibold text-[#374151] bg-[#F3F4F6] hover:bg-[#E5E7EB] smooth-transition"
-                                    >
-                                        Retry
-                                    </button>
-                                    <Link
-                                        to="/user/dashboard"
-                                        className="px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-primary hover:bg-primary-hover shadow-sm smooth-transition"
-                                    >
-                                        Browse Available Listings
-                                    </Link>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* CASE 3: USER HAS NO ACTIVE APARTMENT (Empty State with Clear Instructions) */}
-                        {!isLoading && !fetchError && (!lease || !property) && (
+                        {/* CASE 2: USER HAS NO ACTIVE APARTMENT (Direct to Apartment Listings) */}
+                        {!isLoading && (!lease || !property) && (
                             <div className="bg-white rounded-3xl border border-[#EAEAEA] p-8 sm:p-14 text-center max-w-2xl mx-auto shadow-sm my-8">
                                 <div className="w-20 h-20 rounded-3xl bg-primary-light flex items-center justify-center text-primary mx-auto mb-6 shadow-inner">
                                     <Building2 className="w-10 h-10 text-primary" />
@@ -373,8 +360,8 @@ const ManageApartment = () => {
                             </div>
                         )}
 
-                        {/* CASE 4: ACTIVE APARTMENT LOADED - FULL 8 CAPABILITIES */}
-                        {!isLoading && !fetchError && lease && property && (
+                        {/* CASE 3: ACTIVE APARTMENT LOADED - FULL 8 CAPABILITIES */}
+                        {!isLoading && lease && property && (
                             <>
                                 {/* TOP HERO STRIP: APARTMENT TITLE & PAYMENT STATUS */}
                                 <div className="bg-white rounded-3xl border border-[#EAEAEA] p-6 sm:p-8 shadow-sm mb-8">

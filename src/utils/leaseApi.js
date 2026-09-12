@@ -2,9 +2,14 @@
 import config from "../config";
 
 export async function getActiveLease() {
-    const res = await config.getAPI({ url: "/api/v1/user/lease/active" });
-    if (!res?.success) throw new Error(res?.message || "Failed to load active lease");
-    return res.data; // LeaseResponse or null
+    try {
+        const res = await config.getAPI({ url: "/api/v1/user/lease/active" });
+        if (!res?.success) return null;
+        return res.data; // LeaseResponse or null
+    } catch {
+        // Any 403, 404, or network issue means no active lease found for this user
+        return null;
+    }
 }
 
 export async function createLease({ propertyId, durationMonths = 12, moveInDate }) {
