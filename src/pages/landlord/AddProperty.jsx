@@ -7,6 +7,7 @@ import { createLandlordProperty } from '../../utils/landlordPropertiesApi';
 import { addPropertyAgent } from '../../utils/inspectionApi';
 import { uploadMediaFiles } from '../../utils/mediaApi';
 import { hyveSuccess, hyveError } from '../../utils/hyveToast';
+import AddressAutocompleteInput from '../../components/maps/AddressAutocompleteInput';
 
 import {
     IoHomeOutline,
@@ -84,34 +85,6 @@ const AddProperty = () => {
     // UI & Submission state
     const [validationErrors, setValidationErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLocating, setIsLocating] = useState(false);
-
-    // Capture phone/browser GPS coordinates
-    const handleCaptureLocation = () => {
-        if (!navigator.geolocation) {
-            hyveError("GPS Unavailable", "Your browser or device does not support GPS location.");
-            return;
-        }
-        setIsLocating(true);
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const lat = Math.round(pos.coords.latitude * 1000000) / 1000000;
-                const lng = Math.round(pos.coords.longitude * 1000000) / 1000000;
-                setFormData((prev) => ({
-                    ...prev,
-                    latitude: lat,
-                    longitude: lng,
-                }));
-                setIsLocating(false);
-                hyveSuccess("Location Pinned!", `GPS coordinates: ${lat}° N, ${lng}° E`);
-            },
-            (err) => {
-                setIsLocating(false);
-                hyveError("Location Failed", err.message || "Could not retrieve device GPS coordinates.");
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    };
 
     // Text inputs change handler
     const handleChange = (e) => {
@@ -497,48 +470,34 @@ const AddProperty = () => {
                                         </div>
                                     </div>
 
-                                    {/* Location / Address */}
+                                    {/* Location / Address via Google Maps Autocomplete & Geocoding */}
                                     <div>
-                                        <div className='flex items-center justify-between mb-2'>
-                                            <label htmlFor='location' className='block text-xs font-semibold text-[#3D3129] uppercase tracking-wider font-poppins'>
-                                                Property Address & Landmark <span className='text-red-500'>*</span>
-                                            </label>
-                                            <button
-                                                type='button'
-                                                onClick={handleCaptureLocation}
-                                                disabled={isLocating}
-                                                className='inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover active:scale-95 smooth-transition cursor-pointer disabled:opacity-50'
-                                            >
-                                                <IoNavigateOutline className={`text-sm ${isLocating ? 'animate-spin' : ''}`} />
-                                                <span>{isLocating ? 'Detecting GPS...' : '📍 Pin Current GPS Location'}</span>
-                                            </button>
-                                        </div>
-                                        <div className='relative'>
-                                            <span className='absolute left-3.5 top-3.5 text-[#3D3129]/50 text-base'>
-                                                <IoLocationOutline />
-                                            </span>
-                                            <input
-                                                type='text'
-                                                id='location'
-                                                name='location'
-                                                value={formData.location}
-                                                onChange={handleChange}
-                                                placeholder='e.g., 18 St. Finbarrs College Road, Akoka, Yaba (200m from Unilag)'
-                                                className={`w-full pl-9 pr-4 py-3 rounded-xl text-sm border bg-[#FAF7F5]/50 focus:bg-white outline-none smooth-transition ${validationErrors.location
-                                                        ? 'border-red-500 focus:ring-1 focus:ring-red-500'
-                                                        : 'border-[#3D3129]/15 focus:border-primary'
-                                                    }`}
-                                            />
-                                        </div>
-                                        {formData.latitude != null && (
-                                            <div className='mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#059669] bg-[#ECFDF5] border border-[#A7F3D0] px-3 py-1.5 rounded-lg'>
-                                                <CheckCircle2 size={13} className='text-[#059669]' />
-                                                <span>GPS Coordinates Pinned: {formData.latitude}° N, {formData.longitude}° E</span>
-                                            </div>
-                                        )}
-                                        {validationErrors.location && (
-                                            <p className='text-xs text-red-500 mt-1.5'>{validationErrors.location}</p>
-                                        )}
+                                        <label htmlFor='location' className='block text-xs font-semibold text-[#3D3129] uppercase tracking-wider mb-2 font-poppins'>
+                                            Property Address & Landmark <span className='text-red-500'>*</span>
+                                        </label>
+                                        <AddressAutocompleteInput
+                                            value={formData.location}
+                                            latitude={formData.latitude}
+                                            longitude={formData.longitude}
+                                            onChangeAddress={({ location, latitude, longitude }) => {
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    location,
+                                                    latitude,
+                                                    longitude,
+                                                }));
+                                                if (validationErrors.location) {
+                                                    setValidationErrors((prev) => {
+                                                        const updated = { ...prev };
+                                                        delete updated.location;
+                                                        return updated;
+                                                    });
+                                                }
+                                            }}
+                                            hasError={!!validationErrors.location}
+                                            errorMessage={validationErrors.location}
+                                            placeholder='e.g. 18 St. Finbarrs College Road, Akoka, Yaba, Lagos'
+                                        />
                                     </div>
                                 </div>
 

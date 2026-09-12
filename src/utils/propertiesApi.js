@@ -13,6 +13,34 @@ export async function getProperties({ page = 0, size = 50, sortBy } = {}) {
     return res.data; // PageProperty: { content, totalElements, ... }
 }
 
+export async function searchPropertiesApi({
+    query,
+    propertyType,
+    location,
+    minPrice,
+    maxPrice,
+    sortBy,
+    page = 0,
+    size = 50,
+} = {}) {
+    const params = {
+        page,
+        size,
+        ...(query ? { query } : {}),
+        ...(propertyType ? { propertyType } : {}),
+        ...(location ? { location } : {}),
+        ...(minPrice ? { minPrice } : {}),
+        ...(maxPrice ? { maxPrice } : {}),
+        ...(sortBy ? { sortBy } : {}),
+    };
+    const res = await config.getAPI({
+        url: "/api/v1/user/properties/search",
+        params,
+    });
+    if (!res?.success) throw new Error(res?.message || "Failed to search properties");
+    return res.data; // PageProperty: { content, totalElements, ... }
+}
+
 export async function getNearbyProperties({ lat, lng, radiusKm = 50 } = {}) {
     const res = await config.getAPI({
         url: "/api/v1/user/properties/nearby",

@@ -87,6 +87,22 @@ const AllApartments = ({ lodges = [], savedIds = new Set(), onSavedChange, empty
                                     <img src={lodge.lodgeImage} alt="featured lodge" className='object-cover w-full h-full' />
                                 </Link>
 
+                                {/* Floating Vacancy Status Badge on Image */}
+                                <div className="absolute top-3 left-3 z-10">
+                                    <span className={`text-[11px] font-semibold px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5 backdrop-blur-xs ${
+                                        lodge.status === 'open' || lodge.status === 'ACTIVE'
+                                            ? 'bg-white/95 text-[#1B784D] border border-[#10B981]/30'
+                                            : 'bg-black/70 text-white'
+                                    }`}>
+                                        <span className={`w-2 h-2 rounded-full ${
+                                            lodge.status === 'open' || lodge.status === 'ACTIVE'
+                                                ? 'bg-[#10B981] animate-pulse'
+                                                : 'bg-gray-400'
+                                        }`}></span>
+                                        {lodge.status === 'open' || lodge.status === 'ACTIVE' ? 'Vacant' : 'Occupied'}
+                                    </span>
+                                </div>
+
                                 {/* save apartment button — calls the real save/unsave endpoints */}
                                 <button
                                     aria-label={saved ? "Unsave apartment" : "Save apartment"}
@@ -110,7 +126,7 @@ const AllApartments = ({ lodges = [], savedIds = new Set(), onSavedChange, empty
                                 </div>
                                 <div className="flex items-start justify-between gap-3 mb-1 sm:mt-4">
                                     <Link to={`/user/apartment/${lodge.id}`} className="flex-1 min-w-0">
-                                        <h3 className="font-poppins text-[14px] md:text-[16px] font-medium line-clamp-2">
+                                        <h3 className="font-poppins text-[14px] md:text-[16px] font-medium line-clamp-2 hover:text-primary transition-colors">
                                             {lodge.lodgeDesc}
                                         </h3>
                                     </Link>
@@ -125,55 +141,54 @@ const AllApartments = ({ lodges = [], savedIds = new Set(), onSavedChange, empty
                                 </div>
                             </div>
 
-                            {/* lodge location estimation */}
+                            {/* lodge location estimation & status tags */}
                             <div className="flex flex-wrap items-center gap-2 mt-1 md:mt-2" >
-                                <p className="text-[12px] md:text-sm mr-2 text-[#AAAAAA] sm:text-black">{lodge.nearbyDistance}</p>
+                                <p className="text-[12px] md:text-sm mr-2 text-[#666666] sm:text-black">{lodge.nearbyDistance}</p>
                                 {lodge.distanceKm != null && (
                                     <span className="inline-flex items-center gap-1 bg-[#EEF2FF] text-[#4F46E5] text-[10px] md:text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-[#C7D2FE]">
                                         📍 {lodge.distanceKm < 1 ? `${Math.round(lodge.distanceKm * 1000)}m away` : `${lodge.distanceKm.toFixed(1)} km away`}
                                     </span>
                                 )}
-                                <span className="hidden bg-[#DDFFE7] text-[#1B784D] text-[10px] md:text-[10px] px-4 rounded-sm md:rounded-md md:py-[.2rem] py-[.15rem] sm:block">
+                                <span className="inline-flex items-center bg-[#DDFFE7] text-[#1B784D] text-[10px] md:text-[10px] px-2.5 sm:px-4 rounded-md py-[.18rem] md:py-[.2rem] font-semibold">
                                     Verified
                                 </span>
-                                <span className="hidden bg-[#FF630038] text-[#FF6300] text-[10px] md:text-[10px] px-4 rounded-sm md:rounded-md md:py-[.2rem] py-[.15rem] capitalize sm:block">
-                                    {lodge.status}
+                                <span className={`inline-flex items-center text-[10px] md:text-[10px] px-2.5 sm:px-4 rounded-md py-[.18rem] md:py-[.2rem] font-bold capitalize ${
+                                    lodge.status === 'open' || lodge.status === 'ACTIVE'
+                                        ? 'bg-[#FF63001F] text-[#FF6300] border border-[#FF630033]'
+                                        : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                    {lodge.status === 'open' || lodge.status === 'ACTIVE' ? 'Vacant' : lodge.status}
                                 </span>
                             </div>
 
                             <div className="flex flex-wrap items-center justify-between mt-2 md:mt-3 ">
-                                <div className="flex-wrap items-center hidden sm:flex">
-                                    <span className="relative top-[-1.5px] text-[#F6D100] text-[20px] pr-1"><IoStarSharp /></span>
-                                    <span className="pr-3">
-                                        <p className="pb-0 mb-0 text-sm font-bold">{lodge.starRating}</p>
+                                <div className="flex items-center">
+                                    <span className="relative top-[-1.5px] text-[#F6D100] text-[18px] sm:text-[20px] pr-1"><IoStarSharp /></span>
+                                    <span className="pr-2 sm:pr-3">
+                                        <p className="pb-0 mb-0 text-xs sm:text-sm font-bold">{lodge.starRating}</p>
                                     </span>
 
-                                    <span><p className="text-[12px] font-light">{lodge.totalReviews} reviews</p></span>
+                                    <span><p className="text-[11px] sm:text-[12px] font-light text-gray-500">{lodge.totalReviews} reviews</p></span>
                                 </div>
 
                                 {/* Amenities */}
                                 <div className='hidden sm:block'>
-                                    <p className="text-[12px] font-light">{lodge.amenities}</p>
-                                </div>
-
-                                {/* verified id tag, only visible on mobile screens */}
-                                <div className="flex items-center gap-2 sm:hidden">
-                                    <span className="flex items-center gap-1 text-sm text-[#FF6300] border border-[#FF6300] bg-white px-2 py-1 rounded-md">
-                                        <LuUserRoundCog />
-                                        <p className="leading-none text-[10px]">Verified ID</p>
-                                    </span>
+                                    <p className="text-[12px] font-light text-gray-500">{lodge.amenities}</p>
                                 </div>
                             </div>
 
-                            {/* CTA */}
-                            <div className="hidden gap-4 mt-4 sm:flex sm:mt-6">
-                                <Link to={`/user/apartment/${lodge.id}`} className='w-1/2 py-2 text-white rounded-lg shadow-md bg-primary hover:bg-primary-hover smooth-transition text-[12px] sm:text-[14px] text-center'>
-                                    <button type='button'>
-                                        Explore Property
-                                    </button>
+                            {/* CTA Buttons (Visible on both Mobile and Desktop) */}
+                            <div className="flex gap-2.5 sm:gap-4 mt-3 sm:mt-6">
+                                <Link to={`/user/apartment/${lodge.id}`} className='flex-1 py-2 sm:py-2.5 text-white rounded-lg sm:rounded-xl shadow-xs bg-primary hover:bg-primary-hover smooth-transition text-[12px] sm:text-[14px] text-center font-medium flex items-center justify-center'>
+                                    Explore Property
                                 </Link>
 
-                                <button type='button' onClick={(e) => handleMessageOwner(e, lodge)} disabled={openingChatFor === lodge.id} className="w-1/2 py-2 text-black bg-transparent border-2 rounded-lg shadow-md border-primary hover:bg-gray smooth-transition text-[12px] sm:text-[14px] text-center disabled:opacity-50">
+                                <button
+                                    type='button'
+                                    onClick={(e) => handleMessageOwner(e, lodge)}
+                                    disabled={openingChatFor === lodge.id}
+                                    className="flex-1 py-2 sm:py-2.5 text-black bg-transparent border-2 rounded-lg sm:rounded-xl shadow-xs border-primary/60 hover:bg-primary/5 smooth-transition text-[12px] sm:text-[14px] text-center font-medium disabled:opacity-50"
+                                >
                                     {openingChatFor === lodge.id ? "Opening..." : "Message Owner"}
                                 </button>
                             </div>

@@ -336,7 +336,7 @@ const ApartmentQueue = () => {
                           className="w-full py-3.5 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-xl font-bold text-sm shadow-md shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer transition-all"
                         >
                           <Users size={18} />
-                          <span>Book Tour & Join Fair Queue</span>
+                          <span>Book Tour & Join Queue</span>
                         </button>
                       </div>
                     )}

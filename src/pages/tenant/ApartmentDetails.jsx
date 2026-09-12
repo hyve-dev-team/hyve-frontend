@@ -179,7 +179,7 @@ const ApartmentDetails = () => {
                                                                     className="w-full py-3.5 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover active:scale-[0.99] smooth-transition text-xs sm:text-[14px] font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
                                                                 >
                                                                     <Users size={18} />
-                                                                    <span>Book Tour & Join Fair Queue</span>
+                                                                    <span>Book Tour & Join Queue</span>
                                                                 </button>
                                                             )}
 
@@ -279,7 +279,7 @@ const ApartmentDetails = () => {
                                                             className="w-full py-3 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
                                                         >
                                                             <Users size={16} />
-                                                            <span>Book Tour & Join Fair Queue</span>
+                                                            <span>Book Tour & Join Queue</span>
                                                         </button>
                                                     )}
 

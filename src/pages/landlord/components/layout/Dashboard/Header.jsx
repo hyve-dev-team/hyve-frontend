@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MdOutlineNotificationsActive } from 'react-icons/md'
 import userProfileImage from "../../../../../assets/images/shared-images/user-1.png"
@@ -10,15 +11,43 @@ const Header = () => {
         navigate("/landlord/notifications")
     }
 
-    const cachedUser = (() => {
+    const [cachedUser, setCachedUser] = useState(() => {
         try {
-            return JSON.parse(localStorage.getItem("user")) || null;
+            return JSON.parse(localStorage.getItem("user")) || JSON.parse(localStorage.getItem("userData")) || null;
         } catch {
             return null;
         }
-    })();
+    });
 
-    const firstName = cachedUser?.firstName || "Landlord";
+    useEffect(() => {
+        const syncUser = () => {
+            try {
+                const stored = JSON.parse(localStorage.getItem("user")) || JSON.parse(localStorage.getItem("userData")) || null;
+                setCachedUser(stored);
+            } catch {
+                // Ignore parse errors
+            }
+        };
+
+        window.addEventListener('storage', syncUser);
+        window.addEventListener('focus', syncUser);
+        return () => {
+            window.removeEventListener('storage', syncUser);
+            window.removeEventListener('focus', syncUser);
+        };
+    }, []);
+
+    const rawFirstName = 
+        cachedUser?.firstName || 
+        cachedUser?.firstname || 
+        (cachedUser?.fullName ? cachedUser.fullName.trim().split(' ')[0] : '') ||
+        (cachedUser?.name ? cachedUser.name.trim().split(' ')[0] : '') ||
+        (cachedUser?.email ? cachedUser.email.split('@')[0] : '');
+
+    const firstName = rawFirstName 
+        ? rawFirstName.charAt(0).toUpperCase() + rawFirstName.slice(1)
+        : 'Landlord';
+
     const avatar = cachedUser?.profilePictureUrl || userProfileImage;
 
     return (
