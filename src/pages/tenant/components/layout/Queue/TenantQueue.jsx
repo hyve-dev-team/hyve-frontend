@@ -252,9 +252,9 @@ const MyQueues = () => {
                             </div>
                             <div className="text-right shrink-0">
                               <p className="text-lg sm:text-xl font-bold text-white">
-                                ₦ {queue.price}
+                                ₦ {typeof queue.price === "number" ? queue.price.toLocaleString() : queue.price}
                               </p>
-                              <p className="text-[11px] text-white/80">per year</p>
+                              <p className="text-[11px] text-white/80">per month</p>
                             </div>
                           </div>
                         </div>

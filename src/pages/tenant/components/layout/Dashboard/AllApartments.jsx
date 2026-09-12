@@ -104,8 +104,8 @@ const AllApartments = ({ lodges = [], savedIds = new Set(), onSavedChange, empty
                             <div>
                                 {/* Price (Visible only on smaller screens) */}
                                 <div className="mt-4 sm:hidden">
-                                    <p className="text-sm font-normal text-[#FF6300]">
-                                        ₦ {lodge.price}
+                                    <p className="text-sm font-semibold text-[#FF6300]">
+                                        ₦ {Number(lodge.price || 0).toLocaleString()} <span className="text-xs font-normal text-[#888888]">/ month</span>
                                     </p>
                                 </div>
                                 <div className="flex items-start justify-between gap-3 mb-1 sm:mt-4">
@@ -114,11 +114,11 @@ const AllApartments = ({ lodges = [], savedIds = new Set(), onSavedChange, empty
                                             {lodge.lodgeDesc}
                                         </h3>
                                     </Link>
-                                    <div className="flex-shrink-0 hidden sm:block">
-                                        <p className="text-sm font-normal text-primary md:text-[16px] whitespace-nowrap">
-                                            ₦ {lodge.price}
+                                    <div className="flex-shrink-0 hidden text-right sm:block">
+                                        <p className="text-sm font-semibold text-primary md:text-[16px] whitespace-nowrap">
+                                            ₦ {Number(lodge.price || 0).toLocaleString()}
                                         </p>
-                                        <p className="text-[10px] md:text-[12px] font-light capitalize text-right">
+                                        <p className="text-[10px] md:text-[12px] font-light capitalize text-[#888888]">
                                             per month
                                         </p>
                                     </div>

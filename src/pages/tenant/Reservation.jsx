@@ -80,7 +80,7 @@ const Reservation = () => {
                                 <div className='sm:text-right w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0'>
                                     <p className='text-xs text-gray-400'>Annual Rent</p>
                                     <p className='text-xl sm:text-2xl font-bold text-primary font-montserrat'>
-                                        ₦ {lodge.lodgePrice}
+                                        ₦ {Number(lodge.lodgePrice || lodge.price || 0).toLocaleString()}
                                     </p>
                                 </div>
                             </div>

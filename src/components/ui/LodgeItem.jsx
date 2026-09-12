@@ -23,7 +23,7 @@ const LodgeItem = () => {
                             <div className="flex items-center justify-between mt-4 mb-1">
                                 <h3 className="font-poppins text-[14px] md:text-[16px] font-medium trunc">
                                     Newly Built 2 Bedroom Flat</h3>
-                                <p className="text-sm font-normal text-primary md:text-[16px]">₦ 250000</p>
+                                <p className="text-sm font-normal text-primary md:text-[16px]">₦ 250,000</p>
                             </div>
                             <span className="leading-none text-right">
                                 <p className="text-[10px] md:text-[12px] font-light capitalize">per year</p>

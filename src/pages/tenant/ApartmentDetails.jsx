@@ -13,6 +13,7 @@ import MobileNavigationTab from "./components/layout/MobileNavigation/MobileNavi
 import { LuUserRoundCog } from "react-icons/lu"
 import { BiErrorCircle } from "react-icons/bi";
 import { BiChat } from "react-icons/bi";
+import { RxCaretDown, RxCaretUp } from "react-icons/rx";
 import useQueueStore from "../../hooks/useQueueStore";
 import JoinQueueModal from "../../components/queue/JoinQueueModal";
 import UpgradeTierModal from "../../components/queue/UpgradeTierModal";
@@ -108,7 +109,7 @@ const ApartmentDetails = () => {
                                             <div>
                                                 <div>
                                                     <p className="text-sm sm:text-[18px] font-semibold text-[#FF6300] ">
-                                                        ₦ {apartment.price}
+                                                        ₦ {Number(apartment.price || 0).toLocaleString()} <span className="text-xs sm:text-sm font-normal text-[#888888]">/ month</span>
                                                     </p>
 
                                                     <h3 className="font-poppins text-[16px] md:text-[22px] font-medium ">

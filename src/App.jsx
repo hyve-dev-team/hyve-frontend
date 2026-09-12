@@ -1,5 +1,7 @@
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom"
 import MainLayout from "./components/layout/MainLayout"
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 /* Landing page */
 import Homepage from "./pages/Homepage"
@@ -56,9 +58,11 @@ function App() {
   return (
     <>
       {/* Routes configuration */}
+      <Analytics />
+      <SpeedInsights />
       <Toaster />
       <BrowserRouter>
-        
+
         <Routes>
           {/* Landing Page Route */}
           <Route path="/" element={<MainLayout><Homepage /></MainLayout>} />
