@@ -11,10 +11,12 @@ import { setCurrentLodge } from '../../utils/currentLodge'
 import { getQueues, commitAndPayRent } from '../../utils/queueStore'
 import { BsShieldCheck } from 'react-icons/bs'
 import { IoCheckmarkCircle, IoKeyOutline } from 'react-icons/io5'
+import { hyveSuccess } from '../../utils/hyveToast'
 
 const Reservation = () => {
     const { apartmentID } = useParams();
     const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [hasAgreedTerms, setHasAgreedTerms] = useState(false);
     const [hasAgreedPolicy, setHasAgreedPolicy] = useState(false);
 
@@ -25,26 +27,33 @@ const Reservation = () => {
     const lodge = apiApartment || fallbackLodge;
 
     const handlePayment = (e) => {
-        e.preventDefault()
+        e.preventDefault();
+        if (!isReadyToPay || isProcessing) return;
 
-        // On real payment success, record this as the tenant's current lodge
-        const rentExpiry = new Date();
-        rentExpiry.setFullYear(rentExpiry.getFullYear() + 1);
+        setIsProcessing(true);
 
-        setCurrentLodge({
-            apartmentId: Number(apartmentID),
-            name: lodge ? lodge.lodgeDesc : "Your Apartment",
-            rentExpiryDate: rentExpiry.toISOString(),
-        });
+        setTimeout(() => {
+            // On real payment success, record this as the tenant's current lodge
+            const rentExpiry = new Date();
+            rentExpiry.setFullYear(rentExpiry.getFullYear() + 1);
 
-        // If tenant joined the queue for this apartment, close/commit that queue
-        const activeQueues = getQueues();
-        const matchedQueue = activeQueues.find((q) => Number(q.apartmentId) === Number(apartmentID));
-        if (matchedQueue) {
-            commitAndPayRent(matchedQueue.id);
-        }
+            setCurrentLodge({
+                apartmentId: Number(apartmentID),
+                name: lodge ? lodge.lodgeDesc : "Your Apartment",
+                rentExpiryDate: rentExpiry.toISOString(),
+            });
 
-        setIsPaymentSuccessful(true)
+            // If tenant joined the queue for this apartment, close/commit that queue
+            const activeQueues = getQueues();
+            const matchedQueue = activeQueues.find((q) => Number(q.apartmentId) === Number(apartmentID));
+            if (matchedQueue) {
+                commitAndPayRent(matchedQueue.id);
+            }
+
+            setIsProcessing(false);
+            setIsPaymentSuccessful(true);
+            hyveSuccess("Payment Received!", "Your rent has been safely placed in HYVE Escrow.");
+        }, 800);
     }
 
     return (
@@ -156,13 +165,21 @@ const Reservation = () => {
                             <div className='flex justify-center mt-6'>
                                 <button
                                     type='submit'
-                                    disabled={!isReadyToPay}
-                                    className={`w-full lg:w-[45%] text-center font-semibold text-sm sm:text-base rounded-xl py-3.5 sm:py-4 transition-all ${isReadyToPay
+                                    disabled={!isReadyToPay || isProcessing}
+                                    className={`w-full lg:w-[45%] text-center font-semibold text-sm sm:text-base rounded-xl py-3.5 sm:py-4 transition-all flex items-center justify-center gap-2 ${
+                                        isReadyToPay && !isProcessing
                                             ? 'text-white bg-primary hover:bg-primary-hover cursor-pointer shadow-lg shadow-primary/20'
-                                            : 'text-gray-400 bg-primary/50 cursor-not-allowed shadow-none'
-                                        }`}
+                                            : 'text-white bg-primary/50 cursor-not-allowed shadow-none'
+                                    }`}
                                 >
-                                    Proceed to Make Escrow Payment
+                                    {isProcessing ? (
+                                        <>
+                                            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            <span>Processing Escrow Payment...</span>
+                                        </>
+                                    ) : (
+                                        "Proceed to Make Escrow Payment"
+                                    )}
                                 </button>
                             </div>
                         </form>
