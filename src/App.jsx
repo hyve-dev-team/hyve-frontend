@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom"
 import MainLayout from "./components/layout/MainLayout"
+import { Analytics } from "@vercel/analytics/next"
 
 /* Landing page */
 import Homepage from "./pages/Homepage"
@@ -56,9 +57,10 @@ function App() {
   return (
     <>
       {/* Routes configuration */}
+      <Analytics />
       <Toaster />
       <BrowserRouter>
-        
+
         <Routes>
           {/* Landing Page Route */}
           <Route path="/" element={<MainLayout><Homepage /></MainLayout>} />
