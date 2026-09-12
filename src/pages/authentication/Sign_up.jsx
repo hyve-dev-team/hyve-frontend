@@ -139,10 +139,19 @@ const Sign_up = () => {
       });
 
       if (!data?.success) {
-        hyveError(
-          "Registration Failed",
-          data?.message || "Registration failed. Please try again."
-        );
+        const serverMsg = data?.message || "";
+        const isEmailTaken =
+          serverMsg.toLowerCase().includes("email already") ||
+          serverMsg.toLowerCase().includes("already registered") ||
+          serverMsg.toLowerCase().includes("email taken") ||
+          serverMsg.toLowerCase().includes("duplicate");
+
+        if (isEmailTaken) {
+          setInputError((prev) => ({ ...prev, email: true }));
+          hyveError("Email Already Taken", "This email is already registered. Try logging in instead.");
+        } else {
+          hyveError("Registration Failed", serverMsg || "Registration failed. Please try again.");
+        }
         return;
       }
 
@@ -152,11 +161,23 @@ const Sign_up = () => {
       hyveSuccess("Account Created!", "Check your email for your verification OTP.");
       navigate("/auth/verify");
     } catch (error) {
-      console.error("Network error:", error);
-      hyveError(
-        "Connection Error",
-        "An unexpected error occurred. Please try again."
-      );
+      console.error("Registration error:", error);
+      const msg = error?.message || "";
+      const isEmailTaken =
+        msg.toLowerCase().includes("email already") ||
+        msg.toLowerCase().includes("already registered") ||
+        msg.toLowerCase().includes("email taken") ||
+        msg.toLowerCase().includes("duplicate");
+
+      if (isEmailTaken) {
+        setInputError((prev) => ({ ...prev, email: true }));
+        hyveError("Email Already Taken", "This email is already registered. Try logging in instead.");
+      } else {
+        hyveError(
+          "Registration Failed",
+          msg || "Something went wrong. Please check your connection and try again."
+        );
+      }
     } finally {
       setIsLoading(false);
     }
