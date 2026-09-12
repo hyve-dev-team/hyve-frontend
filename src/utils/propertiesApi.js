@@ -13,6 +13,15 @@ export async function getProperties({ page = 0, size = 50, sortBy } = {}) {
     return res.data; // PageProperty: { content, totalElements, ... }
 }
 
+export async function getNearbyProperties({ lat, lng, radiusKm = 50 } = {}) {
+    const res = await config.getAPI({
+        url: "/api/v1/user/properties/nearby",
+        params: { lat, lng, radiusKm },
+    });
+    if (!res?.success) throw new Error(res?.message || "Failed to load nearby properties");
+    return res.data; // NearbyPropertyResponse[]: [{ property, distanceKm }]
+}
+
 export async function getPropertyById(id) {
     const res = await config.getAPI({ url: `/api/v1/user/properties/${id}` });
     if (!res?.success) throw new Error(res?.message || "Property not found");

@@ -18,9 +18,10 @@ import {
     IoArrowBack,
     IoAdd,
     IoTimeOutline,
-    IoSparklesOutline
+    IoSparklesOutline,
+    IoNavigateOutline
 } from 'react-icons/io5';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 import { FaWhatsapp, FaUserTie } from 'react-icons/fa';
 
 const PROPERTY_TYPES = [
@@ -56,6 +57,8 @@ const AddProperty = () => {
         title: '',
         priceAnnually: '',
         location: '',
+        latitude: null,
+        longitude: null,
         propertyType: 'APARTMENT',
         minimumRentalPeriod: 12,
         description: '',
@@ -81,6 +84,34 @@ const AddProperty = () => {
     // UI & Submission state
     const [validationErrors, setValidationErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLocating, setIsLocating] = useState(false);
+
+    // Capture phone/browser GPS coordinates
+    const handleCaptureLocation = () => {
+        if (!navigator.geolocation) {
+            hyveError("GPS Unavailable", "Your browser or device does not support GPS location.");
+            return;
+        }
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = Math.round(pos.coords.latitude * 1000000) / 1000000;
+                const lng = Math.round(pos.coords.longitude * 1000000) / 1000000;
+                setFormData((prev) => ({
+                    ...prev,
+                    latitude: lat,
+                    longitude: lng,
+                }));
+                setIsLocating(false);
+                hyveSuccess("Location Pinned!", `GPS coordinates: ${lat}° N, ${lng}° E`);
+            },
+            (err) => {
+                setIsLocating(false);
+                hyveError("Location Failed", err.message || "Could not retrieve device GPS coordinates.");
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
 
     // Text inputs change handler
     const handleChange = (e) => {
@@ -215,6 +246,8 @@ const AddProperty = () => {
                 amenities: selectedAmenities,
                 images: uploadedUrls,
                 minimumRentalPeriod: Number(formData.minimumRentalPeriod) || 12,
+                ...(formData.latitude != null ? { latitude: formData.latitude } : {}),
+                ...(formData.longitude != null ? { longitude: formData.longitude } : {}),
             };
 
             const createdProperty = await createLandlordProperty(payload);
@@ -466,9 +499,20 @@ const AddProperty = () => {
 
                                     {/* Location / Address */}
                                     <div>
-                                        <label htmlFor='location' className='block text-xs font-semibold text-[#3D3129] uppercase tracking-wider mb-2 font-poppins'>
-                                            Property Address & Landmark <span className='text-red-500'>*</span>
-                                        </label>
+                                        <div className='flex items-center justify-between mb-2'>
+                                            <label htmlFor='location' className='block text-xs font-semibold text-[#3D3129] uppercase tracking-wider font-poppins'>
+                                                Property Address & Landmark <span className='text-red-500'>*</span>
+                                            </label>
+                                            <button
+                                                type='button'
+                                                onClick={handleCaptureLocation}
+                                                disabled={isLocating}
+                                                className='inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover active:scale-95 smooth-transition cursor-pointer disabled:opacity-50'
+                                            >
+                                                <IoNavigateOutline className={`text-sm ${isLocating ? 'animate-spin' : ''}`} />
+                                                <span>{isLocating ? 'Detecting GPS...' : '📍 Pin Current GPS Location'}</span>
+                                            </button>
+                                        </div>
                                         <div className='relative'>
                                             <span className='absolute left-3.5 top-3.5 text-[#3D3129]/50 text-base'>
                                                 <IoLocationOutline />
@@ -486,6 +530,12 @@ const AddProperty = () => {
                                                     }`}
                                             />
                                         </div>
+                                        {formData.latitude != null && (
+                                            <div className='mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#059669] bg-[#ECFDF5] border border-[#A7F3D0] px-3 py-1.5 rounded-lg'>
+                                                <CheckCircle2 size={13} className='text-[#059669]' />
+                                                <span>GPS Coordinates Pinned: {formData.latitude}° N, {formData.longitude}° E</span>
+                                            </div>
+                                        )}
                                         {validationErrors.location && (
                                             <p className='text-xs text-red-500 mt-1.5'>{validationErrors.location}</p>
                                         )}

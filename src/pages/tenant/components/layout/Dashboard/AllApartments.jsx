@@ -128,6 +128,11 @@ const AllApartments = ({ lodges = [], savedIds = new Set(), onSavedChange, empty
                             {/* lodge location estimation */}
                             <div className="flex flex-wrap items-center gap-2 mt-1 md:mt-2" >
                                 <p className="text-[12px] md:text-sm mr-2 text-[#AAAAAA] sm:text-black">{lodge.nearbyDistance}</p>
+                                {lodge.distanceKm != null && (
+                                    <span className="inline-flex items-center gap-1 bg-[#EEF2FF] text-[#4F46E5] text-[10px] md:text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-[#C7D2FE]">
+                                        📍 {lodge.distanceKm < 1 ? `${Math.round(lodge.distanceKm * 1000)}m away` : `${lodge.distanceKm.toFixed(1)} km away`}
+                                    </span>
+                                )}
                                 <span className="hidden bg-[#DDFFE7] text-[#1B784D] text-[10px] md:text-[10px] px-4 rounded-sm md:rounded-md md:py-[.2rem] py-[.15rem] sm:block">
                                     Verified
                                 </span>
