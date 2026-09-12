@@ -5,6 +5,8 @@ import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavi
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import featuredLodges from '../../utils/featuredLodges'
+import defaultApartmentImage from '../../assets/images/apartments/apartment-image-2.png'
+import useFetchApartment from '../../hooks/useFetchApartment'
 import { setCurrentLodge } from '../../utils/currentLodge'
 import { getQueues, commitAndPayRent } from '../../utils/queueStore'
 import { BsShieldCheck } from 'react-icons/bs'
@@ -13,8 +15,14 @@ import { IoCheckmarkCircle, IoKeyOutline } from 'react-icons/io5'
 const Reservation = () => {
     const { apartmentID } = useParams();
     const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
+    const [hasAgreedTerms, setHasAgreedTerms] = useState(false);
+    const [hasAgreedPolicy, setHasAgreedPolicy] = useState(false);
 
-    const lodge = featuredLodges.find((l) => l.id === Number(apartmentID));
+    const isReadyToPay = hasAgreedTerms && hasAgreedPolicy;
+
+    const { apartment: apiApartment } = useFetchApartment(apartmentID);
+    const fallbackLodge = featuredLodges.find((l) => l.id === Number(apartmentID));
+    const lodge = apiApartment || fallbackLodge;
 
     const handlePayment = (e) => {
         e.preventDefault()
@@ -63,9 +71,13 @@ const Reservation = () => {
                             <div className='bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm'>
                                 <div className='flex items-center gap-4'>
                                     <img
-                                        src={lodge.image}
-                                        alt={lodge.lodgeDesc}
-                                        className='w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover'
+                                        src={lodge.lodgeImage || lodge.image || (lodge.images && lodge.images[0]) || defaultApartmentImage}
+                                        alt={lodge.lodgeDesc || "Apartment"}
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = defaultApartmentImage;
+                                        }}
+                                        className='w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0'
                                     />
                                     <div>
                                         <div className='flex items-center gap-2'>
@@ -74,7 +86,7 @@ const Reservation = () => {
                                             </span>
                                         </div>
                                         <h3 className='font-bold text-gray-900 text-base sm:text-lg mt-1'>{lodge.lodgeDesc}</h3>
-                                        <p className='text-xs text-gray-500'>{lodge.lodgeLocation}</p>
+                                        <p className='text-xs text-gray-500'>{lodge.nearbyDistance || lodge.location || lodge.lodgeLocation || "Lagos, Nigeria"}</p>
                                     </div>
                                 </div>
                                 <div className='sm:text-right w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0'>
@@ -99,7 +111,14 @@ const Reservation = () => {
                                         </p>
 
                                         <div className='flex items-center gap-2.5 mt-6'>
-                                            <input type="checkbox" name="" id="terms" className='w-4 h-4 accent-primary cursor-pointer' required />
+                                            <input
+                                                type="checkbox"
+                                                id="terms"
+                                                checked={hasAgreedTerms}
+                                                onChange={(e) => setHasAgreedTerms(e.target.checked)}
+                                                className='w-4 h-4 accent-primary cursor-pointer'
+                                                required
+                                            />
                                             <label htmlFor="terms" className='font-medium text-[#2D2D2D] text-xs sm:text-sm cursor-pointer'>
                                                 I agree to HYVE Escrow protection terms and rental conditions
                                             </label>
@@ -118,7 +137,14 @@ const Reservation = () => {
                                         </p>
 
                                         <div className='flex items-center gap-2.5 mt-6'>
-                                            <input type="checkbox" name="" id="policy" className='w-4 h-4 accent-primary cursor-pointer' required />
+                                            <input
+                                                type="checkbox"
+                                                id="policy"
+                                                checked={hasAgreedPolicy}
+                                                onChange={(e) => setHasAgreedPolicy(e.target.checked)}
+                                                className='w-4 h-4 accent-primary cursor-pointer'
+                                                required
+                                            />
                                             <label htmlFor="policy" className='font-medium text-[#2D2D2D] text-xs sm:text-sm cursor-pointer'>
                                                 I agree to HYVE cancellation and fair queue reservation policy
                                             </label>
@@ -130,7 +156,12 @@ const Reservation = () => {
                             <div className='flex justify-center mt-6'>
                                 <button
                                     type='submit'
-                                    className='w-full lg:w-[45%] text-center text-white bg-primary rounded-xl py-3.5 sm:py-4 font-semibold text-sm sm:text-base cursor-pointer hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all'
+                                    disabled={!isReadyToPay}
+                                    className={`w-full lg:w-[45%] text-center font-semibold text-sm sm:text-base rounded-xl py-3.5 sm:py-4 transition-all ${
+                                        isReadyToPay
+                                            ? 'text-white bg-primary hover:bg-primary-hover cursor-pointer shadow-lg shadow-primary/20'
+                                            : 'text-gray-400 bg-gray-200 cursor-not-allowed shadow-none'
+                                    }`}
                                 >
                                     Proceed to Make Escrow Payment
                                 </button>
