@@ -26,12 +26,12 @@ const Onboarding = () => {
     // creating heading content as variable, so they can be passed as props because they comtain html tags
     const screen1Heading = (
         <>
-            discover <span className="text-primary">verified</span> housing around your campus. safe and <span className='text-primary'>easy to rent</span>
+            discover <span className="text-primary">verified</span> housing around your community. safe and <span className='text-primary'>easy to rent</span>
         </>
     );
     const screen2Heading = (
         <>
-            <span className="text-primary">Search</span> & <span className="text-primary">discover</span> apartments near your campus.
+            <span className="text-primary">Search</span> & <span className="text-primary">discover</span> apartments near your community.
         </>
     );
     const screen3Heading = (

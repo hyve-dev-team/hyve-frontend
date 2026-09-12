@@ -8,6 +8,7 @@ import Homepage from "./pages/Homepage"
 
 /* Onboarding  */
 import Onboarding from "./pages/onboarding/Onboarding"
+import ViewingLinkPage from "./pages/public/ViewingLinkPage"
 
 /* Auth Pages */
 import Sign_up from "./pages/authentication/Sign_up"
@@ -69,6 +70,9 @@ function App() {
 
           {/* Onboarding screens route */}
           <Route path="/onboarding" element={<Onboarding />} />
+
+          {/* Public Apartment Viewing Link (from WhatsApp) */}
+          <Route path="/viewing/:token" element={<ViewingLinkPage />} />
 
           {/* Sign up and Sign in routes */}
           <Route path="/auth/signup" element={<Sign_up />} />

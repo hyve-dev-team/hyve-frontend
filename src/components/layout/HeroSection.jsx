@@ -18,7 +18,7 @@ const HeroSection = () => {
                     <p className="mt-6 sm:mt-8 capitalize text-[14px] sm:text-[1rem]">
                         Search & Discover <span className="text-primary">Apartments</span>
                         <br />
-                        Near Your Campus.
+                        Near Your Community.
                     </p>
 
                     {/* Hero section CTA button */}

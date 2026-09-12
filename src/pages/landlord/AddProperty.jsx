@@ -4,6 +4,7 @@ import Sidebar from './components/layout/Sidebar/Sidebar';
 import Header from './components/layout/Dashboard/Header';
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab';
 import { createLandlordProperty } from '../../utils/landlordPropertiesApi';
+import { addPropertyAgent } from '../../utils/inspectionApi';
 import { uploadMediaFiles } from '../../utils/mediaApi';
 import { hyveSuccess, hyveError } from '../../utils/hyveToast';
 
@@ -20,6 +21,7 @@ import {
     IoSparklesOutline
 } from 'react-icons/io5';
 import { Loader2 } from 'lucide-react';
+import { FaWhatsapp, FaUserTie } from 'react-icons/fa';
 
 const PROPERTY_TYPES = [
     { value: 'APARTMENT', label: 'Apartment', desc: 'Flat or multiple rooms' },
@@ -57,6 +59,13 @@ const AddProperty = () => {
         propertyType: 'APARTMENT',
         minimumRentalPeriod: 12,
         description: '',
+    });
+
+    // Optional Inspection Agent / Caretaker state
+    const [agentData, setAgentData] = useState({
+        fullName: '',
+        whatsappNumber: '',
+        roleTitle: 'Caretaker',
     });
 
     // Amenities state
@@ -208,9 +217,23 @@ const AddProperty = () => {
                 minimumRentalPeriod: Number(formData.minimumRentalPeriod) || 12,
             };
 
-            await createLandlordProperty(payload);
+            const createdProperty = await createLandlordProperty(payload);
 
-            hyveSuccess('Property published!', 'Your property has been listed successfully.');
+            // If agent details provided, attach agent to the property immediately
+            if (agentData.fullName.trim() && agentData.whatsappNumber.trim() && createdProperty?.id) {
+                try {
+                    await addPropertyAgent(createdProperty.id, {
+                        fullName: agentData.fullName.trim(),
+                        whatsappNumber: agentData.whatsappNumber.trim(),
+                        roleTitle: agentData.roleTitle || 'Caretaker',
+                        isPrimary: true,
+                    });
+                } catch (agentErr) {
+                    console.warn('Agent could not be attached immediately:', agentErr);
+                }
+            }
+
+            hyveSuccess('Property published!', 'Your property and inspection contacts have been saved.');
             navigate('/landlord/dashboard');
         } catch (err) {
             console.error('Failed to create property:', err);
@@ -586,6 +609,67 @@ const AddProperty = () => {
                                         placeholder='Highlight what makes this accommodation attractive to prospective tenants — constant water running, serene compound, prepaid meter, etc.'
                                         className='w-full p-4 rounded-xl text-sm border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none smooth-transition resize-none'
                                     />
+                                </div>
+
+                                {/* Section 5: Inspection Agent / Caretaker (Optional) */}
+                                <div className='bg-white rounded-2xl p-5 sm:p-7 border border-[#FF6300]/15 shadow-sm'>
+                                    <div className='flex items-center justify-between mb-3'>
+                                        <div>
+                                            <h2 className='text-base font-semibold text-[#3D3129] font-poppins flex items-center gap-2'>
+                                                <FaUserTie className='text-primary text-sm' />
+                                                <span>Inspection Agent / Caretaker</span>
+                                                <span className='text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase'>
+                                                    Optional
+                                                </span>
+                                            </h2>
+                                            <p className='text-xs text-[#3D3129]/60 mt-0.5'>
+                                                Assign who will receive tour viewing links on WhatsApp. If left blank, requests route directly to your WhatsApp number.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2'>
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>Agent Full Name</label>
+                                            <input
+                                                type='text'
+                                                placeholder='e.g. Babatunde Lawal'
+                                                value={agentData.fullName}
+                                                onChange={(e) => setAgentData(prev => ({ ...prev, fullName: e.target.value }))}
+                                                className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>Agent WhatsApp Number</label>
+                                            <div className='relative'>
+                                                <span className='absolute left-3.5 top-1/2 -translate-y-1/2 text-[#10B981]'>
+                                                    <FaWhatsapp className='w-3.5 h-3.5' />
+                                                </span>
+                                                <input
+                                                    type='tel'
+                                                    placeholder='e.g. 08012345678'
+                                                    value={agentData.whatsappNumber}
+                                                    onChange={(e) => setAgentData(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                                                    className='w-full pl-9 pr-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>Role / Designation</label>
+                                            <select
+                                                value={agentData.roleTitle}
+                                                onChange={(e) => setAgentData(prev => ({ ...prev, roleTitle: e.target.value }))}
+                                                className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                            >
+                                                <option value='Caretaker'>Caretaker</option>
+                                                <option value='Facility Manager'>Facility Manager</option>
+                                                <option value='Viewing Agent'>Viewing Agent</option>
+                                                <option value='Co-Landlord'>Co-Landlord</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

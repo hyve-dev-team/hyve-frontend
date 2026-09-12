@@ -8,6 +8,7 @@ import { getLandlordPropertyById, deleteLandlordProperty } from "../../utils/lan
 import { getPropertyById } from "../../utils/propertiesApi";
 import { mapProperty } from "../../utils/mapProperty";
 import placeholderImage from "../../assets/images/apartments/apartment-image-1.png";
+import AgentSetupSection from "./components/AgentSetupSection";
 
 import { BiErrorCircle } from "react-icons/bi";
 import { RxCaretDown, RxCaretUp } from "react-icons/rx";
@@ -400,6 +401,16 @@ const ManageProperty = () => {
                                             )}
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Caretaker & Agent Inspection Contacts */}
+                                <div className="mt-8">
+                                    <AgentSetupSection
+                                        propertyId={apartmentID}
+                                        propertyTitle={apartment.lodgeDesc}
+                                        landlordPhone={apartment.landlord?.phone}
+                                        landlordName={apartment.landlord?.name}
+                                    />
                                 </div>
                             </div>
                         ) : null}

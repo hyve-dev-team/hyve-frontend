@@ -27,7 +27,7 @@ const NeedNewApartment = () => {
                             </h2>
 
                             <p className="mt-8 capitalize paragraph-responsive ">Search & discover apartments <br />
-                                near your campus.</p>
+                                near your community.</p>
 
                             {/* new a new apartment CTA btn */}
                             <Link to="/onboarding">

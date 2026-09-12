@@ -283,7 +283,7 @@ const Login = () => {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-primary accent-primary cursor-pointer"
                 />
-                <span className="text-xs sm:text-sm text-gray-600 font-medium">Remember my email</span>
+                <span className="text-xs sm:text-sm text-gray-600 font-medium">Remember email</span>
               </label>
             </div>
 
