@@ -13,6 +13,7 @@ import MobileNavigationTab from "./components/layout/MobileNavigation/MobileNavi
 import { LuUserRoundCog } from "react-icons/lu"
 import { BiErrorCircle } from "react-icons/bi";
 import { BiChat } from "react-icons/bi";
+import { RxCaretDown, RxCaretUp } from "react-icons/rx";
 import useQueueStore from "../../hooks/useQueueStore";
 import JoinQueueModal from "../../components/queue/JoinQueueModal";
 import UpgradeTierModal from "../../components/queue/UpgradeTierModal";
