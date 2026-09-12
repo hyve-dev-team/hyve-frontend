@@ -5,7 +5,12 @@ import userProfileImage from "../../../../../assets/images/shared-images/user-1.
 import { PiHandWavingFill } from 'react-icons/pi'
 import { RiSearch2Line } from 'react-icons/ri'
 
-const Header = () => {
+const Header = ({ 
+    searchValue, 
+    onSearchChange, 
+    onSearchSubmit, 
+    placeholder = 'Search area, type, 2 bedroom, studio...' 
+} = {}) => {
     const navigate = useNavigate();
 
     const [cachedUser, setCachedUser] = useState(() => {
@@ -51,14 +56,28 @@ const Header = () => {
         navigate("/user/notifications")
     }
 
+    const isControlled = typeof onSearchChange === 'function';
     const [searchTerm, setSearchTerm] = useState('');
+    const currentSearch = isControlled ? (searchValue ?? '') : searchTerm;
 
     const handleSearchSubmit = (e) => {
         e.preventDefault();
-        if (searchTerm.trim()) {
-            navigate(`/user/apartment/search?q=${encodeURIComponent(searchTerm.trim())}`);
+        if (onSearchSubmit) {
+            onSearchSubmit(currentSearch);
+        } else if (!isControlled) {
+            if (searchTerm.trim()) {
+                navigate(`/user/apartment/search?q=${encodeURIComponent(searchTerm.trim())}`);
+            } else {
+                navigate(`/user/apartment/search`);
+            }
+        }
+    };
+
+    const handleClear = () => {
+        if (isControlled) {
+            onSearchChange('');
         } else {
-            navigate(`/user/apartment/search`);
+            setSearchTerm('');
         }
     };
 
@@ -90,30 +109,43 @@ const Header = () => {
                 {/* search input and notification icon */}
                 <div className='hidden sm:flex items-center gap-6 w-full mt-4 lg:mt-0 lg:w-[50%] desktop-lg:w-[40%] '>
                     <div className='w-full'>
-                        <form onSubmit={handleSearchSubmit} className='group flex flex-shrink items-center border border-[#AAAAAA] rounded-full overflow-hidden px-3 lg:px-5 shadow-sm focus-within:border-primary transition-colors bg-white'>
-                            <span className='mr-2.5'><RiSearch2Line className='text-[#AAAAAA] text-[16px] lg:text-[20px] group-focus-within:text-primary transition-colors' /></span>
+                        <form onSubmit={handleSearchSubmit} className='group flex flex-shrink items-center border border-[#D1D5DB] focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 rounded-full overflow-hidden px-3 lg:px-4 shadow-2xs transition-all bg-white'>
+                            <span className='mr-2.5 shrink-0'>
+                                <RiSearch2Line className='text-[#9CA3AF] text-[16px] lg:text-[18px] group-focus-within:text-primary transition-colors' />
+                            </span>
 
                             <input
                                 type="search"
                                 name='search-properties'
                                 id='search-properties'
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className='outline-none w-full text-black py-2 lg:py-2.5 text-sm placeholder:font-light placeholder:text-[#AAAAAA]'
-                                placeholder='Search area, type, 2 bedroom, studio...'
+                                value={currentSearch}
+                                onChange={(e) => isControlled ? onSearchChange(e.target.value) : setSearchTerm(e.target.value)}
+                                className='outline-none w-full text-black py-2 lg:py-2 text-xs lg:text-sm placeholder:font-light placeholder:text-[#9CA3AF]'
+                                placeholder={placeholder}
                             />
+
+                            {currentSearch && (
+                                <button
+                                    type="button"
+                                    onClick={handleClear}
+                                    className="p-1 text-[#9CA3AF] hover:text-black transition-colors shrink-0"
+                                    title="Clear search"
+                                >
+                                    ✕
+                                </button>
+                            )}
                         </form>
                     </div>
 
                     {/* Notification Icon: visible on larger screens */}
-                    <button onClick={handleNotification}>
+                    <button onClick={handleNotification} title="Notifications">
                         <MdOutlineNotificationsActive className='text-[22px] lg:text-[24px] cursor-pointer hover:text-primary smooth-transition text-black/70' />
                     </button>
                 </div>
 
                 {/* Notification Icon: visible on smaller screens */}
                 <div className="sm:hidden">
-                    <button onClick={handleNotification}>
+                    <button onClick={handleNotification} title="Notifications">
                         <MdOutlineNotificationsActive className='text-[22px] lg:text-[24px] text-black/60' />
                     </button>
                 </div>

@@ -11,6 +11,7 @@ import { HiUser, HiUsers } from "react-icons/hi2";
 import { PiBuildingApartmentFill } from "react-icons/pi";
 import { HiMiniChatBubbleBottomCenterText } from "react-icons/hi2";
 import { IoLogOutOutline } from "react-icons/io5";
+import { RiSearch2Line } from "react-icons/ri";
 
 const Sidebar = ({ currentPage }) => {
     const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Sidebar = ({ currentPage }) => {
 
     const getActiveTab = () => {
         const path = location.pathname;
+        if (path.startsWith('/user/apartment/search')) return 'search';
         if (path.startsWith('/user/apartment/manage')) return 'apartment';
         if (path.startsWith('/user/apartment/queue')) return 'queues';
         if (path.startsWith('/user/chats')) return 'chats';
@@ -89,6 +91,14 @@ const Sidebar = ({ currentPage }) => {
                                 to="/user/dashboard"
                                 label="Home"
                                 isActive={activeNav === "home"}
+                            />
+
+                            {/* search & filter */}
+                            <Navitem
+                                icon={RiSearch2Line}
+                                to="/user/apartment/search"
+                                label="Search & Filter"
+                                isActive={activeNav === "search"}
                             />
 
                             {/* my apartment */}

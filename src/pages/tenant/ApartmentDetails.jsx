@@ -1,30 +1,43 @@
-
 "use client"
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import defaultProfile from "../../assets/images/shared-images/user-1.png"
-import useFetchApartment from "../../hooks/useFetchApartment"
+import defaultProfile from "../../assets/images/shared-images/user-1.png";
+import placeholderImage from "../../assets/images/apartments/apartment-image-1.png";
+import useFetchApartment from "../../hooks/useFetchApartment";
 import { createOrGetChatRoom } from "../../utils/chatApi";
-import { hyveError } from "../../utils/hyveToast";
+import { saveProperty, unsaveProperty } from "../../utils/propertiesApi";
+import useSavedPropertyIds from "../../hooks/useSavedPropertyIds";
+import { hyveError, hyveSuccess } from "../../utils/hyveToast";
 import Header from "./components/layout/Dashboard/Header";
-import Sidebar from "./components/layout/Sidebar/Sidebar"
+import Sidebar from "./components/layout/Sidebar/Sidebar";
 import MobileNavigationTab from "./components/layout/MobileNavigation/MobileNavigationTab";
-
-import { LuUserRoundCog } from "react-icons/lu"
-import { BiErrorCircle } from "react-icons/bi";
-import { BiChat } from "react-icons/bi";
-import { RxCaretDown, RxCaretUp } from "react-icons/rx";
 import useQueueStore from "../../hooks/useQueueStore";
 import JoinQueueModal from "../../components/queue/JoinQueueModal";
 import UpgradeTierModal from "../../components/queue/UpgradeTierModal";
-import { Users, Clock } from "lucide-react";
+
+import { 
+    Users, 
+    ShieldCheck, 
+    ArrowLeft, 
+    Share2, 
+    CheckCircle2, 
+    ChevronLeft, 
+    ChevronRight,
+    Sparkles,
+    Calendar,
+    Ruler
+} from "lucide-react";
+import { BiErrorCircle, BiChat } from "react-icons/bi";
+import { BsHeart, BsHeartFill } from "react-icons/bs";
+import { IoStarSharp } from "react-icons/io5";
+import { RxCaretDown, RxCaretUp } from "react-icons/rx";
+import { HiOutlineHome, HiOutlineLocationMarker } from "react-icons/hi";
 
 const ApartmentDetails = () => {
-    // Get apartment Id and fetch apartment details using the id
     const { apartmentID } = useParams();
     const navigate = useNavigate();
 
-    // Call useFetchApartment to fetch apartment details
+    // Fetch real apartment data from backend
     const { apartment, isLoading, error } = useFetchApartment(apartmentID);
 
     // Queue system hooks & state
@@ -33,8 +46,38 @@ const ApartmentDetails = () => {
     const [showJoinQueueModal, setShowJoinQueueModal] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-    // State to track "Chat with Landlord" click in flight
+    // Save/Wishlist state
+    const { savedIds, applyOptimisticChange } = useSavedPropertyIds();
+    const isSaved = apartment ? savedIds.has(apartment.id) : false;
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Landlord Chat state
     const [isOpeningChat, setIsOpeningChat] = useState(false);
+
+    // Gallery state
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+    // Description expand state
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const handleToggleSave = async () => {
+        if (!apartment?.id || isSaving) return;
+        setIsSaving(true);
+        const nextState = !isSaved;
+        try {
+            if (nextState) {
+                await saveProperty(apartment.id);
+                hyveSuccess("Saved to Wishlist", "Apartment added to your saved listings.");
+            } else {
+                await unsaveProperty(apartment.id);
+            }
+            applyOptimisticChange?.(apartment.id, nextState);
+        } catch (err) {
+            hyveError("Action Failed", err.message || "Could not update wishlist.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleChatWithLandlord = async () => {
         if (!apartment?.landlord?.id) {
@@ -52,275 +95,505 @@ const ApartmentDetails = () => {
         }
     };
 
-    // State to handle show more/less of apartment description
-    const [isExpanded, setIsExpanded] = useState(false);
-
-    // State to track the currently displayed main image
-    const [mainImage, setMainImage] = useState(null);
-
-    // Handle show more/less functionality
-    const toggleDescription = () => {
-        setIsExpanded(prev => !prev);
+    const handleShare = async () => {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: apartment?.lodgeDesc || "HYVE Apartment",
+                    text: `Check out this verified listing on HYVE: ${apartment?.lodgeDesc}`,
+                    url: window.location.href,
+                });
+            } catch {
+                // User dismissed share dialog
+            }
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+            hyveSuccess("Link Copied!", "Apartment link copied to your clipboard.");
+        }
     };
 
-    // Set a default value for lodgeTumbnails to prevent crashing during loading/error
-    const lodgeTumbnails = apartment?.lodgeTumbnails || [];
+    // Prepare real image gallery
+    const images = (apartment?.images && apartment.images.length > 0)
+        ? apartment.images
+        : [apartment?.lodgeImage || placeholderImage];
+    const currentMainImage = images[selectedImageIndex] || images[0];
 
-    // Function to handle thumbnail click
-    const handleThumbnailClick = (thumbnailImage) => {
-        setMainImage(thumbnailImage);
+    // Format Property Type dynamically
+    const formatPropertyType = (type) => {
+        if (!type) return "Apartment";
+        switch (type.toUpperCase()) {
+            case "STUDIO":
+                return "Studio / Self-Contain";
+            case "APARTMENT":
+                return "Flat / Apartment";
+            case "ROOM":
+                return "Single Room";
+            case "HOUSE":
+                return "Entire House";
+            default:
+                return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+        }
     };
 
-    // Determine which image to display in the main container
-    const displayedImage = mainImage || apartment?.lodgeImage;
+    // Real amenities array
+    const realAmenities = (apartment?.amenitiesList && apartment.amenitiesList.length > 0)
+        ? apartment.amenitiesList
+        : (apartment?.amenities && apartment.amenities !== "No amenities listed"
+            ? apartment.amenities.split(",").map(a => a.trim())
+            : []);
 
     return (
-        <>
-            <div className='page-wrapper'>
-                <div className='flex'>
-                    {/* dashboard sidebar*/}
-                    <Sidebar />
+        <div className="page-wrapper bg-[#FAFAFA] min-h-screen">
+            <div className="flex">
+                {/* Dashboard Sidebar */}
+                <Sidebar currentPage="search" />
 
-                    {/* dashboard content area */}
-                    <main className='w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-auto'>
-                        {/* Navbar */}
-                        <Header />
+                {/* Dashboard Main Content */}
+                <main className="w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-auto">
+                    {/* Top Header */}
+                    <Header />
 
-                        {
-                            isLoading ?
-                                <>
-                                    <div className="flex flex-col items-center justify-center h-full">
-                                        <div className="spinner w-[30px] h-[30px]"></div>
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+                            <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                            <p className="text-xs text-gray-500 font-medium">Loading apartment details...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+                            <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center text-3xl mb-3 shadow-xs">
+                                <BiErrorCircle />
+                            </div>
+                            <h3 className="text-base font-bold text-gray-900 mb-1">Could not load apartment</h3>
+                            <p className="text-xs text-gray-500 max-w-sm mb-6">{error}</p>
+                            <Link
+                                to="/user/apartment/search"
+                                className="px-5 py-2.5 bg-primary text-white text-xs font-semibold rounded-xl hover:bg-primary-hover smooth-transition shadow-sm shadow-primary/20"
+                            >
+                                Back to All Apartments
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="px-3 pt-5 pb-32 sm:pb-20 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+                            {/* Navigation Bar / Breadcrumbs */}
+                            <div className="flex items-center justify-between gap-4 mb-4 pb-3 border-b border-gray-200">
+                                <button
+                                    onClick={() => navigate(-1)}
+                                    className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-600 hover:text-primary transition-colors cursor-pointer group"
+                                >
+                                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                                    <span>Back to Listings</span>
+                                </button>
+
+                                <div className="flex items-center gap-2">
+                                    {/* Share Button */}
+                                    <button
+                                        type="button"
+                                        onClick={handleShare}
+                                        className="p-2 sm:px-3 sm:py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors"
+                                        title="Share Listing"
+                                    >
+                                        <Share2 className="w-3.5 h-3.5" />
+                                        <span className="hidden sm:inline">Share</span>
+                                    </button>
+
+                                    {/* Save Button */}
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleSave}
+                                        disabled={isSaving}
+                                        className="p-2 sm:px-3 sm:py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors disabled:opacity-50"
+                                        title={isSaved ? "Remove from wishlist" : "Save to wishlist"}
+                                    >
+                                        {isSaved ? (
+                                            <BsHeartFill className="text-primary text-sm" />
+                                        ) : (
+                                            <BsHeart className="text-gray-500 text-sm" />
+                                        )}
+                                        <span className="hidden sm:inline">{isSaved ? "Saved" : "Save"}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Property Title & Header Meta */}
+                            <div className="mb-6">
+                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1B784D] bg-[#DDFFE7] px-2.5 py-0.5 rounded-md">
+                                        <ShieldCheck className="w-3.5 h-3.5" />
+                                        Verified Property
+                                    </span>
+
+                                    <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-md capitalize ${
+                                        apartment.status === "open"
+                                            ? "bg-[#FF630018] text-[#FF6300] border border-[#FF630030]"
+                                            : "bg-gray-100 text-gray-600"
+                                    }`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${
+                                            apartment.status === "open" ? "bg-[#FF6300] animate-pulse" : "bg-gray-400"
+                                        }`}></span>
+                                        {apartment.status === "open" ? "Vacant • Open to Apply" : "Occupied"}
+                                    </span>
+
+                                    {apartment.distanceKm != null && (
+                                        <span className="inline-flex items-center gap-1 bg-[#EEF2FF] text-[#4F46E5] text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-[#C7D2FE]">
+                                            📍 {apartment.distanceKm < 1 ? `${Math.round(apartment.distanceKm * 1000)}m away` : `${apartment.distanceKm.toFixed(1)} km away`}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight font-poppins">
+                                    {apartment.lodgeDesc}
+                                </h1>
+
+                                <div className="flex flex-wrap items-center gap-4 mt-2 text-xs sm:text-sm text-gray-600">
+                                    <p className="flex items-center gap-1 text-gray-600 font-medium">
+                                        <HiOutlineLocationMarker className="text-primary text-base" />
+                                        <span>{apartment.nearbyDistance || "Lagos, Nigeria"}</span>
+                                    </p>
+
+                                    <div className="flex items-center gap-1">
+                                        <IoStarSharp className="text-[#F6D100] text-base" />
+                                        <span className="font-bold text-gray-900">{apartment.starRating}</span>
+                                        <Link
+                                            to={`/user/apartment/review/${apartment.id}`}
+                                            className="text-gray-500 hover:text-primary underline ml-0.5"
+                                        >
+                                            ({apartment.totalReviews} {apartment.totalReviews === 1 ? "review" : "reviews"})
+                                        </Link>
                                     </div>
-                                </>
-                                :
-                                /* check for any error after loading */
-                                error ?
+                                </div>
+                            </div>
 
-                                    <>
-                                        <div className="flex flex-col items-center justify-center h-full">
-                                            <BiErrorCircle className="text-[30px] text-primary" />
-                                            <small className="mt-4 text-[#AAAAAA]">{error}</small>
-                                        </div>
-                                    </>
-                                    :
-                                    <>
-                                        <div className='px-3 pt-6 pb-28 sm:pb-16 sm:px-6 lg:px-8 lg:pt-8'>
-                                            <div>
-                                                <div>
-                                                    <p className="text-sm sm:text-[18px] font-semibold text-[#FF6300] ">
-                                                        ₦ {Number(apartment.price || 0).toLocaleString()} <span className="text-xs sm:text-sm font-normal text-[#888888]">/ month</span>
-                                                    </p>
+                            {/* Main Grid: Gallery & Details (Left) vs Sticky Booking Card (Right) */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                                {/* Left Column: Photo Gallery, Key Highlights, Description, Amenities */}
+                                <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6">
+                                    {/* High-Resolution Photo Gallery */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs">
+                                        {/* Main Featured Photo */}
+                                        <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full bg-gray-100 overflow-hidden group">
+                                            <img
+                                                src={currentMainImage}
+                                                alt={apartment.lodgeDesc}
+                                                className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-102"
+                                                onError={(e) => { e.target.src = placeholderImage; }}
+                                            />
 
-                                                    <h3 className="font-poppins text-[16px] md:text-[22px] font-medium ">
-                                                        {apartment.lodgeDesc}
-                                                    </h3>
-
-                                                    <p className="text-[12px] md:text-sm mr-2 text-[#AAAAAA]">{apartment.nearbyDistance}</p>
+                                            {/* Photo Counter Pill */}
+                                            {images.length > 1 && (
+                                                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg">
+                                                    📷 {selectedImageIndex + 1} / {images.length}
                                                 </div>
-                                                <div className="flex items-center gap-2 pt-2">
-                                                    <span className="flex items-center gap-1 text-sm text-[#FF6300] border border-[#FF6300] bg-white px-2 py-1 rounded-md">
-                                                        <LuUserRoundCog />
-                                                        <p className="leading-none text-[10px]">Verified ID</p>
-                                                    </span>
-                                                </div>
-                                            </div>
+                                            )}
 
-                                            {/* Right and Left components wrapper */}
-                                            <div className="flex flex-col items-start gap-12 mt-8 lg:gap-16 lg:flex-row">
-
-                                                {/* Right component: Image Gallery */}
-                                                <div className="w-full lg:w-[50%] bg-[#FFFBF9] flex flex-col justify-center items-center px-4 sm:px-10 md:px-10 py-10">
-                                                    <div className="w-full">
-                                                        <div className="relative mb-5">
-                                                            {/* Main Image Container */}
-                                                            <div className="w-full overflow-hidden shadow-md aspect-square rounded-xl">
-                                                                <img
-                                                                    src={displayedImage}
-                                                                    alt="apartment image"
-                                                                    className="object-cover w-full h-full"
-                                                                />
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Thumbnails Section */}
-                                                        <div className="flex items-center justify-center gap-1 ">
-                                                            {lodgeTumbnails.slice(0, 6).map((thumbnail, index) => (
-                                                                <div
-                                                                    key={thumbnail.id}
-                                                                    onClick={() => handleThumbnailClick(thumbnail.image)}
-                                                                    className={`w-20 aspect-square overflow-hidden rounded-lg cursor-pointer border-2 smooth-transition ${displayedImage === thumbnail.image ? 'border-primary' : 'border-transparent hover:border-primary'}`}
-                                                                >
-                                                                    <img
-                                                                        src={thumbnail.image}
-                                                                        alt={`Thumbnail view ${index + 1}`}
-                                                                        className="object-cover w-full h-full"
-                                                                    />
-                                                                </div>
-                                                            ))}
-                                                        </div>
-
-                                                        {/* Action Btns: hidden on smaller screens */}
-                                                        <div className="flex flex-col w-full gap-3 mt-8 lg:flex sm:gap-4 md:mt-10">
-                                                            {/* Queue Status / Join Button */}
-                                                            {existingQueue ? (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => navigate(`/user/apartment/${apartment.id}/queue`)}
-                                                                    className="w-full py-3.5 text-white rounded-lg md:rounded-xl shadow-md bg-[#1B784D] hover:bg-[#15603d] smooth-transition text-xs sm:text-[14px] font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <Users size={18} />
-                                                                    <span>In Queue (Position #{existingQueue.position} of {existingQueue.total}) — View Status</span>
-                                                                </button>
-                                                            ) : (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setShowJoinQueueModal(true)}
-                                                                    className="w-full py-3.5 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover active:scale-[0.99] smooth-transition text-xs sm:text-[14px] font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <Users size={18} />
-                                                                    <span>Book Tour & Join Queue</span>
-                                                                </button>
-                                                            )}
-
-                                                            <Link
-                                                                to={`/user/apartment/review/${apartment.id}`}
-                                                                className="w-full py-3 text-black bg-transparent border-2 rounded-lg md:rounded-xl shadow-sm border-primary/40 hover:border-primary hover:bg-gray smooth-transition text-[12px] sm:text-[14px] text-center"
-                                                            >
-                                                                Check Reviews
-                                                            </Link>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-
-                                                {/* Left component: landlord profile and apartment details */}
-                                                <div className="w-full  lg:w-[50%]">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-[40px] md:w-[55px]  rounded-full overflow-hidden">
-                                                                <img src={apartment.landlord?.profilePictureUrl || defaultProfile} alt="landlord image profile image" className="object-cover w-full h-full" />
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="font-medium text-xs sm:text-[16px] font-poppins">{`${apartment.landlord?.firstName || ""} ${apartment.landlord?.lastName || ""}`.trim() || "Landlord"} </h4>
-                                                                <p className="text-[#777777] font-normal text-xs md:text-sm">Landlord / Owner</p>
-                                                            </div>
-                                                        </div>
-
-                                                        <button type="button" onClick={handleChatWithLandlord} disabled={isOpeningChat} title="Chat with Landlord" className="flex items-center gap-1 p-2 border rounded-full text-primary border-primary hover:text-white hover:bg-primary-hover smooth-transition disabled:opacity-50">
-                                                            <BiChat className="text-[16px] md:text-[20px]" />
-                                                        </button>
-                                                    </div>
-
-                                                    <div className="bg-[#00000008] rounded-xl px-4 sm:px-8 py-6 mt-8 flex flex-col gap-6">
-                                                        <span>
-                                                            <h5 className="font-normal text-sm sm:text-[16px] sm:leading-relaxed">Ojota</h5>
-                                                            <p className="text-[#777777] font-light text-sm">Location</p>
-                                                        </span>
-                                                        <span>
-                                                            <h5 className="font-normal text-sm sm:text-[16px] sm:leading-relaxed">Completed</h5>
-                                                            <p className="text-[#777777] font-light text-sm">Status</p>
-                                                        </span>
-                                                        <span>
-                                                            <h5 className="font-normal text-sm sm:text-[16px] sm:leading-relaxed">Apartment</h5>
-                                                            <p className="text-[#777777] font-light text-sm">Property type</p>
-                                                        </span>
-                                                        <span>
-                                                            <h5 className="font-normal text-sm sm:text-[16px] sm:leading-relaxed">Newly-Built</h5>
-                                                            <p className="text-[#777777] font-light text-sm">Condition</p>
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="bg-[#00000008] rounded-xl px-4 sm:px-8 py-6 mt-4">
-                                                        <div
-                                                            className={`
-                                                                overflow-hidden 
-                                                                ${isExpanded ? 'max-h-[500px]' : 'max-h-[4.5rem]'}
-                                                                transition-all duration-700 linear
-                                                            `}
-                                                        >
-                                                            {/* The text content */}
-                                                            <p className="text-sm font-light leading-relaxed text-gray-800 whitespace-pre-wrap">
-                                                                Spacious and well-finished apartment with 24/7 power supply.
-                                                                Clean water, secure parking space. The unit also includes high-speed fiber internet access, a fully equipped modern kitchen, and a private balcony with stunning city views. The residential complex offers premium amenities, including a state-of-the-art fitness center, a sparkling swimming pool, and round-the-clock professional security.
-                                                            </p>
-                                                        </div>
-
-                                                        <button
-                                                            onClick={toggleDescription}
-                                                            className="flex items-center mt-2 font-normal underline text-primary">
-                                                            <p className="text-sm">
-                                                                {isExpanded ? 'Show less' : 'Show more'}
-                                                            </p>
-
-                                                            {isExpanded
-                                                                ? <RxCaretUp className="text-[26px]" />
-                                                                : <RxCaretDown className="text-[26px]" />
-                                                            }
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Action Btns: visible on smaller screens */}
-                                                <div className="flex flex-col justify-center w-full gap-2.5 mt-4 lg:hidden sm:gap-3">
-                                                    {existingQueue ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => navigate(`/user/apartment/${apartment.id}/queue`)}
-                                                            className="w-full py-3 text-white rounded-lg md:rounded-xl shadow-md bg-[#1B784D] hover:bg-[#15603d] smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
-                                                        >
-                                                            <Users size={16} />
-                                                            <span>In Queue (Position #{existingQueue.position}) — View</span>
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowJoinQueueModal(true)}
-                                                            className="w-full py-3 text-white rounded-lg md:rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
-                                                        >
-                                                            <Users size={16} />
-                                                            <span>Book Tour & Join Queue</span>
-                                                        </button>
-                                                    )}
-
-                                                    <Link
-                                                        to={`/user/apartment/review/${apartment.id}`}
-                                                        className="w-full py-2.5 text-black bg-transparent border-2 rounded-lg md:rounded-xl shadow-sm border-primary/40 hover:bg-gray smooth-transition text-xs sm:text-sm text-center font-medium"
+                                            {/* Previous / Next Arrow Controls */}
+                                            {images.length > 1 && (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
+                                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition-all active:scale-95"
+                                                        aria-label="Previous photo"
                                                     >
-                                                        Check reviews
-                                                    </Link>
-                                                </div>
+                                                        <ChevronLeft className="w-5 h-5" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition-all active:scale-95"
+                                                        aria-label="Next photo"
+                                                    >
+                                                        <ChevronRight className="w-5 h-5" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        {/* Thumbnail Strip */}
+                                        {images.length > 1 && (
+                                            <div className="p-3 bg-gray-50 flex items-center gap-2 overflow-x-auto border-t border-gray-100">
+                                                {images.map((img, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        onClick={() => setSelectedImageIndex(idx)}
+                                                        className={`relative shrink-0 w-16 sm:w-20 aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                                                            selectedImageIndex === idx
+                                                                ? "border-primary ring-2 ring-primary/20 scale-95"
+                                                                : "border-transparent opacity-70 hover:opacity-100"
+                                                        }`}
+                                                    >
+                                                        <img
+                                                            src={img}
+                                                            alt={`Thumbnail ${idx + 1}`}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => { e.target.src = placeholderImage; }}
+                                                        />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Key Property Highlights Card */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs">
+                                        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                            <Sparkles className="w-4 h-4 text-primary" />
+                                            Key Property Highlights
+                                        </h3>
+
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            {/* Property Type */}
+                                            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                                <p className="text-[11px] font-medium text-gray-500">Property Type</p>
+                                                <p className="text-xs sm:text-sm font-bold text-gray-900 mt-0.5 capitalize">
+                                                    {formatPropertyType(apartment.propertyType)}
+                                                </p>
+                                            </div>
+
+                                            {/* Community Location */}
+                                            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                                <p className="text-[11px] font-medium text-gray-500">Location</p>
+                                                <p className="text-xs sm:text-sm font-bold text-gray-900 mt-0.5 truncate" title={apartment.nearbyDistance}>
+                                                    {apartment.nearbyDistance || "Verified Community"}
+                                                </p>
+                                            </div>
+
+                                            {/* Rental Cycle */}
+                                            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                                <p className="text-[11px] font-medium text-gray-500">Payment Plan</p>
+                                                <p className="text-xs sm:text-sm font-bold text-gray-900 mt-0.5">
+                                                    {apartment.minimumRentalPeriod ? `${apartment.minimumRentalPeriod} Months Min` : "Monthly / Annual"}
+                                                </p>
+                                            </div>
+
+                                            {/* Verified Status */}
+                                            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                                <p className="text-[11px] font-medium text-gray-500">Inspection</p>
+                                                <p className="text-xs sm:text-sm font-bold text-[#1B784D] mt-0.5">
+                                                    Fair Queue
+                                                </p>
                                             </div>
                                         </div>
-                                    </>
-                        }
-                    </main>
-                </div>
+                                    </div>
 
-                {/* Mobile navigation */}
-                <MobileNavigationTab />
+                                    {/* Real Landlord Description */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs">
+                                        <h3 className="text-sm font-bold text-gray-900 mb-2">About this space</h3>
+                                        
+                                        {apartment.description ? (
+                                            <div>
+                                                <p className={`text-xs sm:text-sm leading-relaxed text-gray-700 whitespace-pre-wrap ${
+                                                    isExpanded ? "" : "line-clamp-4"
+                                                }`}>
+                                                    {apartment.description}
+                                                </p>
 
-                {/* Queue Modals */}
-                <JoinQueueModal
-                    isOpen={showJoinQueueModal}
-                    onClose={() => setShowJoinQueueModal(false)}
-                    apartment={apartment}
-                    capacity={capacity}
-                    existingQueue={existingQueue}
-                    onJoin={joinQueue}
-                    onOpenUpgrade={() => setShowUpgradeModal(true)}
-                    onViewExistingQueue={(qId) => navigate(`/user/apartment/${apartment.id}/queue`)}
-                />
+                                                {apartment.description.length > 200 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsExpanded(!isExpanded)}
+                                                        className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-primary hover:text-primary-hover transition-colors cursor-pointer"
+                                                    >
+                                                        <span>{isExpanded ? "Show less" : "Read full description"}</span>
+                                                        {isExpanded ? <RxCaretUp className="text-lg" /> : <RxCaretDown className="text-lg" />}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs sm:text-sm text-gray-500 italic">
+                                                The landlord has not provided an extended description for this apartment. All core amenities and verified specs are detailed below.
+                                            </p>
+                                        )}
+                                    </div>
 
-                <UpgradeTierModal
-                    isOpen={showUpgradeModal}
-                    onClose={() => setShowUpgradeModal(false)}
-                    currentTier={capacity.tier}
-                    onUpgrade={upgradeTier}
-                />
+                                    {/* Real Amenities & Features */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs">
+                                        <h3 className="text-sm font-bold text-gray-900 mb-3">Amenities & Features</h3>
+
+                                        {realAmenities.length > 0 ? (
+                                            <div className="flex flex-wrap gap-2">
+                                                {realAmenities.map((amenity, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-800"
+                                                    >
+                                                        <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
+                                                        <span>{amenity}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-gray-500">
+                                                Standard verified housing features included. Inquire during inspection tour.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Verified Landlord Profile Card */}
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-primary/20 bg-primary/10">
+                                                <img
+                                                    src={apartment.landlord?.profilePictureUrl || defaultProfile}
+                                                    alt="Landlord"
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => { e.target.src = defaultProfile; }}
+                                                />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1.5">
+                                                    <h4 className="text-sm font-bold text-gray-900 truncate font-poppins">
+                                                        {`${apartment.landlord?.firstName || ""} ${apartment.landlord?.lastName || ""}`.trim() || "Verified Landlord"}
+                                                    </h4>
+                                                    <ShieldCheck className="w-4 h-4 text-[#10B981] shrink-0" title="Identity Verified" />
+                                                </div>
+                                                <p className="text-xs text-gray-500">Property Host • Verified on HYVE</p>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleChatWithLandlord}
+                                            disabled={isOpeningChat}
+                                            className="px-3.5 py-2 rounded-xl border border-primary/40 hover:border-primary text-primary hover:bg-primary/5 text-xs font-bold inline-flex items-center gap-1.5 smooth-transition cursor-pointer disabled:opacity-50 shrink-0"
+                                        >
+                                            <BiChat className="text-base" />
+                                            <span>{isOpeningChat ? "Opening..." : "Chat Host"}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Right Column: Sticky Booking & Queue Action Card (Desktop) */}
+                                <div className="lg:col-span-5 xl:col-span-4 sticky top-24">
+                                    <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col gap-5">
+                                        {/* Pricing Block */}
+                                        <div className="pb-4 border-b border-gray-100">
+                                            <div className="flex items-baseline justify-between">
+                                                <div>
+                                                    <p className="text-2xl sm:text-3xl font-extrabold text-primary font-poppins">
+                                                        ₦ {Number(apartment.price || 0).toLocaleString()}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 font-medium">per month (rent)</p>
+                                                </div>
+                                                {apartment.priceAnnually && (
+                                                    <div className="text-right">
+                                                        <p className="text-xs font-semibold text-gray-700">
+                                                            ₦ {Number(apartment.priceAnnually).toLocaleString()}
+                                                        </p>
+                                                        <p className="text-[10px] text-gray-400">annual total</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Action Buttons Container */}
+                                        <div className="flex flex-col gap-2.5">
+                                            {existingQueue ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => navigate(`/user/apartment/${apartment.id}/queue`)}
+                                                    className="w-full py-3.5 text-white rounded-xl shadow-md bg-[#1B784D] hover:bg-[#15603d] active:scale-[0.99] smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
+                                                >
+                                                    <Users className="w-4 h-4" />
+                                                    <span>In Queue (Position #{existingQueue.position}) — View</span>
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowJoinQueueModal(true)}
+                                                    className="w-full py-3.5 text-white rounded-xl shadow-md bg-primary hover:bg-primary-hover active:scale-[0.99] smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
+                                                >
+                                                    <Users className="w-4 h-4" />
+                                                    <span>Book Tour & Join Queue</span>
+                                                </button>
+                                            )}
+
+                                            <Link
+                                                to={`/user/apartment/review/${apartment.id}`}
+                                                className="w-full py-2.5 text-gray-800 bg-transparent border border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded-xl smooth-transition text-xs sm:text-sm text-center font-semibold"
+                                            >
+                                                Check Reviews ({apartment.totalReviews})
+                                            </Link>
+                                        </div>
+
+                                        {/* Trust & Guarantee Perks */}
+                                        <div className="bg-[#FFF9F5] border border-[#FF630015] rounded-xl p-3.5 text-xs text-gray-700 space-y-2">
+                                            <div className="flex items-start gap-2">
+                                                <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                                <p><strong className="text-gray-900">Zero Agent Bidding Wars:</strong> Strict first-come, first-served queue policy.</p>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                                <p><strong className="text-gray-900">24-Hour Decision Lock:</strong> Full private inspection window before anyone else.</p>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                                <p><strong className="text-gray-900">100% Escrow Protection:</strong> Funds held safe until keys and tenancy are verified.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </main>
             </div>
-        </>
-    )
-}
 
-export default ApartmentDetails
+            {/* Mobile Navigation Tab */}
+            <MobileNavigationTab currentTab="search" />
+
+            {/* Mobile Fixed Sticky Bottom Action Bar */}
+            {apartment && (
+                <div className="sm:hidden fixed bottom-14 left-0 right-0 z-20 bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-3 shadow-lg flex items-center justify-between gap-3">
+                    <div>
+                        <p className="text-lg font-extrabold text-primary leading-tight font-poppins">
+                            ₦ {Number(apartment.price || 0).toLocaleString()}
+                        </p>
+                        <p className="text-[10px] text-gray-500 font-medium">per month</p>
+                    </div>
+
+                    {existingQueue ? (
+                        <button
+                            type="button"
+                            onClick={() => navigate(`/user/apartment/${apartment.id}/queue`)}
+                            className="px-5 py-2.5 bg-[#1B784D] text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 shrink-0"
+                        >
+                            <Users className="w-4 h-4" />
+                            <span>In Queue (#{existingQueue.position})</span>
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => setShowJoinQueueModal(true)}
+                            className="px-5 py-2.5 bg-primary text-white text-xs font-bold rounded-xl shadow-sm shadow-primary/20 flex items-center gap-1.5 shrink-0 active:scale-95"
+                        >
+                            <Users className="w-4 h-4" />
+                            <span>Book Tour & Join Queue</span>
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {/* Queue Booking Modals */}
+            <JoinQueueModal
+                isOpen={showJoinQueueModal}
+                onClose={() => setShowJoinQueueModal(false)}
+                apartment={apartment}
+                capacity={capacity}
+                existingQueue={existingQueue}
+                onJoin={joinQueue}
+                onOpenUpgrade={() => setShowUpgradeModal(true)}
+                onViewExistingQueue={(qId) => navigate(`/user/apartment/${apartment?.id}/queue`)}
+            />
+
+            <UpgradeTierModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                currentTier={capacity.tier}
+                onUpgrade={upgradeTier}
+            />
+        </div>
+    );
+};
+
+export default ApartmentDetails;

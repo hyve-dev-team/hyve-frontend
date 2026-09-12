@@ -6,7 +6,8 @@ import { createOrGetChatRoom } from '../../../../../utils/chatApi';
 import { hyveError } from '../../../../../utils/hyveToast';
 import { BsHeart, BsHeartFill } from "react-icons/bs";
 import { LuUserRoundCog } from "react-icons/lu";
-import { IoStarSharp } from 'react-icons/io5'
+import { IoStarSharp } from 'react-icons/io5';
+import placeholderImage from "../../../../../assets/images/apartments/apartment-image-1.png";
 
 // `lodges` must be passed in — already mapped via utils/mapProperty.js by whichever
 // page fetched them (Dashboard/Search/Saved). `savedIds` is a Set of saved property
@@ -84,7 +85,12 @@ const AllApartments = ({ lodges = [], savedIds = new Set(), onSavedChange, empty
                             {/* lodge image */}
                             <div className="rounded-[6px] relative overflow-hidden w-full h-[280px] sm:h-[300px] sm:rounded-[16px]">
                                 <Link to={`/user/apartment/${lodge.id}`}>
-                                    <img src={lodge.lodgeImage} alt="featured lodge" className='object-cover w-full h-full' />
+                                    <img 
+                                        src={lodge.lodgeImage || placeholderImage} 
+                                        alt={lodge.lodgeDesc || "Apartment"} 
+                                        className='object-cover w-full h-full' 
+                                        onError={(e) => { e.target.src = placeholderImage; }}
+                                    />
                                 </Link>
 
                                 {/* Floating Vacancy Status Badge on Image */}
