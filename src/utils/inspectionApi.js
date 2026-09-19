@@ -126,3 +126,33 @@ export async function respondToPublicInspection(token, { action, proposedDate, p
     if (!res?.success) throw new Error(res?.message || "Failed to submit response");
     return res.data; // TourInspectionResponse
 }
+
+// -------------------------------------------------------------
+// Landlord Dashboard Inspection Endpoints
+// -------------------------------------------------------------
+
+export async function getLandlordInspections() {
+    try {
+        const res = await config.getAPI({
+            url: `/api/v1/landlord/inspections`,
+        });
+        if (!res?.success) return [];
+        return res.data || [];
+    } catch {
+        return [];
+    }
+}
+
+export async function respondToLandlordInspection(inspectionId, { action, proposedDate, proposedTime, notes }) {
+    const res = await config.postAPI({
+        url: `/api/v1/landlord/inspections/${inspectionId}/respond`,
+        params: {
+            action,
+            ...(proposedDate ? { proposedDate } : {}),
+            ...(proposedTime ? { proposedTime } : {}),
+            ...(notes ? { notes } : {}),
+        },
+    });
+    if (!res?.success) throw new Error(res?.message || "Failed to submit response");
+    return res.data;
+}

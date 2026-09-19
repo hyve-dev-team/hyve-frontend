@@ -53,7 +53,13 @@ import ManageProperty from "./pages/landlord/ApartmentDetails"
 import UpdateProperty from "./pages/landlord/UpdateProperty"
 import Toaster from "./components/ui/Toaster"
 
-
+/* Admin dashboard */
+import AdminDashboard from "./pages/admin/AdminDashboard"
+import AdminUserManagement from "./pages/admin/AdminUserManagement"
+import AdminPropertyManagement from "./pages/admin/AdminPropertyManagement"
+import AdminTransactions from "./pages/admin/AdminTransactions"
+import AdminMessages from "./pages/admin/AdminMessages"
+import AdminProtectedRoute from "./route/AdminProtectedRoute"
 
 /* Dashboard */
 function App() {
@@ -134,6 +140,13 @@ function App() {
           <Route path="/landlord/property/:apartmentID/manage" element={<ManageProperty />} /> {/* View apartment details */}
           <Route path="/landlord/property/:apartmentID/update" element={<UpdateProperty />} /> {/* update apartment details */}
 
+          {/* Admin Dashboard Routes */}
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/admin/dashboard" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
+          <Route path="/admin/users" element={<AdminProtectedRoute><AdminUserManagement /></AdminProtectedRoute>} />
+          <Route path="/admin/properties" element={<AdminProtectedRoute><AdminPropertyManagement /></AdminProtectedRoute>} />
+          <Route path="/admin/transactions" element={<AdminProtectedRoute><AdminTransactions /></AdminProtectedRoute>} />
+          <Route path="/admin/messages" element={<AdminProtectedRoute><AdminMessages /></AdminProtectedRoute>} />
 
           {/* Redirect unauthorized route visits  or 404 page*/}
           <Route path="*" element={<MainLayout><Homepage /></MainLayout>} />

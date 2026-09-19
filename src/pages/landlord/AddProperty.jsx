@@ -201,12 +201,10 @@ const AddProperty = () => {
                 uploadedUrls = await uploadMediaFiles(rawFiles, 'properties');
             }
 
-            // Fallback sample URLs if cloud upload returned empty (e.g. dev/credentials)
             if (uploadedUrls.length === 0) {
-                uploadedUrls = [
-                    'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80',
-                    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80'
-                ];
+                hyveError('Image Upload Error', 'Could not upload property images. Please check your network connection and try again.');
+                setIsSubmitting(false);
+                return;
             }
 
             // 2. Call backend Landlord Properties creation API

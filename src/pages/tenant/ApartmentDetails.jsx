@@ -485,11 +485,17 @@ const ApartmentDetails = () => {
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-1.5">
                                                     <h4 className="text-sm font-bold text-gray-900 truncate font-poppins">
-                                                        {`${apartment.landlord?.firstName || ""} ${apartment.landlord?.lastName || ""}`.trim() || "Verified Landlord"}
+                                                        {`${apartment.landlord?.firstName || ""} ${apartment.landlord?.lastName || ""}`.trim() || "Landlord Host"}
                                                     </h4>
-                                                    <ShieldCheck className="w-4 h-4 text-[#10B981] shrink-0" title="Identity Verified" />
+                                                    {apartment.landlord?.kycStatus === 'VERIFIED' && (
+                                                        <ShieldCheck className="w-4 h-4 text-[#10B981] shrink-0" title="Identity & Title Verified" />
+                                                    )}
                                                 </div>
-                                                <p className="text-xs text-gray-500">Property Host • Verified on Hyve Haven</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {apartment.landlord?.kycStatus === 'VERIFIED'
+                                                        ? "Property Host • Verified on Hyve Haven"
+                                                        : "Property Host • Pending Document Review"}
+                                                </p>
                                             </div>
                                         </div>
 
@@ -546,14 +552,24 @@ const ApartmentDetails = () => {
                                                     <span>In Queue (Position #{existingQueue.position}) — View</span>
                                                 </button>
                                             ) : (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowJoinQueueModal(true)}
-                                                    className="w-full py-3.5 text-white rounded-xl shadow-md bg-primary hover:bg-primary-hover active:scale-[0.99] smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
-                                                >
-                                                    <Users className="w-4 h-4" />
-                                                    <span>Book Tour & Join Queue</span>
-                                                </button>
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/user/apartment/schedule-tour/${apartment.id}`)}
+                                                        className="w-full py-3.5 text-white rounded-xl shadow-md bg-primary hover:bg-primary-hover active:scale-[0.99] smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
+                                                    >
+                                                        <Calendar className="w-4 h-4" />
+                                                        <span>Schedule In-Person Tour</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowJoinQueueModal(true)}
+                                                        className="w-full py-2.5 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
+                                                    >
+                                                        <Users className="w-4 h-4" />
+                                                        <span>Book Tour & Join Queue</span>
+                                                    </button>
+                                                </>
                                             )}
 
                                             <Link
@@ -610,14 +626,24 @@ const ApartmentDetails = () => {
                             <span>In Queue (#{existingQueue.position})</span>
                         </button>
                     ) : (
-                        <button
-                            type="button"
-                            onClick={() => setShowJoinQueueModal(true)}
-                            className="px-5 py-2.5 bg-primary text-white text-xs font-bold rounded-xl shadow-sm shadow-primary/20 flex items-center gap-1.5 shrink-0 active:scale-95"
-                        >
-                            <Users className="w-4 h-4" />
-                            <span>Book Tour & Join Queue</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => navigate(`/user/apartment/schedule-tour/${apartment.id}`)}
+                                className="px-3.5 py-2.5 bg-primary text-white text-xs font-bold rounded-xl shadow-sm shadow-primary/20 flex items-center gap-1.5 shrink-0 active:scale-95"
+                            >
+                                <Calendar className="w-3.5 h-3.5" />
+                                <span>Schedule</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowJoinQueueModal(true)}
+                                className="px-3 py-2.5 border border-primary text-primary text-xs font-bold rounded-xl flex items-center gap-1.5 shrink-0 active:scale-95"
+                            >
+                                <Users className="w-3.5 h-3.5" />
+                                <span>Queue</span>
+                            </button>
+                        </div>
                     )}
                 </div>
             )}

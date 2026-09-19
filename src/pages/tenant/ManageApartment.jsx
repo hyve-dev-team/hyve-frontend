@@ -494,11 +494,10 @@ const ManageApartment = () => {
                                                 key={tab.id}
                                                 type="button"
                                                 onClick={() => setActiveTab(tab.id)}
-                                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap smooth-transition shrink-0 ${
-                                                    isActive
+                                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap smooth-transition shrink-0 ${isActive
                                                         ? 'bg-primary text-white shadow-sm'
                                                         : 'text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#1F2937]'
-                                                }`}
+                                                    }`}
                                             >
                                                 <Icon className="w-4 h-4" />
                                                 {tab.label}
@@ -535,9 +534,8 @@ const ManageApartment = () => {
                                                             key={idx}
                                                             type="button"
                                                             onClick={() => setSelectedImageIndex(idx)}
-                                                            className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 ${
-                                                                selectedImageIndex === idx ? 'border-primary ring-1 ring-primary' : 'border-transparent opacity-70 hover:opacity-100'
-                                                            }`}
+                                                            className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 ${selectedImageIndex === idx ? 'border-primary ring-1 ring-primary' : 'border-transparent opacity-70 hover:opacity-100'
+                                                                }`}
                                                         >
                                                             <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
                                                         </button>
@@ -557,7 +555,7 @@ const ManageApartment = () => {
                                         <div className="lg:col-span-6 space-y-6">
                                             <div className="bg-white rounded-2xl border border-[#EAEAEA] p-6 shadow-sm">
                                                 <h3 className="text-base font-bold text-[#1F2937] mb-4">Landlord & Caretaker Contacts</h3>
-                                                
+
                                                 <div className="flex items-center gap-3.5 pb-5 border-b border-[#F3F4F6]">
                                                     <div className="w-14 h-14 rounded-full overflow-hidden border border-[#EAEAEA] bg-[#F3F4F6] shrink-0">
                                                         <img src={defaultProfile} alt={landlordName} className="w-full h-full object-cover" />
@@ -747,7 +745,7 @@ const ManageApartment = () => {
                                                     {isRentExpired ? (
                                                         <Link
                                                             to={`/user/apartment/reserve/${property.id}`}
-                                                            className="w-full py-3.5 px-4 text-white rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-sm text-center font-semibold flex items-center justify-center gap-2 block"
+                                                            className="w-full py-3.5 px-4 text-white rounded-xl shadow-md bg-primary hover:bg-primary-hover smooth-transition text-sm text-center font-semibold flex items-center justify-center gap-2"
                                                         >
                                                             <RefreshCw className="w-4 h-4" />
                                                             Pay Next Rent Now (Renew)
@@ -915,9 +913,8 @@ const ManageApartment = () => {
                                                         { step: "4", title: "Escrow Refund Dispatched", desc: "Caution deposit wired to your bank account within 72 hours", completed: false },
                                                     ].map((item, i) => (
                                                         <div key={i} className="flex items-start gap-3">
-                                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                                                                item.completed ? 'bg-[#059669] text-white' : 'bg-[#E5E7EB] text-[#4B5563]'
-                                                            }`}>
+                                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${item.completed ? 'bg-[#059669] text-white' : 'bg-[#E5E7EB] text-[#4B5563]'
+                                                                }`}>
                                                                 {item.completed ? <Check className="w-4 h-4" /> : item.step}
                                                             </div>
                                                             <div>
@@ -973,7 +970,7 @@ const ManageApartment = () => {
                                                 {/* Utilities Card */}
                                                 <div className="bg-white rounded-2xl border border-[#EAEAEA] p-6 shadow-sm space-y-4">
                                                     <h3 className="text-base font-bold text-[#1F2937]">Utility Information</h3>
-                                                    
+
                                                     <div className="p-4 rounded-xl bg-[#FFF9F5] border border-[#FFE7DB] flex items-center justify-between">
                                                         <div>
                                                             <p className="text-[11px] font-bold text-primary uppercase">Prepaid Electricity Meter</p>

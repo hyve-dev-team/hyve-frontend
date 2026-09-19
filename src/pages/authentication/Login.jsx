@@ -94,15 +94,19 @@ const Login = () => {
 
       const user = res.data.user
       const roleFromBackend = user?.role?.toLowerCase()
-      const resolvedRole = roleFromBackend === "landlord" ? "landlord" : (userRole === "landlord" ? "landlord" : "user")
+      const resolvedRole = roleFromBackend === "admin" 
+        ? "admin" 
+        : (roleFromBackend === "landlord" ? "landlord" : (userRole === "landlord" ? "landlord" : "user"))
 
       localStorage.setItem("token", res.data.token)
       localStorage.setItem("user", JSON.stringify(user))
       localStorage.setItem("userRole", resolvedRole)
 
-      hyveSuccess("Welcome Back!", `Signed in as ${user?.firstname || user?.fullname || "User"}`)
+      hyveSuccess("Welcome Back!", `Signed in as ${user?.firstName || user?.firstname || user?.fullname || "User"}`)
 
-      if (resolvedRole === "landlord") {
+      if (resolvedRole === "admin") {
+        navigate("/admin/dashboard")
+      } else if (resolvedRole === "landlord") {
         navigate("/landlord/dashboard")
       } else {
         navigate("/user/dashboard")
