@@ -20,14 +20,22 @@ const Conversation = () => {
     const [isSending, setIsSending] = useState(false);
     const bottomRef = useRef(null);
 
+    const currentUserEmail = (() => {
+        try {
+            return JSON.parse(localStorage.getItem("user"))?.email;
+        } catch {
+            return null;
+        }
+    })();
+
     useEffect(() => {
         let cancelled = false;
         getMessages(roomId)
             .then((data) => {
                 if (cancelled) return;
-                setMessages(data);
+                setMessages(data || []);
                 // Derive contact info from whoever isn't the current user in the message history.
-                const other = data.find((m) => m.sender?.id !== currentUserId)?.sender;
+                const other = (data || []).find((m) => m.sender?.id !== currentUserId && m.sender?.email !== currentUserEmail)?.sender;
                 if (other) {
                     setContact({
                         name: `${other.firstName || ""} ${other.lastName || ""}`.trim() || "Chat",
@@ -42,22 +50,38 @@ const Conversation = () => {
             })
             .finally(() => !cancelled && setIsLoading(false));
         return () => { cancelled = true; };
-    }, [roomId, currentUserId]);
+    }, [roomId, currentUserId, currentUserEmail]);
 
     // Live delivery: listen on the SSE stream for new messages in this room.
     useEffect(() => {
         const source = openChatStream(
             (payload) => {
-                if (payload?.chatRoom?.id === Number(roomId) || payload?.roomId === Number(roomId)) {
+                const targetRoomId = payload?.chatRoom?.id ?? payload?.roomId;
+                if (String(targetRoomId) === String(roomId)) {
                     setMessages((prev) => {
-                        if (prev.some((m) => m.id === payload.id)) return prev; // avoid dupes with our own optimistic send
+                        if (prev.some((m) => m.id === payload.id)) return prev;
                         return [...prev, payload];
                     });
                 }
             },
-            (err) => console.error("Chat stream error:", err)
+            (err) => console.warn("Tenant chat stream status:", err)
         );
-        return () => source?.close();
+
+        // Fallback polling every 4 seconds to guarantee zero missed messages
+        const pollInterval = setInterval(() => {
+            getMessages(roomId)
+                .then((fresh) => {
+                    if (Array.isArray(fresh)) {
+                        setMessages((prev) => (fresh.length > prev.length ? fresh : prev));
+                    }
+                })
+                .catch(() => {});
+        }, 4000);
+
+        return () => {
+            source?.close();
+            clearInterval(pollInterval);
+        };
     }, [roomId]);
 
     useEffect(() => {
@@ -72,11 +96,14 @@ const Conversation = () => {
         setDraft("");
         try {
             const sent = await sendMessage(roomId, text);
-            setMessages((prev) => [...prev, sent]);
+            setMessages((prev) => {
+                if (prev.some((m) => m.id === sent.id)) return prev;
+                return [...prev, sent];
+            });
         } catch (err) {
             console.error("Failed to send message:", err);
             hyveError("Message not sent", "Please try again.");
-            setDraft(text); // give the text back so it isn't lost
+            setDraft(text);
         } finally {
             setIsSending(false);
         }
@@ -117,11 +144,12 @@ const Conversation = () => {
                                 ) : messages.length === 0 ? (
                                     <p className='text-sm text-center text-[#AAAAAA]'>No messages yet — say hello.</p>
                                 ) : (
-                                    messages.map(msg => (
+                                    messages.map((msg) => (
                                         <ChatBubble
                                             key={msg.id}
                                             message={msg.content}
-                                            isSender={msg.sender?.id === currentUserId}
+                                            timestamp={msg.createdAt}
+                                            isSender={msg.sender?.id === currentUserId || (currentUserEmail && msg.sender?.email === currentUserEmail)}
                                         />
                                     ))
                                 )}

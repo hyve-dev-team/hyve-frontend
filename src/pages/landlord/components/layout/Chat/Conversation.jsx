@@ -78,20 +78,32 @@ const LandlordConversation = () => {
     useEffect(() => {
         const source = openChatStream(
             (payload) => {
-                if (
-                    payload?.chatRoom?.id === Number(roomId) ||
-                    payload?.roomId === Number(roomId)
-                ) {
+                const targetRoomId = payload?.chatRoom?.id ?? payload?.roomId;
+                if (String(targetRoomId) === String(roomId)) {
                     setMessages((prev) => {
                         if (prev.some((m) => m.id === payload.id)) return prev;
                         return [...prev, payload];
                     });
                 }
             },
-            (err) => console.error("Landlord chat stream error:", err)
+            (err) => console.warn("Landlord chat stream warning:", err)
         );
 
-        return () => source?.close();
+        // Fallback polling every 4 seconds to guarantee zero missed messages
+        const pollInterval = setInterval(() => {
+            getMessages(roomId)
+                .then((fresh) => {
+                    if (Array.isArray(fresh)) {
+                        setMessages((prev) => (fresh.length > prev.length ? fresh : prev));
+                    }
+                })
+                .catch(() => {});
+        }, 4000);
+
+        return () => {
+            source?.close();
+            clearInterval(pollInterval);
+        };
     }, [roomId]);
 
     // Scroll to latest message

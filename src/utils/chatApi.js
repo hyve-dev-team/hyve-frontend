@@ -43,18 +43,35 @@ export function openChatStream(onMessage, onError) {
     if (!token) return null;
 
     const baseURL = config.baseURL;
-    const source = new EventSource(`${baseURL}/api/v1/chat/stream?token=${encodeURIComponent(token)}`);
+    const streamUrl = `${baseURL}/api/v1/chat/stream?token=${encodeURIComponent(token)}`;
+    let source = null;
 
-    source.onmessage = (event) => {
-        try {
-            onMessage(JSON.parse(event.data));
-        } catch {
-            onMessage(event.data);
-        }
-    };
-    source.onerror = (err) => {
-        onError?.(err);
-    };
+    try {
+        source = new EventSource(streamUrl);
+
+        const handleData = (event) => {
+            if (!event?.data || event.data === "Connected") return;
+            try {
+                const parsed = JSON.parse(event.data);
+                onMessage(parsed);
+            } catch {
+                onMessage(event.data);
+            }
+        };
+
+        source.onmessage = handleData;
+        source.addEventListener("message", handleData);
+        source.addEventListener("init", (event) => {
+            console.log("Chat SSE stream connected:", event.data);
+        });
+
+        source.onerror = (err) => {
+            console.warn("Chat SSE stream connection state changed:", err);
+            onError?.(err);
+        };
+    } catch (e) {
+        console.error("Could not initialize EventSource:", e);
+    }
 
     return source;
 }
