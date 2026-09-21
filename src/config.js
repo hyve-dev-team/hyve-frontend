@@ -1,7 +1,7 @@
 
 import axios from "axios";
-// const baseURL = "https://hyvn-api-production-66db.up.railway.app"
-const baseURL = "http://localhost:8080";
+const baseURL = "https://hyvn-api-production-66db.up.railway.app"
+// const baseURL = "http://localhost:8080";
 // const tinyAPIKey = process.env.TINY_API_KEY;
 
 async function parseResponseBody(response) {
@@ -171,7 +171,7 @@ const config = {
       }
     });
   },
-  
+
   postAPIaxios(data) {
     return new Promise(async (resolve, reject) => {
       try {
@@ -197,15 +197,15 @@ const config = {
     });
   },
 
-//   accessRight(code, flag = "") {
-//     try {
-//       const rightsData = JSON.parse(localStorage.getItem("rightsData"));
-//       const whereFind = findWhere(rightsData, { code: code });
-//       return whereFind?.data;
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
+  //   accessRight(code, flag = "") {
+  //     try {
+  //       const rightsData = JSON.parse(localStorage.getItem("rightsData"));
+  //       const whereFind = findWhere(rightsData, { code: code });
+  //       return whereFind?.data;
+  //     } catch (error) {
+  //       throw error;
+  //     }
+  //   }
 };
 
 export default config;

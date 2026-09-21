@@ -71,6 +71,7 @@ export function openChatStream(onMessage, onError) {
         };
     } catch (e) {
         console.error("Could not initialize EventSource:", e);
+        onError?.(e);
     }
 
     return source;
