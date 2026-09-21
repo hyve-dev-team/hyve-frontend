@@ -37,7 +37,7 @@ const AdminSidebar = () => {
     ];
 
     return (
-        <aside className="w-64 lg:w-72 bg-[#FA6400] text-white shrink-0 min-h-screen flex flex-col justify-between py-8 px-6 selection:bg-white/20">
+        <aside className="w-64 lg:w-72 bg-[#FA6400] text-white shrink-0 sticky top-0 h-screen h-[100svh] overflow-y-auto [&::-webkit-scrollbar]:hidden flex flex-col justify-between py-8 px-6 selection:bg-white/20 z-30">
             <div>
                 {/* Brand Logo */}
                 <div className="flex items-center gap-3 mb-12 pl-2">

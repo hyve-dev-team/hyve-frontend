@@ -86,7 +86,7 @@ export const BUDGET_OPTIONS = [
 
 export const SORT_OPTIONS = {
     "": "Default Sorting",
-    nearby: "sNearest to me (GPS)",
+    nearby: "Nearest to me (GPS)",
     lowest: "Lowest price",
     highest: "Highest price",
     newest: "Newest listings",

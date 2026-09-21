@@ -131,7 +131,7 @@ const MyQueues = () => {
         <div className="flex">
           <Sidebar currentPage={"queues"} />
 
-          <main className="w-full min-h-[100svh] sm:w-[70%] lg:w-[80%] overflow-auto">
+          <main className="w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-y-auto">
             <Header />
 
             <div className="px-4 sm:px-8 lg:px-12 py-6 sm:py-8 pb-28 sm:pb-16 max-w-7xl mx-auto">

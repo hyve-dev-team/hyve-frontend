@@ -55,7 +55,7 @@ const Sidebar = ({ currentPage }) => {
                 onClose={() => setShowLogoutModal(false)}
                 onConfirm={confirmLogout}
             />
-            <aside className='bg-[#FFF0E6] hidden sm:flex flex-col justify-between flex-1 min-w-[210px] max-w-[270px] lg:max-w-[290px] h-[100svh] overflow-y-auto [&::-webkit-scrollbar]:hidden px-4 py-6 border-r border-[#FF6300]/10 select-none'>
+            <aside className='bg-[#FFF0E6] hidden sm:flex flex-col justify-between shrink-0 sticky top-0 h-screen h-[100svh] overflow-y-auto [&::-webkit-scrollbar]:hidden px-4 py-6 border-r border-[#FF6300]/10 select-none z-30 sm:w-[30%] lg:w-[20%] min-w-[210px] max-w-[270px] lg:max-w-[290px]'>
             {/* Top area: Logo & Nav items */}
             <div className='flex flex-col'>
                 {/* Logo & Portal Badge */}

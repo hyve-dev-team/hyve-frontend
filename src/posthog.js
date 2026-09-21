@@ -16,6 +16,7 @@ if (typeof window !== 'undefined' && posthogToken) {
   posthog.init(posthogToken, {
     api_host: posthogHost,
     defaults: '2026-05-30',
+    enable_recording_console_log: true,
   })
 }
 
