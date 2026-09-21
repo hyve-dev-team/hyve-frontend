@@ -5,7 +5,7 @@ import defaultProfile from "../../assets/images/shared-images/user-1.png";
 import useFetchApartment from "../../hooks/useFetchApartment";
 import { createOrGetChatRoom } from "../../utils/chatApi";
 import { saveProperty, unsaveProperty } from "../../utils/propertiesApi";
-import { getPropertyQueueApi, mapBackendQueue } from "../../utils/queueApi";
+import { getPropertyQueueApi, getPropertyQueueSummaryApi, mapBackendQueue } from "../../utils/queueApi";
 import useSavedPropertyIds from "../../hooks/useSavedPropertyIds";
 import { hyveError, hyveSuccess } from "../../utils/hyveToast";
 import Header from "./components/layout/Dashboard/Header";
@@ -26,7 +26,8 @@ import {
     Sparkles,
     Calendar,
     Ruler,
-    ImageOff
+    ImageOff,
+    Clock
 } from "lucide-react";
 import { BiErrorCircle, BiChat } from "react-icons/bi";
 import { BsHeart, BsHeartFill } from "react-icons/bs";
@@ -51,6 +52,7 @@ const ApartmentDetails = () => {
     // Queue system hooks & state
     const { capacity, joinQueue, upgradeTier, getQueueForApartment } = useQueueStore();
     const [propertyQueue, setPropertyQueue] = useState(null);
+    const [queueSummary, setQueueSummary] = useState({ totalInQueue: 0, estimatedWaitHours: 0, nextPosition: 1 });
     const [isLoadingQueue, setIsLoadingQueue] = useState(true);
 
     const fetchPropertyQueueStatus = async () => {
@@ -60,8 +62,12 @@ const ApartmentDetails = () => {
         }
         setIsLoadingQueue(true);
         try {
-            const data = await getPropertyQueueApi(apartmentID);
+            const [data, summary] = await Promise.all([
+                getPropertyQueueApi(apartmentID).catch(() => null),
+                getPropertyQueueSummaryApi(apartmentID).catch(() => ({ totalInQueue: 0, estimatedWaitHours: 0, nextPosition: 1 }))
+            ]);
             setPropertyQueue(data ? mapBackendQueue(data) : null);
+            if (summary) setQueueSummary(summary);
         } catch {
             setPropertyQueue(null);
         } finally {
@@ -527,23 +533,67 @@ const ApartmentDetails = () => {
                                             <div className="flex items-baseline justify-between">
                                                 <div>
                                                     <p className="text-2xl sm:text-3xl font-extrabold text-primary font-poppins">
-                                                        ₦ {Number(apartment.price || 0).toLocaleString()}
+                                                        ₦ {Number(apartment.priceAnnually || (apartment.price ? apartment.price * 12 : 0)).toLocaleString()}
                                                     </p>
-                                                    <p className="text-xs text-gray-500 font-medium">per month (rent)</p>
+                                                    <p className="text-xs text-gray-500 font-medium">per year (annual rent)</p>
                                                 </div>
-                                                {apartment.priceAnnually && (
+                                                {(apartment.price || apartment.priceAnnually) && (
                                                     <div className="text-right">
                                                         <p className="text-xs font-semibold text-gray-700">
-                                                            ₦ {Number(apartment.priceAnnually).toLocaleString()}
+                                                            ₦ {Number(apartment.price || Math.round(apartment.priceAnnually / 12)).toLocaleString()}
                                                         </p>
-                                                        <p className="text-[10px] text-gray-400">annual total</p>
+                                                        <p className="text-[10px] text-gray-400">per month</p>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
 
                                         {/* Action Buttons Container */}
-                                        <div className="flex flex-col gap-2.5">
+                                        <div className="flex flex-col gap-3">
+                                            {/* Fair Queue Wait & Position Transparency Banner */}
+                                            {apartment.rawStatus === "ACTIVE" && (
+                                                <div className="p-3.5 rounded-xl border bg-orange-50/70 border-orange-200/80 text-xs">
+                                                    <div className="flex items-center gap-1.5 font-bold text-gray-900 mb-1">
+                                                        <Users className="w-4 h-4 text-primary shrink-0" />
+                                                        <span>Fair Queue Transparency</span>
+                                                    </div>
+                                                    {existingQueue ? (
+                                                        existingQueue.status === "ACTIVE" ? (
+                                                            <p className="text-green-700 font-semibold flex items-center gap-1">
+                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                <span>It's your turn! You're Position #1 to inspect and pay.</span>
+                                                            </p>
+                                                        ) : (
+                                                            <p className="text-gray-700">
+                                                                You hold <strong>Position #{existingQueue.position}</strong> of {existingQueue.total}.{" "}
+                                                                {existingQueue.peopleAhead === 1
+                                                                    ? "1 person ahead (~24 hours until you can inspect)."
+                                                                    : `${existingQueue.peopleAhead} people ahead (~${existingQueue.peopleAhead * 24} hours until you can inspect).`}
+                                                            </p>
+                                                        )
+                                                    ) : (
+                                                        <div>
+                                                            {queueSummary.totalInQueue === 0 ? (
+                                                                <p className="text-green-700 font-semibold">
+                                                                    🎉 0 people in queue — You'll be first to inspect and pay!
+                                                                </p>
+                                                            ) : queueSummary.totalInQueue === 1 ? (
+                                                                <p className="text-gray-700">
+                                                                    ⏱️ <strong className="text-gray-900">1 person ahead</strong> — 24 hours until you can inspect.
+                                                                </p>
+                                                            ) : (
+                                                                <p className="text-gray-700">
+                                                                    ⏱️ <strong className="text-gray-900">{queueSummary.totalInQueue} people ahead</strong> — {queueSummary.totalInQueue * 24} hours until you can inspect.
+                                                                </p>
+                                                            )}
+                                                            <p className="text-[11px] text-gray-500 mt-1">
+                                                                Joining is free. Inspection fee is paid only when your 24h turn arrives.
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
                                             {apartment.rawStatus !== "ACTIVE" ? (
                                                 // Apartment is RENTED or INACTIVE — no queue allowed
                                                 <div className="w-full py-3.5 bg-gray-100 border border-gray-200 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-gray-500 cursor-not-allowed select-none">
@@ -560,24 +610,14 @@ const ApartmentDetails = () => {
                                                     <span>In Queue (Position #{existingQueue.position}) — View</span>
                                                 </button>
                                             ) : (
-                                                <>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => navigate(`/user/apartment/schedule-tour/${apartment.id}`)}
-                                                        className="w-full py-3.5 text-white rounded-xl shadow-md bg-primary hover:bg-primary-hover active:scale-[0.99] smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
-                                                    >
-                                                        <Calendar className="w-4 h-4" />
-                                                        <span>Schedule In-Person Tour</span>
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setShowJoinQueueModal(true)}
-                                                        className="w-full py-2.5 text-primary bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
-                                                    >
-                                                        <Users className="w-4 h-4" />
-                                                        <span>Book Tour & Join Queue</span>
-                                                    </button>
-                                                </>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowJoinQueueModal(true)}
+                                                    className="w-full py-3.5 text-white rounded-xl shadow-md bg-primary hover:bg-primary-hover active:scale-[0.99] smooth-transition text-xs sm:text-sm font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
+                                                >
+                                                    <Users className="w-4 h-4" />
+                                                    <span>Join Queue</span>
+                                                </button>
                                             )}
 
                                             <Link
@@ -619,12 +659,16 @@ const ApartmentDetails = () => {
                 <div className="sm:hidden fixed bottom-14 left-0 right-0 z-20 bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-3 shadow-lg flex items-center justify-between gap-3">
                     <div>
                         <p className="text-lg font-extrabold text-primary leading-tight font-poppins">
-                            ₦ {Number(apartment.price || 0).toLocaleString()}
+                            ₦ {Number(apartment.priceAnnually || (apartment.price ? apartment.price * 12 : 0)).toLocaleString()}
                         </p>
-                        <p className="text-[10px] text-gray-500 font-medium">per month</p>
+                        <p className="text-[10px] text-gray-500 font-medium">per year</p>
                     </div>
 
-                    {existingQueue ? (
+                    {apartment.rawStatus !== "ACTIVE" ? (
+                        <div className="px-4 py-2.5 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl">
+                            Taken
+                        </div>
+                    ) : existingQueue ? (
                         <button
                             type="button"
                             onClick={() => navigate(`/user/apartment/${apartment.id}/queue`)}
@@ -634,24 +678,14 @@ const ApartmentDetails = () => {
                             <span>In Queue (#{existingQueue.position})</span>
                         </button>
                     ) : (
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => navigate(`/user/apartment/schedule-tour/${apartment.id}`)}
-                                className="px-3.5 py-2.5 bg-primary text-white text-xs font-bold rounded-xl shadow-sm shadow-primary/20 flex items-center gap-1.5 shrink-0 active:scale-95"
-                            >
-                                <Calendar className="w-3.5 h-3.5" />
-                                <span>Schedule</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setShowJoinQueueModal(true)}
-                                className="px-3 py-2.5 border border-primary text-primary text-xs font-bold rounded-xl flex items-center gap-1.5 shrink-0 active:scale-95"
-                            >
-                                <Users className="w-3.5 h-3.5" />
-                                <span>Queue</span>
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowJoinQueueModal(true)}
+                            className="px-5 py-2.5 bg-primary text-white text-xs font-bold rounded-xl shadow-sm shadow-primary/20 flex items-center gap-1.5 shrink-0 active:scale-95"
+                        >
+                            <Users className="w-4 h-4" />
+                            <span>Join Queue {queueSummary.totalInQueue > 0 ? `(${queueSummary.totalInQueue} ahead)` : "(First)"}</span>
+                        </button>
                     )}
                 </div>
             )}

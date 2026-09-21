@@ -10,7 +10,10 @@ export async function getChatRooms() {
 }
 
 export async function createOrGetChatRoom(recipientId) {
-    const res = await config.postAPI({ url: "/api/v1/chat/rooms", params: { recipientId } });
+    const res = await config.postAPI({
+        url: `/api/v1/chat/rooms?recipientId=${encodeURIComponent(recipientId)}`,
+        params: { recipientId },
+    });
     if (!res?.success) throw new Error(res?.message || "Failed to open chat");
     return res.data; // ChatRoom
 }

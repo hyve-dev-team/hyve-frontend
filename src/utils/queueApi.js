@@ -19,6 +19,25 @@ export async function getPropertyQueueApi(propertyId) {
   return res.data; // PropertyQueueResponse
 }
 
+export async function getPropertyQueueSummaryApi(propertyId) {
+  try {
+    const res = await config.getAPI({ url: `/api/v1/queue/property/${propertyId}/summary` });
+    if (res?.success && res.data) return res.data;
+  } catch (err) {
+    console.warn("Could not load queue summary:", err?.message);
+  }
+  return { totalInQueue: 0, estimatedWaitHours: 0, nextPosition: 1 };
+}
+
+export async function scheduleActiveTourApi(queueId, tourTime) {
+  const res = await config.postAPI({
+    url: `/api/v1/queue/${queueId}/schedule-tour`,
+    params: { tourTime },
+  });
+  if (!res?.success) throw new Error(res?.message || "Failed to schedule viewing");
+  return res.data; // PropertyQueueResponse
+}
+
 export async function getQueueCapacityApi() {
   const res = await config.getAPI({ url: "/api/v1/queue/capacity" });
   if (!res?.success) throw new Error(res?.message || "Failed to load queue capacity");

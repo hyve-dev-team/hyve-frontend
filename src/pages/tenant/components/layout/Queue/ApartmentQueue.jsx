@@ -6,17 +6,17 @@ import MobileNavigationTab from "../MobileNavigation/MobileNavigationTab";
 import { BsPeople, BsCheck2Circle } from "react-icons/bs";
 import { IoTimeOutline, IoCallOutline, IoShieldCheckmarkOutline } from "react-icons/io5";
 import { FaWhatsapp } from "react-icons/fa";
-import { Users, ArrowLeft, ExternalLink } from "lucide-react";
+import { Users, ArrowLeft, ExternalLink, Calendar, Loader2 } from "lucide-react";
 import useFetchApartment from "../../../../../hooks/useFetchApartment";
 import useQueueStore from "../../../../../hooks/useQueueStore";
-import { getPropertyQueueApi, mapBackendQueue } from "../../../../../utils/queueApi";
+import { getPropertyQueueApi, scheduleActiveTourApi, mapBackendQueue } from "../../../../../utils/queueApi";
 import placeholderImage from "../../../../../assets/images/apartments/apartment-image-1.png";
 import JoinQueueModal from "../../../../../components/queue/JoinQueueModal";
 import UpgradeTierModal from "../../../../../components/queue/UpgradeTierModal";
 import PayInspectionModal from "../../../../../components/queue/PayInspectionModal";
 import PassSlotModal from "../../../../../components/queue/PassSlotModal";
 import { BiErrorCircle } from "react-icons/bi";
-import { hyveSuccess } from "../../../../../utils/hyveToast";
+import { hyveSuccess, hyveError } from "../../../../../utils/hyveToast";
 
 // Live Countdown
 const CountdownTimer = ({ expiresAt }) => {
@@ -90,6 +90,45 @@ const ApartmentQueue = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [payingQueue, setPayingQueue] = useState(null);
   const [passingQueue, setPassingQueue] = useState(null);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [showSlotPicker, setShowSlotPicker] = useState(false);
+
+  const SAME_DAY_SLOTS = ["10:00 AM", "11:30 AM", "01:00 PM", "02:30 PM", "04:00 PM", "05:30 PM"];
+
+  const handleScheduleSlot = async (slot) => {
+    if (!userQueue?.id || isScheduling) return;
+    setIsScheduling(true);
+    try {
+      const res = await scheduleActiveTourApi(userQueue.id, slot);
+      if (res) {
+        setPropertyQueue(mapBackendQueue(res));
+        hyveSuccess("Tour Scheduled", `Your viewing is confirmed for today at ${slot}`);
+        setShowSlotPicker(false);
+      }
+    } catch (err) {
+      hyveError("Scheduling Failed", err?.message || "Could not schedule viewing time");
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
+  // User details for automated WhatsApp dispatch to agent
+  const currentUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user")) || JSON.parse(localStorage.getItem("userData")) || {};
+    } catch {
+      return {};
+    }
+  })();
+  const renterName = `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() || currentUser.email || "Tenant";
+  const renterPhone = currentUser.phone || currentUser.phoneNumber || "Not provided";
+  const apartmentType = apartment?.type || apartment?.propertyType || "Apartment";
+  const propertyTitle = apartment?.lodgeDesc || "Hyve Apartment";
+  const tourDetails = userQueue?.scheduledTour ? `Scheduled Viewing: Today at ${userQueue.scheduledTour}` : "Preferred Viewing: Flexible today";
+
+  const cleanPhone = (userQueue?.agentPhone || "").replace(/\D/g, "");
+  const waMessage = `Hello ${userQueue?.agentName || "Agent"},\n\nI am currently Position #1 on Hyve Haven for "${propertyTitle}" (${apartmentType}) and have paid my inspection fee.\n\nTenant Details:\n- Name: ${renterName}\n- Phone: ${renterPhone}\n- Apartment: ${propertyTitle} (${apartmentType})\n- Status: ${tourDetails}\n- Hyve Queue Reference: #${userQueue?.id}\n\nPlease confirm our viewing arrangement. Thank you!`;
+  const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}` : null;
 
   const handleLeave = () => {
     if (!userQueue) return;
@@ -221,54 +260,150 @@ const ApartmentQueue = () => {
                         </div>
 
                         {!userQueue.inspectionPaid ? (
-                          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-2">
-                            <p className="text-xs text-gray-600 font-medium">
-                              Pay the inspection fee (₦5,000) to confirm your private tour and unlock direct agent contact.
-                            </p>
+                          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-3">
+                            <div className="flex items-start gap-2.5">
+                              <IoShieldCheckmarkOutline className="text-primary w-5 h-5 shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-xs font-bold text-gray-900">
+                                  Unlock Agent Direct Contact & Schedule Viewing
+                                </p>
+                                <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+                                  Pay the inspection fee (₦5,000) to reveal the agent's verified contact, automatically dispatch your tenant details to their WhatsApp, and book your same-day viewing time.
+                                </p>
+                              </div>
+                            </div>
                             <button
                               type="button"
                               onClick={() => setPayingQueue(userQueue)}
-                              className="w-full py-3 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-colors"
+                              className="w-full py-3 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md cursor-pointer transition-all"
                             >
                               Pay Inspection Fee (₦ 5,000)
                             </button>
                           </div>
                         ) : (
-                          <div className="p-4 rounded-xl bg-green-50 border border-green-200 space-y-3">
+                          <div className="p-4 rounded-xl bg-green-50/70 border border-green-200 space-y-3.5">
                             <div className="flex items-center justify-between text-xs font-bold text-green-800">
                               <span className="flex items-center gap-1.5">
-                                <IoShieldCheckmarkOutline size={16} />
-                                <span>Inspection Fee Confirmed</span>
+                                <IoShieldCheckmarkOutline size={18} className="text-green-600" />
+                                <span>Inspection Fee Confirmed (₦ 5,000)</span>
                               </span>
-                              <span className="text-gray-500 font-normal">
-                                Tour: {userQueue.scheduledTour}
+                              <span className="text-green-700 bg-green-100 px-2 py-0.5 rounded-md font-medium">
+                                24h Window Active
                               </span>
                             </div>
-                            <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-green-100">
-                              <div>
-                                <p className="text-xs font-bold text-gray-900">
-                                  {userQueue.agentName}
-                                </p>
-                                <p className="text-[11px] text-gray-500">
-                                  {userQueue.agentPhone}
-                                </p>
+
+                            {/* Agent Direct Contact (Unlocked after payment) */}
+                            <div className="bg-white p-3.5 rounded-xl border border-green-100 shadow-2xs space-y-2.5">
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-xs font-bold text-gray-900">
+                                    {userQueue.agentName || "Assigned Property Agent"}
+                                  </p>
+                                  <p className="text-[11px] text-gray-500">
+                                    {userQueue.agentPhone || "Verified Agent Phone"}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {userQueue.agentPhone && (
+                                    <a
+                                      href={`tel:${userQueue.agentPhone}`}
+                                      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs transition-colors"
+                                      title="Call Agent"
+                                    >
+                                      <IoCallOutline size={17} />
+                                    </a>
+                                  )}
+                                  {whatsappUrl && (
+                                    <a
+                                      href={whatsappUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-xs transition-colors"
+                                      title="Send details & chat on WhatsApp"
+                                    >
+                                      <FaWhatsapp size={16} />
+                                      <span>WhatsApp Agent</span>
+                                    </a>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <a
-                                  href={`tel:${userQueue.agentPhone}`}
-                                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs"
-                                >
-                                  <IoCallOutline size={16} />
-                                </a>
-                                <a
-                                  href={`https://wa.me/${userQueue.agentPhone?.replace(/\D/g, "")}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-xs"
-                                >
-                                  <FaWhatsapp size={16} />
-                                </a>
+
+                              {whatsappUrl && (
+                                <p className="text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                  💬 <strong>Auto-Dispatch Ready:</strong> Clicking "WhatsApp Agent" sends your name, phone, property choice, and queue ID directly to the agent's WhatsApp.
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Same-Day Inspection Schedule Picker */}
+                            <div className="bg-white p-3.5 rounded-xl border border-green-100 shadow-2xs space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
+                                  <Calendar className="w-4 h-4 text-primary" />
+                                  <span>Same-Day Inspection Time</span>
+                                </div>
+                                {userQueue.scheduledTour && !showSlotPicker && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowSlotPicker(true)}
+                                    className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                                  >
+                                    Change Slot
+                                  </button>
+                                )}
                               </div>
+
+                              {userQueue.scheduledTour && !showSlotPicker ? (
+                                <div className="p-2.5 bg-green-50/70 rounded-lg border border-green-200/80 flex items-center justify-between text-xs">
+                                  <span className="text-gray-700">
+                                    Confirmed inspection: <strong className="text-green-900">{userQueue.scheduledTour}</strong>
+                                  </span>
+                                  <span className="text-[11px] text-green-700 font-semibold flex items-center gap-1">
+                                    <BsCheck2Circle size={14} /> Scheduled
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  <p className="text-[11px] text-gray-500">
+                                    Pick your preferred tour slot for today (within your 24-hour decision lock):
+                                  </p>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    {SAME_DAY_SLOTS.map((slot) => {
+                                      const isSelected = userQueue.scheduledTour?.includes(slot);
+                                      return (
+                                        <button
+                                          key={slot}
+                                          type="button"
+                                          disabled={isScheduling}
+                                          onClick={() => handleScheduleSlot(slot)}
+                                          className={`py-2 px-2.5 rounded-lg text-xs font-semibold border transition-all text-center flex items-center justify-center gap-1 ${
+                                            isSelected
+                                              ? "bg-primary text-white border-primary shadow-xs"
+                                              : "bg-gray-50 hover:bg-primary/10 hover:border-primary/40 text-gray-800 border-gray-200"
+                                          }`}
+                                        >
+                                          {isScheduling && isSelected ? (
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                          ) : (
+                                            slot
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {userQueue.scheduledTour && (
+                                    <div className="text-right">
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowSlotPicker(false)}
+                                        className="text-[11px] text-gray-500 hover:text-gray-700 underline cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -307,16 +442,17 @@ const ApartmentQueue = () => {
                         </div>
 
                         <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 space-y-2 text-xs">
-                          <div className="flex justify-between">
+                          <div className="flex justify-between items-center">
                             <span className="text-gray-500 flex items-center gap-1">
                               <IoTimeOutline size={14} className="text-primary" />
-                              Estimated Wait Until Your Turn:
+                              Estimated Wait:
                             </span>
-                            <span className="font-semibold text-gray-800">
-                              ~
-                              <CountdownTimer
-                                expiresAt={userQueue.currentPersonExpiresAt || Date.now() + 12 * 3600 * 1000}
-                              />
+                            <span className="font-bold text-gray-800">
+                              {userQueue.peopleAhead === 0
+                                ? "You're first in queue / first to inspect and pay!"
+                                : userQueue.peopleAhead === 1
+                                ? "Approx. 24 hours until you can inspect"
+                                : `Approx. ${userQueue.peopleAhead * 24} hours until you can inspect`}
                             </span>
                           </div>
                           <div className="flex justify-between pt-1 border-t border-gray-200">
@@ -352,7 +488,7 @@ const ApartmentQueue = () => {
                           className="w-full py-3.5 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-xl font-bold text-sm shadow-md shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer transition-all"
                         >
                           <Users size={18} />
-                          <span>Book Tour & Join Queue</span>
+                          <span>Join Queue</span>
                         </button>
                       </div>
                     )}
@@ -394,7 +530,12 @@ const ApartmentQueue = () => {
           isOpen={Boolean(payingQueue)}
           onClose={() => setPayingQueue(null)}
           queue={payingQueue}
-          onConfirmPayment={payInspectionFee}
+          onConfirmPayment={async (qId) => {
+            const res = await payInspectionFee(qId);
+            if (res?.queue) {
+              setPropertyQueue(res.queue);
+            }
+          }}
         />
 
         <PassSlotModal

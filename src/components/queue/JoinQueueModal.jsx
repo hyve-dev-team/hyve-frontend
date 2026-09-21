@@ -219,58 +219,24 @@ const JoinQueueModal = ({
         <div className="mt-4 p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-2 text-xs text-gray-700">
           <div className="flex items-center gap-2 font-semibold text-primary">
             <ShieldCheck size={16} />
-            <span>How the Hyve Haven Fair Queue Protects You</span>
+            <span>How the Hyve Haven Fair Queue Works</span>
           </div>
           <ul className="space-y-1.5 pl-5 list-disc text-gray-600">
-            <li><strong>Exclusive Access</strong>: Only 1 person inspects and decides at a time. No agent bidding games.</li>
-            <li><strong>Pay When It's Your Turn</strong>: Inspection fee is only charged when you reach Position #1.</li>
-            <li><strong>24-Hour Decision Lock</strong>: You have a full 24 hours to inspect, decide, and pay rent into escrow.</li>
+            <li><strong>Orderly & Fair</strong>: Only 1 person inspects and decides at a time. No bidding wars.</li>
+            <li><strong>Pay When It's Your Turn</strong>: Joining is 100% free. Inspection fee is only paid when you reach Position #1.</li>
+            <li><strong>24-Hour Decision Lock</strong>: Once your turn arrives, you have a full 24 hours to inspect, schedule your viewing, and decide.</li>
           </ul>
         </div>
 
-        {/* Tour Scheduling Preference */}
-        <form onSubmit={handleJoin} className="mt-5 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Preferred Viewing Date
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  min={today}
-                  value={tourDate}
-                  onChange={(e) => setTourDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Preferred Time
-              </label>
-              <select
-                value={tourTime}
-                onChange={(e) => setTourTime(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white"
-              >
-                <option value="">Any time (Daylight)</option>
-                <option value="10:00 AM">Morning (10:00 AM)</option>
-                <option value="12:00 PM">Midday (12:00 PM)</option>
-                <option value="02:00 PM">Afternoon (02:00 PM)</option>
-                <option value="04:00 PM">Late Afternoon (04:00 PM)</option>
-              </select>
-            </div>
-          </div>
-
+        {/* Join Queue Action */}
+        <form onSubmit={handleJoin} className="mt-5 space-y-3">
           <div className="pt-2">
             <button
               type="submit"
               disabled={isSubmitting}
               className="w-full py-3.5 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-xl font-semibold text-sm shadow-md shadow-primary/20 transition-all cursor-pointer disabled:opacity-50"
             >
-              {isSubmitting ? "Securing Your Queue Spot..." : "Join Queue & Reserve Spot"}
+              {isSubmitting ? "Securing Your Queue Spot..." : "Join Queue (Free)"}
             </button>
             <p className="text-[11px] text-center text-gray-400 mt-2">
               Joining the queue is free. Inspection fee is only charged when your turn arrives.

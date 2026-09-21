@@ -1,24 +1,27 @@
 import React, { useState } from "react";
 import { CgClose } from "react-icons/cg";
 import { ShieldCheck, Phone, CheckCircle, Loader2, CreditCard } from "lucide-react";
-import { hyveSuccess } from "../../utils/hyveToast";
+import { hyveSuccess, hyveError } from "../../utils/hyveToast";
 
 const PayInspectionModal = ({ isOpen, onClose, queue, onConfirmPayment }) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (!isOpen || !queue) return null;
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setIsProcessing(true);
-    setTimeout(() => {
-      onConfirmPayment(queue.id);
-      setIsProcessing(false);
+    try {
+      await onConfirmPayment(queue.id);
       hyveSuccess(
         "Inspection Fee Paid!",
         "Agent contact and 24-hour exclusive decision window unlocked."
       );
       onClose();
-    }, 1200);
+    } catch (err) {
+      hyveError("Payment Failed", err?.message || "Could not process inspection fee payment");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
