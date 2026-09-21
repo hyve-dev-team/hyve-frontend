@@ -159,49 +159,57 @@ const AddProperty = () => {
     // Form validation
     const validate = () => {
         const errors = {};
-        if (!formData.title.trim()) {
+        if (!formData.title || !formData.title.trim()) {
             errors.title = 'Property title is required';
         }
         if (!formData.priceAnnually || Number(formData.priceAnnually) <= 0) {
             errors.priceAnnually = 'Please provide a valid annual rent price';
         }
-        if (!formData.location.trim()) {
+        if (!formData.location || !formData.location.trim()) {
             errors.location = 'Property address / location is required';
         }
-        if (images.length === 0) {
+        if (!images || images.length === 0) {
             errors.images = 'Please upload at least 1 photo of the property';
         }
 
-        // Validate Video (last slot)
-        if (!uploadedMedia[VIDEO_SLOT_INDEX]) {
-            errors.video = true;
-            isValid = false;
-        }
-
         setValidationErrors(errors);
-        return Object.keys(errors).length === 0;
+        return {
+            isValid: Object.keys(errors).length === 0,
+            errors,
+        };
     };
 
     // Submission handler
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!validate()) {
-            hyveError('Incomplete form', 'Please check highlighted fields and upload at least one image.');
-            return;
-        }
-
-        setIsSubmitting(true);
+        if (e && e.preventDefault) e.preventDefault();
 
         try {
+            const { isValid, errors } = validate();
+            if (!isValid) {
+                const errorList = Object.values(errors);
+                const primaryMessage = errorList.length === 1
+                    ? errorList[0]
+                    : `Please fix: ${errorList.join(', ')}`;
+                hyveError('Required Details Missing', primaryMessage);
+                return;
+            }
+
+            setIsSubmitting(true);
+
             // 1. Upload images to Cloudinary via backend MediaController
             const rawFiles = images.map((img) => img.file).filter(Boolean);
-            let uploadedUrls = [];
+            const existingUrls = images
+                .filter((img) => !img.file && (img.url || img.preview))
+                .map((img) => img.url || img.preview);
 
+            let uploadedUrls = [];
             if (rawFiles.length > 0) {
                 uploadedUrls = await uploadMediaFiles(rawFiles, 'properties');
             }
 
-            if (uploadedUrls.length === 0) {
+            const allImages = [...existingUrls, ...uploadedUrls];
+
+            if (allImages.length === 0) {
                 hyveError('Image Upload Error', 'Could not upload property images. Please check your network connection and try again.');
                 setIsSubmitting(false);
                 return;
@@ -215,7 +223,7 @@ const AddProperty = () => {
                 location: formData.location.trim(),
                 propertyType: formData.propertyType,
                 amenities: selectedAmenities,
-                images: uploadedUrls,
+                images: allImages,
                 minimumRentalPeriod: Number(formData.minimumRentalPeriod) || 12,
                 ...(formData.latitude != null ? { latitude: formData.latitude } : {}),
                 ...(formData.longitude != null ? { longitude: formData.longitude } : {}),
@@ -242,7 +250,7 @@ const AddProperty = () => {
         } catch (err) {
             console.error('Failed to create property:', err);
             const msg = err?.message || 'Could not upload property. Please try again.';
-            hyveError('Upload failed', msg);
+            hyveError('Property Listing Failed', msg);
         } finally {
             setIsSubmitting(false);
         }

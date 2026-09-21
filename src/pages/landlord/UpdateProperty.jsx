@@ -229,14 +229,22 @@ const UpdateProperty = () => {
         }
 
         setValidationErrors(errors);
-        return Object.keys(errors).length === 0;
+        return {
+            isValid: Object.keys(errors).length === 0,
+            errors,
+        };
     };
 
     // Submit changes
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!validate()) {
-            hyveError('Incomplete form', 'Please check highlighted fields before saving.');
+        if (e && e.preventDefault) e.preventDefault();
+        const { isValid, errors } = validate();
+        if (!isValid) {
+            const errorList = Object.values(errors);
+            const primaryMessage = errorList.length === 1
+                ? errorList[0]
+                : `Please fix: ${errorList.join(', ')}`;
+            hyveError('Required Details Missing', primaryMessage);
             return;
         }
 
