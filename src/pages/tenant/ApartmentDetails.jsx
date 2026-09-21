@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import defaultProfile from "../../assets/images/shared-images/user-1.png";
-import placeholderImage from "../../assets/images/apartments/apartment-image-1.png";
 import useFetchApartment from "../../hooks/useFetchApartment";
 import { createOrGetChatRoom } from "../../utils/chatApi";
 import { saveProperty, unsaveProperty } from "../../utils/propertiesApi";
@@ -26,7 +25,8 @@ import {
     ChevronRight,
     Sparkles,
     Calendar,
-    Ruler
+    Ruler,
+    ImageOff
 } from "lucide-react";
 import { BiErrorCircle, BiChat } from "react-icons/bi";
 import { BsHeart, BsHeartFill } from "react-icons/bs";
@@ -154,11 +154,11 @@ const ApartmentDetails = () => {
         }
     };
 
-    // Prepare real image gallery
+    // Prepare real image gallery (strictly genuine uploaded property photos)
     const images = (apartment?.images && apartment.images.length > 0)
-        ? apartment.images
-        : [apartment?.lodgeImage || placeholderImage];
-    const currentMainImage = images[selectedImageIndex] || images[0];
+        ? apartment.images.filter((img) => img && typeof img === "string" && !img.includes("apartment-image-1.png"))
+        : [];
+    const currentMainImage = images[selectedImageIndex] || images[0] || null;
 
     // Format Property Type dynamically
     const formatPropertyType = (type) => {
@@ -312,43 +312,51 @@ const ApartmentDetails = () => {
                                     {/* High-Resolution Photo Gallery */}
                                     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs">
                                         {/* Main Featured Photo */}
-                                        <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full bg-gray-100 overflow-hidden group">
-                                            <img
-                                                src={currentMainImage}
-                                                alt={apartment.lodgeDesc}
-                                                className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-102"
-                                                onError={(e) => { e.target.src = placeholderImage; }}
-                                            />
+                                        {currentMainImage ? (
+                                            <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full bg-gray-100 overflow-hidden group">
+                                                <img
+                                                    src={currentMainImage}
+                                                    alt={apartment.lodgeDesc}
+                                                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-102"
+                                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                                />
 
-                                            {/* Photo Counter Pill */}
-                                            {images.length > 1 && (
-                                                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg">
-                                                    📷 {selectedImageIndex + 1} / {images.length}
-                                                </div>
-                                            )}
+                                                {/* Photo Counter Pill */}
+                                                {images.length > 1 && (
+                                                    <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg">
+                                                        📷 {selectedImageIndex + 1} / {images.length}
+                                                    </div>
+                                                )}
 
-                                            {/* Previous / Next Arrow Controls */}
-                                            {images.length > 1 && (
-                                                <>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
-                                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition-all active:scale-95"
-                                                        aria-label="Previous photo"
-                                                    >
-                                                        <ChevronLeft className="w-5 h-5" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSelectedImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
-                                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition-all active:scale-95"
-                                                        aria-label="Next photo"
-                                                    >
-                                                        <ChevronRight className="w-5 h-5" />
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
+                                                {/* Previous / Next Arrow Controls */}
+                                                {images.length > 1 && (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
+                                                            className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition-all active:scale-95 cursor-pointer"
+                                                            aria-label="Previous photo"
+                                                        >
+                                                            <ChevronLeft className="w-5 h-5" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSelectedImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition-all active:scale-95 cursor-pointer"
+                                                            aria-label="Next photo"
+                                                        >
+                                                            <ChevronRight className="w-5 h-5" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full bg-gray-50 flex flex-col items-center justify-center text-center p-6">
+                                                <ImageOff className="w-12 h-12 text-gray-300 mb-2" />
+                                                <p className="text-sm font-medium text-gray-600 font-poppins">No property photos uploaded</p>
+                                                <p className="text-xs text-gray-400 mt-1">Photos will appear here once uploaded by the landlord</p>
+                                            </div>
+                                        )}
 
                                         {/* Thumbnail Strip */}
                                         {images.length > 1 && (
@@ -368,7 +376,7 @@ const ApartmentDetails = () => {
                                                             src={img}
                                                             alt={`Thumbnail ${idx + 1}`}
                                                             className="w-full h-full object-cover"
-                                                            onError={(e) => { e.target.src = placeholderImage; }}
+                                                            onError={(e) => { e.target.style.display = 'none'; }}
                                                         />
                                                     </button>
                                                 ))}
