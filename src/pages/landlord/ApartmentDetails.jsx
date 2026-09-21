@@ -7,7 +7,7 @@ import MobileNavigationTab from "./components/layout/MobileNavigation/MobileNavi
 import { getLandlordPropertyById, deleteLandlordProperty } from "../../utils/landlordPropertiesApi";
 import { getPropertyById } from "../../utils/propertiesApi";
 import { mapProperty } from "../../utils/mapProperty";
-import placeholderImage from "../../assets/images/apartments/apartment-image-1.png";
+import { ImageOff } from "lucide-react";
 import AgentSetupSection from "./components/AgentSetupSection";
 
 import { BiErrorCircle } from "react-icons/bi";
@@ -69,8 +69,17 @@ const ManageProperty = () => {
             }
 
             const mapped = mapProperty(raw);
+            const propertyImages = Array.isArray(raw?.images) && raw.images.length > 0
+                ? raw.images.filter(Boolean)
+                : (Array.isArray(mapped?.images)
+                    ? mapped.images.filter((img) => img && typeof img === 'string' && !img.includes('apartment-image-1.png'))
+                    : []);
+
+            mapped.images = propertyImages;
+            mapped.lodgeImage = propertyImages[0] || null;
+
             setApartment(mapped);
-            setMainImage(mapped?.lodgeImage || (mapped?.images && mapped.images[0]) || placeholderImage);
+            setMainImage(propertyImages[0] || null);
         } catch (err) {
             console.error("Error fetching property:", err);
             const errMsg = String(err?.message || "");
@@ -112,7 +121,7 @@ const ManageProperty = () => {
         setMainImage(thumbnailImage);
     };
 
-    const displayedImage = mainImage || apartment?.lodgeImage || placeholderImage;
+    const displayedImage = mainImage || (apartment?.images && apartment.images[0]) || null;
 
     // Handle delete action
     const handleDelete = async () => {
@@ -227,12 +236,12 @@ const ManageProperty = () => {
 
                                         <div className="text-left md:text-right pt-2 md:pt-0 border-t md:border-t-0 border-black/5">
                                             <p className="text-xl sm:text-2xl font-bold text-primary font-poppins">
-                                                ₦ {Number(apartment.price || 0).toLocaleString()}
-                                                <span className="text-xs font-normal text-[#888888] ml-1">/ month</span>
+                                                ₦ {Number(apartment.priceAnnually || (apartment.price ? apartment.price * 12 : 0)).toLocaleString()}
+                                                <span className="text-xs font-normal text-[#888888] ml-1">/ year</span>
                                             </p>
-                                            {apartment.price ? (
+                                            {(apartment.price || apartment.priceAnnually) ? (
                                                 <p className="text-xs text-[#888888] mt-0.5">
-                                                    ₦ {Number(apartment.price * 12).toLocaleString()} / year
+                                                    ₦ {Number(apartment.price || Math.round(apartment.priceAnnually / 12)).toLocaleString()} / month
                                                 </p>
                                             ) : null}
                                         </div>
@@ -246,14 +255,24 @@ const ManageProperty = () => {
                                         <div className="w-full">
                                             {/* Main Image Container */}
                                             <div className="relative mb-4">
-                                                <div className="w-full overflow-hidden shadow-sm aspect-square sm:aspect-[4/3] rounded-xl bg-black/5">
-                                                    <img
-                                                        src={displayedImage}
-                                                        alt={apartment.lodgeDesc}
-                                                        className="object-cover w-full h-full transition-all duration-300"
-                                                        onError={(e) => { e.target.src = placeholderImage; }}
-                                                    />
-                                                </div>
+                                                {displayedImage ? (
+                                                    <div className="w-full overflow-hidden shadow-sm aspect-square sm:aspect-[4/3] rounded-xl bg-black/5">
+                                                        <img
+                                                            src={displayedImage}
+                                                            alt={apartment.lodgeDesc}
+                                                            className="object-cover w-full h-full transition-all duration-300"
+                                                            onError={(e) => {
+                                                                e.target.style.display = 'none';
+                                                            }}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-full aspect-square sm:aspect-[4/3] rounded-xl bg-[#FAF7F5] border border-dashed border-[#FF6300]/25 flex flex-col items-center justify-center text-center p-6">
+                                                        <ImageOff className="w-12 h-12 text-[#3D3129]/30 mb-2" />
+                                                        <p className="text-sm font-medium text-[#3D3129]/70 font-poppins">No property photos uploaded</p>
+                                                        <p className="text-xs text-[#3D3129]/50 mt-1">Use the edit button to add photos</p>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Thumbnails Section */}
@@ -273,7 +292,9 @@ const ManageProperty = () => {
                                                                 src={thumbnail.image}
                                                                 alt={`Thumbnail view ${index + 1}`}
                                                                 className="object-cover w-full h-full"
-                                                                onError={(e) => { e.target.src = placeholderImage; }}
+                                                                onError={(e) => {
+                                                                    e.target.style.display = 'none';
+                                                                }}
                                                             />
                                                         </div>
                                                     ))}
