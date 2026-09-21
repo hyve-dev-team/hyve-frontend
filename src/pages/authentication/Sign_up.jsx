@@ -151,6 +151,7 @@ const Sign_up = () => {
       lastName: formData.lastName.trim(),
       email: formData.email.trim().toLowerCase(),
       password: formData.password,
+      role: selectedRole === "landlord" ? "LANDLORD" : "STUDENT",
     };
 
     try {

@@ -158,13 +158,19 @@ const Verification = () => {
         return;
       }
 
+      const verifiedUser = res.data.user;
+      const verifiedRole = (verifiedUser?.role?.toLowerCase() === "landlord" || userRole === "landlord")
+        ? "landlord"
+        : "user";
+
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem("user", JSON.stringify(verifiedUser));
+      localStorage.setItem("userRole", verifiedRole);
       localStorage.removeItem("userEmail");
 
       alert("Verification successful! Redirecting to your dashboard...");
 
-      if (userRole === "landlord") {
+      if (verifiedRole === "landlord") {
         navigate("/landlord/dashboard");
       } else {
         navigate("/user/dashboard");
