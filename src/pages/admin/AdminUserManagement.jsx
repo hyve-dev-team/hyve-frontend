@@ -480,15 +480,15 @@ const AdminUserManagement = () => {
                                 </h4>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {/* 1. Live Selfie */}
+                                    {/* 1. Normal ID Verification */}
                                     <div className="p-3.5 border border-stone-200/80 rounded-2xl bg-stone-50/50 flex flex-col justify-between">
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-xs font-semibold text-stone-800 flex items-center gap-1">
-                                                <HiOutlineSparkles className="text-[#FA6400]" /> Live Selfie
+                                                <HiOutlineShieldCheck className="text-[#FA6400]" /> 1. Normal ID Verification
                                             </span>
-                                            {selectedApp.selfieUrl ? (
+                                            {(selectedApp.idDocumentUrl || selectedApp.selfieUrl) ? (
                                                 <a
-                                                    href={selectedApp.selfieUrl}
+                                                    href={selectedApp.idDocumentUrl || selectedApp.selfieUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
@@ -500,31 +500,31 @@ const AdminUserManagement = () => {
                                                 <span className="text-[11px] text-stone-400 font-medium">Not provided</span>
                                             )}
                                         </div>
-                                        {selectedApp.selfieUrl ? (
+                                        {(selectedApp.idDocumentUrl || selectedApp.selfieUrl) ? (
                                             <div className="w-full h-32 rounded-xl overflow-hidden bg-black/5 border border-stone-200/40">
                                                 <img
-                                                    src={selectedApp.selfieUrl}
-                                                    alt="Live facial photo"
+                                                    src={selectedApp.idDocumentUrl || selectedApp.selfieUrl}
+                                                    alt="ID Verification"
                                                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                                                 />
                                             </div>
                                         ) : (
                                             <div className="w-full h-32 rounded-xl bg-stone-100/70 border border-stone-200/60 flex flex-col items-center justify-center text-stone-400 gap-1.5 p-4 text-center">
                                                 <FiImage className="text-2xl text-stone-300" />
-                                                <span className="text-xs font-medium">No live selfie uploaded</span>
+                                                <span className="text-xs font-medium">No ID document uploaded</span>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* 2. Certificate of Occupancy (C of O) */}
+                                    {/* 2. Photo / Property Proof of Ownership / Caretaker Authorisation */}
                                     <div className="p-3.5 border border-stone-200/80 rounded-2xl bg-stone-50/50 flex flex-col justify-between">
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-xs font-semibold text-stone-800 flex items-center gap-1">
-                                                <FiFileText className="text-[#FA6400]" /> Certificate of Occupancy
+                                                <FiFileText className="text-[#FA6400]" /> 2. Proof of Ownership / Caretaker Auth
                                             </span>
-                                            {selectedApp.cofoUrl ? (
+                                            {(selectedApp.ownershipProofUrl || selectedApp.cofoUrl || selectedApp.deedUrl) ? (
                                                 <a
-                                                    href={selectedApp.cofoUrl}
+                                                    href={selectedApp.ownershipProofUrl || selectedApp.cofoUrl || selectedApp.deedUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
@@ -536,31 +536,31 @@ const AdminUserManagement = () => {
                                                 <span className="text-[11px] text-stone-400 font-medium">Not provided</span>
                                             )}
                                         </div>
-                                        {selectedApp.cofoUrl ? (
+                                        {(selectedApp.ownershipProofUrl || selectedApp.cofoUrl || selectedApp.deedUrl) ? (
                                             <div className="w-full h-32 rounded-xl overflow-hidden bg-black/5 border border-stone-200/40">
                                                 <img
-                                                    src={selectedApp.cofoUrl}
-                                                    alt="C of O Document"
+                                                    src={selectedApp.ownershipProofUrl || selectedApp.cofoUrl || selectedApp.deedUrl}
+                                                    alt="Proof of Ownership or Caretaker Auth"
                                                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                                                 />
                                             </div>
                                         ) : (
                                             <div className="w-full h-32 rounded-xl bg-stone-100/70 border border-stone-200/60 flex flex-col items-center justify-center text-stone-400 gap-1.5 p-4 text-center">
                                                 <FiFileText className="text-2xl text-stone-300" />
-                                                <span className="text-xs font-medium">No C of O document uploaded</span>
+                                                <span className="text-xs font-medium">No ownership or caretaker doc</span>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* 3. CAC Certificate */}
+                                    {/* 3. Property Address Proof Doc */}
                                     <div className="p-3.5 border border-stone-200/80 rounded-2xl bg-stone-50/50 flex flex-col justify-between">
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-xs font-semibold text-stone-800 flex items-center gap-1">
-                                                <FiFileText className="text-[#FA6400]" /> CAC / Business Reg.
+                                                <FiFileText className="text-[#FA6400]" /> 3. Property Address Proof Doc
                                             </span>
-                                            {selectedApp.cacUrl ? (
+                                            {(selectedApp.addressProofUrl || selectedApp.surveyPlanUrl) ? (
                                                 <a
-                                                    href={selectedApp.cacUrl}
+                                                    href={selectedApp.addressProofUrl || selectedApp.surveyPlanUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
@@ -572,31 +572,31 @@ const AdminUserManagement = () => {
                                                 <span className="text-[11px] text-stone-400 font-medium">Not provided</span>
                                             )}
                                         </div>
-                                        {selectedApp.cacUrl ? (
+                                        {(selectedApp.addressProofUrl || selectedApp.surveyPlanUrl) ? (
                                             <div className="w-full h-32 rounded-xl overflow-hidden bg-black/5 border border-stone-200/40">
                                                 <img
-                                                    src={selectedApp.cacUrl}
-                                                    alt="CAC Document"
+                                                    src={selectedApp.addressProofUrl || selectedApp.surveyPlanUrl}
+                                                    alt="Property Address Proof"
                                                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                                                 />
                                             </div>
                                         ) : (
                                             <div className="w-full h-32 rounded-xl bg-stone-100/70 border border-stone-200/60 flex flex-col items-center justify-center text-stone-400 gap-1.5 p-4 text-center">
                                                 <FiFileText className="text-2xl text-stone-300" />
-                                                <span className="text-xs font-medium">No CAC certificate uploaded</span>
+                                                <span className="text-xs font-medium">No address proof uploaded</span>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* 4. Survey Plan or Deed */}
+                                    {/* 4. Hyve Landlord Agreement Signed */}
                                     <div className="p-3.5 border border-stone-200/80 rounded-2xl bg-stone-50/50 flex flex-col justify-between">
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-xs font-semibold text-stone-800 flex items-center gap-1">
-                                                <FiFileText className="text-[#FA6400]" /> Registered Survey / Deed
+                                                <FiFileText className="text-[#FA6400]" /> 4. Hyve Agreement (Signed)
                                             </span>
-                                            {selectedApp.surveyPlanUrl || selectedApp.deedUrl ? (
+                                            {(selectedApp.signedAgreementUrl || selectedApp.cacUrl) ? (
                                                 <a
-                                                    href={selectedApp.surveyPlanUrl || selectedApp.deedUrl}
+                                                    href={selectedApp.signedAgreementUrl || selectedApp.cacUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
@@ -608,18 +608,18 @@ const AdminUserManagement = () => {
                                                 <span className="text-[11px] text-stone-400 font-medium">Not provided</span>
                                             )}
                                         </div>
-                                        {(selectedApp.surveyPlanUrl || selectedApp.deedUrl) ? (
+                                        {(selectedApp.signedAgreementUrl || selectedApp.cacUrl) ? (
                                             <div className="w-full h-32 rounded-xl overflow-hidden bg-black/5 border border-stone-200/40">
                                                 <img
-                                                    src={selectedApp.surveyPlanUrl || selectedApp.deedUrl}
-                                                    alt="Survey Plan or Deed"
+                                                    src={selectedApp.signedAgreementUrl || selectedApp.cacUrl}
+                                                    alt="Signed Hyve Landlord Agreement"
                                                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                                                 />
                                             </div>
                                         ) : (
                                             <div className="w-full h-32 rounded-xl bg-stone-100/70 border border-stone-200/60 flex flex-col items-center justify-center text-stone-400 gap-1.5 p-4 text-center">
                                                 <FiFileText className="text-2xl text-stone-300" />
-                                                <span className="text-xs font-medium">No survey plan or deed uploaded</span>
+                                                <span className="text-xs font-medium">No signed agreement uploaded</span>
                                             </div>
                                         )}
                                     </div>

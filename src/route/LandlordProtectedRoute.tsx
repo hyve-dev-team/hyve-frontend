@@ -1,38 +1,38 @@
 import React, { JSX } from "react";
 import { Navigate } from "react-router-dom";
+import { clearAuthSession } from "../utils/auth";
+import { hyveError } from "../utils/hyveToast";
 
 interface LandlordProtectedRouteProps {
   children: JSX.Element;
 }
 
 const LandlordProtectedRoute: React.FC<LandlordProtectedRouteProps> = ({ children }) => {
-  const userData = localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData') as string) : null;
-  const token = userData ? userData.token : null;
+  const token = localStorage.getItem("token") || localStorage.getItem("authToken");
 
-  // Optional: Check if token is expired (if your backend sets exp claim in JWT)
   if (!token) {
-    console.warn("🚫 No token found — redirecting to login");
-    return <Navigate to="/auth/signin/landlord" replace />;
+    return <Navigate to="/auth/signin" replace />;
   }
 
-  // If you want to decode and verify token expiration:
+  let user = null;
   try {
-    const [, payloadBase64] = token.split(".");
-    const payload = JSON.parse(atob(payloadBase64));
-    const now = Math.floor(Date.now() / 1000);
-
-    if (payload.exp && payload.exp < now) {
-      console.warn("⏳ Token expired — clearing and redirecting");
-      localStorage.removeItem("userData");
-      return <Navigate to='/auth/signin/landlord' replace />;
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      user = JSON.parse(userStr);
     }
   } catch (err) {
-    console.error("Invalid token:", err);
-    localStorage.removeItem("userData");
-    return <Navigate to="/auth/signin/landlord" replace />;
+    console.warn("Failed to parse user session in LandlordProtectedRoute:", err);
   }
 
-  // ✅ Token valid — grant access
+  const role = (localStorage.getItem("userRole") || user?.role || "").toLowerCase();
+
+  // If a tenant / student tries to enter the landlord dashboard/routes, log them out
+  if (role !== "landlord" && role !== "admin") {
+    clearAuthSession();
+    hyveError("Access Denied", "Tenant accounts cannot access the landlord portal. You have been logged out.");
+    return <Navigate to="/auth/signin" replace />;
+  }
+
   return children;
 };
 

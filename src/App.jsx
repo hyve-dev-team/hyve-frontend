@@ -36,7 +36,7 @@ import Reservation from "./pages/tenant/Reservation"
 import ScheduleTour from "./pages/tenant/ScheduleTour"
 import ScheduleMoveIn from "./pages/tenant/ScheduleMoveIn"
 import ProtectedRoute from "./route/ProtectedRoute"
-// import LandlordProtectedRoute from "./route/LandlordProtectedRoute"
+import LandlordProtectedRoute from "./route/LandlordProtectedRoute"
 
 /* Landlord dashboard */
 import LandlordDashboard from "./pages/landlord/LandlordDashboard"
@@ -127,18 +127,18 @@ function App() {
           {/* 
           Landlord Dashboard Routes - Some Components/pages can be shared by the user and landdlord, they are seperated just for design sake (static) */}
 
-          <Route path="/landlord/dashboard" element={<LandlordDashboard />} /> {/* Landlord dashboard  */}
-          <Route path="/landlord/notifications" element={<LandlordNotifications />} /> {/* Notification page */}
-          <Route path="/landlord/property/add" element={<AddProperty />} /> {/* Add property */}
-          <Route path="/landlord/profile" element={<LandlordProfile />} /> {/* Landlord profile page */}
-          <Route path="/landlord/profile/update" element={<UpdateLandlordProfile />} /> {/* Landlord -- update profile page */}
-          <Route path="/landlord/verification" element={<AccountVerification />} /> {/* Landlord -- update profile page */}
-          <Route path="/landlord/activity" element={<LandlordActivity />} /> {/* Landlord -- activity page */}
-          <Route path="/landlord/chats" element={<LandlordChatList />} /> {/* Landlord -- All chats page */}
-          <Route path="/landlord/conversation/:chatID" element={<LandlordConversation />} /> {/* Landlord --  Conversation page */}
-          <Route path="/landlord/property/:apartmentID/reviews" element={<LandordApartmentReviews />} /> {/* view apartment review */}
-          <Route path="/landlord/property/:apartmentID/manage" element={<ManageProperty />} /> {/* View apartment details */}
-          <Route path="/landlord/property/:apartmentID/update" element={<UpdateProperty />} /> {/* update apartment details */}
+          <Route path="/landlord/dashboard" element={<LandlordProtectedRoute><LandlordDashboard /></LandlordProtectedRoute>} /> {/* Landlord dashboard  */}
+          <Route path="/landlord/notifications" element={<LandlordProtectedRoute><LandlordNotifications /></LandlordProtectedRoute>} /> {/* Notification page */}
+          <Route path="/landlord/property/add" element={<LandlordProtectedRoute><AddProperty /></LandlordProtectedRoute>} /> {/* Add property */}
+          <Route path="/landlord/profile" element={<LandlordProtectedRoute><LandlordProfile /></LandlordProtectedRoute>} /> {/* Landlord profile page */}
+          <Route path="/landlord/profile/update" element={<LandlordProtectedRoute><UpdateLandlordProfile /></LandlordProtectedRoute>} /> {/* Landlord -- update profile page */}
+          <Route path="/landlord/verification" element={<LandlordProtectedRoute><AccountVerification /></LandlordProtectedRoute>} /> {/* Landlord -- update profile page */}
+          <Route path="/landlord/activity" element={<LandlordProtectedRoute><LandlordActivity /></LandlordProtectedRoute>} /> {/* Landlord -- activity page */}
+          <Route path="/landlord/chats" element={<LandlordProtectedRoute><LandlordChatList /></LandlordProtectedRoute>} /> {/* Landlord -- All chats page */}
+          <Route path="/landlord/conversation/:chatID" element={<LandlordProtectedRoute><LandlordConversation /></LandlordProtectedRoute>} /> {/* Landlord --  Conversation page */}
+          <Route path="/landlord/property/:apartmentID/reviews" element={<LandlordProtectedRoute><LandordApartmentReviews /></LandlordProtectedRoute>} /> {/* view apartment review */}
+          <Route path="/landlord/property/:apartmentID/manage" element={<LandlordProtectedRoute><ManageProperty /></LandlordProtectedRoute>} /> {/* View apartment details */}
+          <Route path="/landlord/property/:apartmentID/update" element={<LandlordProtectedRoute><UpdateProperty /></LandlordProtectedRoute>} /> {/* update apartment details */}
 
           {/* Admin Dashboard Routes */}
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />

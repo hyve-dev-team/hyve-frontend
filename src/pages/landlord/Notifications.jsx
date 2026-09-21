@@ -32,7 +32,7 @@ const LandlordNotifications = () => {
 
                             {/* Logo */}
                             <div className='w-[80px] sm:w-[90px] ml-4 lg:ml-6'>
-                                <Link to={"/user/dashboard"}>
+                                <Link to={"/landlord/dashboard"}>
                                     <img src={hyveLogo} alt="Hyve-logo" className='object-cover w-full' />
                                 </Link>
                             </div>

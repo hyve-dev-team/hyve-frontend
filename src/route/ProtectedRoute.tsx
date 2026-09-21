@@ -1,39 +1,38 @@
 import React, { JSX } from "react";
 import { Navigate } from "react-router-dom";
+import { clearAuthSession } from "../utils/auth";
+import { hyveError } from "../utils/hyveToast";
 
 interface ProtectedRouteProps {
   children: JSX.Element;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  // const token = localStorage.getItem("token");
-  // const userData = localStorage.getItem('userData') ? JSON.parse(localStorage.getItem('userData') as string) : null;
-  // const token = userData ? userData.token : null;
+  const token = localStorage.getItem("token") || localStorage.getItem("authToken");
 
-  // // Optional: Check if token is expired (if your backend sets exp claim in JWT)
-  // if (!token) {
-  //   console.warn("🚫 No token found — redirecting to login");
-  //   return <Navigate to="/auth/signin/user" replace />;
-  // }
+  if (!token) {
+    return <Navigate to="/auth/signin" replace />;
+  }
 
-  // // If you want to decode and verify token expiration:
-  // try {
-  //   const [, payloadBase64] = token.split(".");
-  //   const payload = JSON.parse(atob(payloadBase64));
-  //   const now = Math.floor(Date.now() / 1000);
+  let user = null;
+  try {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      user = JSON.parse(userStr);
+    }
+  } catch (err) {
+    console.warn("Failed to parse user session in ProtectedRoute:", err);
+  }
 
-  //   if (payload.exp && payload.exp < now) {
-  //     console.warn("⏳ Token expired — clearing and redirecting");
-  //     localStorage.removeItem("userData");
-  //     return <Navigate to='/auth/signin/user' replace />;
-  //   }
-  // } catch (err) {
-  //   console.error("Invalid token:", err);
-  //   localStorage.removeItem("userData");
-  //   return <Navigate to="/auth/signin/user" replace />;
-  // }
+  const role = (localStorage.getItem("userRole") || user?.role || "").toLowerCase();
 
-  // ✅ Token valid — grant access
+  // If a landlord tries to enter the tenant dashboard/routes, log them out
+  if (role === "landlord") {
+    clearAuthSession();
+    hyveError("Access Denied", "Landlord accounts cannot access the tenant portal. You have been logged out.");
+    return <Navigate to="/auth/signin" replace />;
+  }
+
   return children;
 };
 

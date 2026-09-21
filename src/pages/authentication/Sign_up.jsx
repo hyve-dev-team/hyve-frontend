@@ -57,10 +57,10 @@ const Sign_up = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  /* Check if all fields are fully filled */
+  /* Check if all fields are fully filled and meet length requirements */
   const isFormFilled = Boolean(
-    formData.firstName?.trim() &&
-    formData.lastName?.trim() &&
+    formData.firstName?.trim()?.length >= 3 &&
+    formData.lastName?.trim()?.length >= 3 &&
     formData.email?.trim() &&
     formData.phone?.trim() &&
     formData.gender?.trim() &&
@@ -81,9 +81,12 @@ const Sign_up = () => {
   const isEmptyOrWhitespace = (str) => !str || str.trim().length === 0;
 
   const validateAll = () => {
+    const isFirstNameInvalid = !formData.firstName || formData.firstName.trim().length < 3;
+    const isLastNameInvalid = !formData.lastName || formData.lastName.trim().length < 3;
+
     const newErrors = {
-      firstName: isEmptyOrWhitespace(formData.firstName),
-      lastName: isEmptyOrWhitespace(formData.lastName),
+      firstName: isFirstNameInvalid,
+      lastName: isLastNameInvalid,
       phone: isEmptyOrWhitespace(formData.phone),
       gender: isEmptyOrWhitespace(formData.gender),
       email: isEmptyOrWhitespace(formData.email),
@@ -107,7 +110,25 @@ const Sign_up = () => {
     e.preventDefault();
 
     if (!validateAll()) {
-      hyveError("Missing Information", "Please fill in all required fields.");
+      if (!formData.firstName?.trim() || formData.firstName.trim().length < 3) {
+        hyveError("Invalid First Name", "First name must be at least 3 characters.");
+      } else if (!formData.lastName?.trim() || formData.lastName.trim().length < 3) {
+        hyveError("Invalid Last Name", "Last name must be at least 3 characters.");
+      } else {
+        hyveError("Missing Information", "Please fill in all required fields correctly.");
+      }
+      return;
+    }
+
+    if (formData.firstName.trim().length < 3) {
+      setInputError((prev) => ({ ...prev, firstName: true }));
+      hyveError("Invalid First Name", "First name must be at least 3 characters.");
+      return;
+    }
+
+    if (formData.lastName.trim().length < 3) {
+      setInputError((prev) => ({ ...prev, lastName: true }));
+      hyveError("Invalid Last Name", "Last name must be at least 3 characters.");
       return;
     }
 
@@ -325,12 +346,18 @@ const Sign_up = () => {
                       type="text"
                       id="firstName"
                       name="firstName"
+                      minLength={3}
                       value={formData.firstName}
                       onChange={handleFormdataChange}
                       className="form-input text-gray-900"
                       placeholder="e.g. John"
                     />
                   </div>
+                  {inputError.firstName && (
+                    <p className="text-[11px] text-red-500 mt-1 font-medium">
+                      First name must be at least 3 characters
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -349,12 +376,18 @@ const Sign_up = () => {
                       type="text"
                       id="lastName"
                       name="lastName"
+                      minLength={3}
                       value={formData.lastName}
                       onChange={handleFormdataChange}
                       className="form-input text-gray-900"
                       placeholder="e.g. Doe"
                     />
                   </div>
+                  {inputError.lastName && (
+                    <p className="text-[11px] text-red-500 mt-1 font-medium">
+                      Last name must be at least 3 characters
+                    </p>
+                  )}
                 </div>
               </div>
 
