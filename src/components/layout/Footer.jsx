@@ -14,56 +14,120 @@ import { TfiLinkedin } from "react-icons/tfi";
 const Footer = () => {
     return (
         <section className='bg-dark' id="contact-us">
-            <div className="container pt-24 sm:pt-28 lg:pt-38">
-                <div className='flex flex-col md:flex-row w-full md:w-[60%] mx-auto items-center'>
-                    <div className='w-full md:w-[70%] text-center md:text-left'>
-                        {/* footer logo */}
+            <div className="container pt-20 sm:pt-24 lg:pt-28">
+                <div className='grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8'>
+                    {/* Column 1: Brand & Contact */}
+                    <div className='md:col-span-5 text-center md:text-left space-y-4'>
                         <Link to="/">
-                            <div className='w-[100px] overflow-hidden  inline-block'>
+                            <div className='w-[120px] overflow-hidden inline-block'>
                                 <img src={hyveLogoBlack} alt="hyve logo" className='object-cover w-full' />
                             </div>
                         </Link>
 
-                        <div className='mt-4 md:mt-10'>
-                            <a href="mailto:info@hyve.org">
-                                <p className='inline font-light text-white font-sora paragraph-responsive hover:text-primary smooth-transition'>info@hyve.org</p>
+                        <p className='text-white/70 font-sora text-xs sm:text-sm font-light max-w-sm mx-auto md:mx-0 leading-relaxed'>
+                            Reinventing rental housing in Nigeria with verified listings, digital tenancy agreements, and 100% Escrow Protection.
+                        </p>
+
+                        <div className='pt-1 text-xs text-white/60 space-y-1 font-mono'>
+                            <p>HYVE Haven Limited • RC 9000322</p>
+                            <a href="mailto:info@hyve.org" className='text-primary hover:underline block'>
+                                info@hyve.org
                             </a>
                         </div>
 
                         {/* social links */}
-                        <div className="flex justify-center gap-4 mt-8 md:justify-start sm:mt-10 ">
-                            <SocialIcons icon={<FaFacebookF />} dynamicClasses="text-white border-white" />
-                            <SocialIcons icon={<SlSocialInstagram />} dynamicClasses="text-white border-white" />
-                            <SocialIcons icon={<RiTwitterXFill />} dynamicClasses="text-white border-white" />
-                            <SocialIcons icon={<FaWhatsapp />} dynamicClasses="text-white border-white" />
-                            <SocialIcons icon={<BiLogoYoutube />} dynamicClasses="text-white border-white" />
-                            <SocialIcons icon={<TfiLinkedin />} dynamicClasses="text-white border-white" />
+                        <div className="flex justify-center gap-3 pt-2 md:justify-start">
+                            <SocialIcons icon={<FaFacebookF />} dynamicClasses="text-white border-white/40 hover:border-primary" />
+                            <SocialIcons icon={<SlSocialInstagram />} dynamicClasses="text-white border-white/40 hover:border-primary" />
+                            <SocialIcons icon={<RiTwitterXFill />} dynamicClasses="text-white border-white/40 hover:border-primary" />
+                            <SocialIcons icon={<FaWhatsapp />} dynamicClasses="text-white border-white/40 hover:border-primary" />
+                            <SocialIcons icon={<BiLogoYoutube />} dynamicClasses="text-white border-white/40 hover:border-primary" />
+                            <SocialIcons icon={<TfiLinkedin />} dynamicClasses="text-white border-white/40 hover:border-primary" />
                         </div>
                     </div>
-                    <div className='w-full md:w-[30%] mt-16 md:mt-0 text-center md:text-left'>
-                        {/* footer quick links */}
-                        <ul className='flex flex-col gap-8 md:gap-10 text-white font-sora font-normal text-[12px] md:text-sm'>
-                            <a href="#home" className='hover:text-primary smooth-transition'>
-                                <li>Home</li>
-                            </a>
-                            <a href="#about" className='hover:text-primary smooth-transition'>
-                                <li>About Us</li>
-                            </a>
-                            <a href="#contact" className='hover:text-primary smooth-transition'>
-                                <li>Contact</li>
-                            </a>
-                            <a href="#faq" className='hover:text-primary smooth-transition'>
-                                <li>FAQs</li>
-                            </a>
+
+                    {/* Column 2: Quick Links */}
+                    <div className='md:col-span-3 text-center md:text-left'>
+                        <p className='text-primary font-bold text-xs uppercase tracking-wider mb-4 sm:mb-6 font-poppins'>
+                            Platform
+                        </p>
+                        <ul className='flex flex-col gap-3.5 text-white/80 font-sora text-xs sm:text-sm'>
+                            <li>
+                                <Link to="/" className='hover:text-primary smooth-transition'>Home</Link>
+                            </li>
+                            <li>
+                                <Link to="/user/apartment/search" className='hover:text-primary smooth-transition'>Find an Apartment</Link>
+                            </li>
+                            <li>
+                                <Link to="/auth/signup/landlord" className='hover:text-primary smooth-transition'>List Your Property</Link>
+                            </li>
+                            <li>
+                                <a href="/#about" className='hover:text-primary smooth-transition'>About Us</a>
+                            </li>
+                            <li>
+                                <a href="/#faq" className='hover:text-primary smooth-transition'>FAQs</a>
+                            </li>
                         </ul>
                     </div>
 
+                    {/* Column 3: Legal & Trust Center */}
+                    <div className='md:col-span-4 text-center md:text-left'>
+                        <p className='text-primary font-bold text-xs uppercase tracking-wider mb-4 sm:mb-6 font-poppins'>
+                            Legal & Compliance Hub
+                        </p>
+                        <ul className='flex flex-col gap-3 text-white/80 font-sora text-xs sm:text-sm'>
+                            <li>
+                                <Link to="/legal?policy=privacy" className='hover:text-primary smooth-transition flex items-center justify-center md:justify-start gap-1.5'>
+                                    <span>Data Protection Policy (NDPR)</span>
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/legal?policy=terms" className='hover:text-primary smooth-transition'>
+                                    Terms of Service & Escrow Rules
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/legal?policy=caution-fee" className='hover:text-primary smooth-transition'>
+                                    Caution Fee Holding & Return Policy
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/legal?policy=landlord-agreement" className='hover:text-primary smooth-transition'>
+                                    Landlord Partnership Agreement (5%)
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/legal?policy=tenancy-agreement" className='hover:text-primary smooth-transition'>
+                                    Standard Tenancy Agreement Template
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/legal?policy=acceptable-use" className='hover:text-primary smooth-transition'>
+                                    Acceptable Use Policy (AUP)
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/legal?policy=cookies" className='hover:text-primary smooth-transition'>
+                                    Cookie & Tracking Policy
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
             {/* copyright */}
-            <div className='flex justify-center pt-8 pb-10 mt-16 border-t md:pb-14 border-white/10'>
-                <p className='text-white/80 font-sora font-light text-[12px] md:text-sm'>© {new Date().getFullYear()} Hyve Haven. All rights reserved.</p>
+            <div className='flex flex-col sm:flex-row items-center justify-between gap-4 px-6 max-w-7xl mx-auto pt-8 pb-10 mt-16 border-t md:pb-14 border-white/10 text-xs text-white/60 font-sora font-light'>
+                <p>© {new Date().getFullYear()} HYVE Haven Limited (RC 9000322). All rights reserved.</p>
+                <div className='flex items-center gap-4 flex-wrap justify-center text-white/50'>
+                    <Link to="/legal?policy=privacy" className='hover:text-primary smooth-transition'>Privacy</Link>
+                    <span>•</span>
+                    <Link to="/legal?policy=terms" className='hover:text-primary smooth-transition'>Terms</Link>
+                    <span>•</span>
+                    <Link to="/legal?policy=caution-fee" className='hover:text-primary smooth-transition'>Caution Fee</Link>
+                    <span>•</span>
+                    <Link to="/legal?policy=cookies" className='hover:text-primary smooth-transition'>Cookies</Link>
+                </div>
             </div>
 
         </section>

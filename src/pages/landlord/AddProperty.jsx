@@ -4,7 +4,7 @@ import Sidebar from './components/layout/Sidebar/Sidebar';
 import Header from './components/layout/Dashboard/Header';
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab';
 import { createLandlordProperty } from '../../utils/landlordPropertiesApi';
-import { addPropertyAgent } from '../../utils/inspectionApi';
+import { addPropertyAgent, formatDisplayPhone } from '../../utils/inspectionApi';
 import { uploadMediaFiles } from '../../utils/mediaApi';
 import { hyveSuccess, hyveError } from '../../utils/hyveToast';
 import AddressAutocompleteInput from '../../components/maps/AddressAutocompleteInput';
@@ -24,6 +24,8 @@ import {
 } from 'react-icons/io5';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import { FaWhatsapp, FaUserTie } from 'react-icons/fa';
+import { FiFileText, FiExternalLink } from 'react-icons/fi';
+import LandlordAgreementModal from '../../components/modals/LandlordAgreementModal';
 
 const PROPERTY_TYPES = [
     { value: 'APARTMENT', label: 'Apartment', desc: 'Flat or multiple rooms' },
@@ -52,6 +54,7 @@ const MAX_IMAGES = 6;
 const AddProperty = () => {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
+    const docInputRef = useRef(null);
 
     // Form inputs state
     const [formData, setFormData] = useState({
@@ -82,9 +85,39 @@ const AddProperty = () => {
     // Images state: array of { file: File, preview: string }
     const [images, setImages] = useState([]);
 
+    // Additional landlord documents (e.g. Tenancy addendums, estate rules, covenants)
+    const [landlordDocs, setLandlordDocs] = useState([]);
+
+    // Landlord Custom House Rules State
+    const [houseRules, setHouseRules] = useState({
+        quietHours: '',
+        visitorPolicy: '',
+        wasteDays: '',
+        petPolicy: '',
+        customRules: '',
+    });
+
+    // Landlord Custom Utility Info State
+    const [utilitiesInfo, setUtilitiesInfo] = useState({
+        meterNumber: '',
+        waterHours: '',
+        generatorSchedule: '',
+        wasteFee: '',
+    });
+
+    // Landlord Emergency Facility Contacts State
+    const [emergencyContacts, setEmergencyContacts] = useState({
+        securityPhone: '',
+        electricianPhone: '',
+        facilityManagerPhone: '',
+        plumberPhone: '',
+    });
+
     // UI & Submission state
     const [validationErrors, setValidationErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [showAgreementModal, setShowAgreementModal] = useState(false);
 
     // Text inputs change handler
     const handleChange = (e) => {
@@ -156,6 +189,25 @@ const AddProperty = () => {
         });
     };
 
+    // Handle landlord supplementary document upload (PDF, images)
+    const handleDocSelect = (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        const toAdd = files.map((file) => ({
+            file,
+            name: file.name,
+            size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+        }));
+        setLandlordDocs((prev) => [...prev, ...toAdd]);
+        if (docInputRef.current) {
+            docInputRef.current.value = '';
+        }
+    };
+
+    const handleRemoveDoc = (indexToRemove) => {
+        setLandlordDocs((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    };
+
     // Form validation
     const validate = () => {
         const errors = {};
@@ -170,6 +222,9 @@ const AddProperty = () => {
         }
         if (!images || images.length === 0) {
             errors.images = 'Please upload at least 1 photo of the property';
+        }
+        if (!agreedToTerms) {
+            errors.agreement = 'You must review and agree to the HYVE Landlord Partnership Agreement before listing';
         }
 
         setValidationErrors(errors);
@@ -215,6 +270,17 @@ const AddProperty = () => {
                 return;
             }
 
+            // Upload any supplementary landlord tenancy docs / agreements
+            let uploadedDocUrls = [];
+            const rawDocs = landlordDocs.map((doc) => doc.file).filter(Boolean);
+            if (rawDocs.length > 0) {
+                try {
+                    uploadedDocUrls = await uploadMediaFiles(rawDocs, 'kyc');
+                } catch (docErr) {
+                    console.warn("Could not upload supplementary tenancy docs:", docErr);
+                }
+            }
+
             // 2. Call backend Landlord Properties creation API
             const payload = {
                 title: formData.title.trim(),
@@ -224,6 +290,10 @@ const AddProperty = () => {
                 propertyType: formData.propertyType,
                 amenities: selectedAmenities,
                 images: allImages,
+                landlordDocUrls: uploadedDocUrls,
+                houseRules: JSON.stringify(houseRules),
+                utilitiesInfo: JSON.stringify(utilitiesInfo),
+                emergencyContacts: JSON.stringify(emergencyContacts),
                 minimumRentalPeriod: Number(formData.minimumRentalPeriod) || 12,
                 ...(formData.latitude != null ? { latitude: formData.latitude } : {}),
                 ...(formData.longitude != null ? { longitude: formData.longitude } : {}),
@@ -236,7 +306,7 @@ const AddProperty = () => {
                 try {
                     await addPropertyAgent(createdProperty.id, {
                         fullName: agentData.fullName.trim(),
-                        whatsappNumber: agentData.whatsappNumber.trim(),
+                        whatsappNumber: formatDisplayPhone(agentData.whatsappNumber.trim()),
                         roleTitle: agentData.roleTitle || 'Caretaker',
                         isPrimary: true,
                     });
@@ -657,18 +727,28 @@ const AddProperty = () => {
 
                                         <div>
                                             <label className='block text-xs font-medium text-[#4B5563] mb-1'>Agent WhatsApp Number</label>
-                                            <div className='relative'>
-                                                <span className='absolute left-3.5 top-1/2 -translate-y-1/2 text-[#10B981]'>
-                                                    <FaWhatsapp className='w-3.5 h-3.5' />
-                                                </span>
+                                            <div className='flex items-center rounded-xl border border-[#3D3129]/15 bg-[#FAF7F5]/50 overflow-hidden focus-within:bg-white focus-within:border-primary focus-within:ring-1 focus-within:ring-primary'>
+                                                <div className='flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 border-r border-[#E5E7EB] text-xs font-semibold text-gray-700 select-none shrink-0'>
+                                                    <span>🇳🇬</span>
+                                                    <span>+234</span>
+                                                </div>
                                                 <input
                                                     type='tel'
-                                                    placeholder='e.g. 08012345678'
+                                                    placeholder='805 623 7380 (or 080...)'
                                                     value={agentData.whatsappNumber}
-                                                    onChange={(e) => setAgentData(prev => ({ ...prev, whatsappNumber: e.target.value }))}
-                                                    className='w-full pl-9 pr-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                    onChange={(e) => {
+                                                        let val = e.target.value;
+                                                        if (val.startsWith("+234")) val = val.slice(4).trim();
+                                                        else if (val.startsWith("234") && val.length > 5) val = val.slice(3).trim();
+                                                        if (val.startsWith("0")) val = val.slice(1).trim();
+                                                        setAgentData(prev => ({ ...prev, whatsappNumber: val }));
+                                                    }}
+                                                    className='w-full px-3 py-2.5 text-xs bg-transparent outline-none'
                                                 />
                                             </div>
+                                            <p className='text-[10px] text-gray-500 mt-1'>
+                                                Country code +234 is handled automatically.
+                                            </p>
                                         </div>
 
                                         <div>
@@ -683,6 +763,288 @@ const AddProperty = () => {
                                                 <option value='Viewing Agent'>Viewing Agent</option>
                                                 <option value='Co-Landlord'>Co-Landlord</option>
                                             </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 6: Landlord Supplementary Tenancy Documents / Addendums (Optional) */}
+                                <div className='bg-white rounded-2xl p-5 sm:p-7 border border-[#FF6300]/15 shadow-sm'>
+                                    <div className='flex items-center justify-between mb-3'>
+                                        <div>
+                                            <h2 className='text-base font-semibold text-[#3D3129] font-poppins flex items-center gap-2'>
+                                                <FiFileText className='text-primary text-sm' />
+                                                <span>Custom Tenancy Agreement / Estate Rules</span>
+                                                <span className='text-[10px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-full uppercase'>
+                                                    Optional
+                                                </span>
+                                            </h2>
+                                            <p className='text-xs text-[#3D3129]/60 mt-0.5'>
+                                                Have your own tenancy agreement, code of conduct, or estate bylaws? Attach them here so tenants must review and accept them before paying rent.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Upload trigger button */}
+                                    <div className='pt-2'>
+                                        <button
+                                            type='button'
+                                            onClick={() => docInputRef.current?.click()}
+                                            className='px-4 py-2.5 rounded-xl border border-dashed border-primary/40 hover:border-primary bg-orange-50/40 hover:bg-orange-50 text-xs font-semibold text-primary flex items-center gap-2 transition-colors cursor-pointer'
+                                        >
+                                            <IoAdd className='text-base' />
+                                            <span>Attach Document (PDF, JPG, PNG)</span>
+                                        </button>
+                                        <input
+                                            type='file'
+                                            ref={docInputRef}
+                                            accept='.pdf,image/png,image/jpeg,image/jpg'
+                                            multiple
+                                            onChange={handleDocSelect}
+                                            className='hidden'
+                                        />
+                                    </div>
+
+                                    {/* List of uploaded documents */}
+                                    {landlordDocs.length > 0 && (
+                                        <div className='mt-3.5 space-y-2'>
+                                            {landlordDocs.map((doc, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className='flex items-center justify-between p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 text-xs'
+                                                >
+                                                    <div className='flex items-center gap-2.5 truncate max-w-[80%]'>
+                                                        <div className='w-7 h-7 rounded-lg bg-orange-100 text-primary flex items-center justify-center shrink-0'>
+                                                            <FiFileText className='text-sm' />
+                                                        </div>
+                                                        <div className='truncate'>
+                                                            <p className='font-medium text-stone-800 truncate'>{doc.name}</p>
+                                                            <p className='text-[10px] text-stone-400'>{doc.size}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        type='button'
+                                                        onClick={() => handleRemoveDoc(idx)}
+                                                        className='text-stone-400 hover:text-red-500 p-1 transition-colors cursor-pointer'
+                                                        title='Remove document'
+                                                    >
+                                                        <IoCloseCircle className='text-lg' />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Section 7: House Rules & Estate Policies (Landlord Customizable) */}
+                                <div className='bg-white rounded-2xl p-5 sm:p-7 border border-[#FF6300]/15 shadow-sm'>
+                                    <div className='mb-4'>
+                                        <h2 className='text-base font-semibold text-[#3D3129] font-poppins flex items-center gap-2'>
+                                            <span>🌙</span>
+                                            <span>House Rules & Estate Policies</span>
+                                            <span className='text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase'>
+                                                Customizable
+                                            </span>
+                                        </h2>
+                                        <p className='text-xs text-[#3D3129]/60 mt-0.5'>
+                                            Specify your property's actual rules so tenants see accurate expectations instead of default templates.
+                                        </p>
+                                    </div>
+
+                                    <div className='space-y-3.5'>
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                🌙 Quiet Hours Policy
+                                            </label>
+                                            <input
+                                                type='text'
+                                                placeholder='e.g. Observed daily from 10:00 PM to 7:00 AM. Avoid loud music.'
+                                                value={houseRules.quietHours}
+                                                onChange={(e) => setHouseRules((prev) => ({ ...prev, quietHours: e.target.value }))}
+                                                className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                👥 Visitor & Guest Policy
+                                            </label>
+                                            <input
+                                                type='text'
+                                                placeholder='e.g. Overnight visitors staying over 3 consecutive days must register with security.'
+                                                value={houseRules.visitorPolicy}
+                                                onChange={(e) => setHouseRules((prev) => ({ ...prev, visitorPolicy: e.target.value }))}
+                                                className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                            />
+                                        </div>
+
+                                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    🗑️ Waste Disposal Days
+                                                </label>
+                                                <input
+                                                    type='text'
+                                                    placeholder='e.g. Tuesdays & Fridays, bag neatly.'
+                                                    value={houseRules.wasteDays}
+                                                    onChange={(e) => setHouseRules((prev) => ({ ...prev, wasteDays: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    🐾 Pet Policy
+                                                </label>
+                                                <input
+                                                    type='text'
+                                                    placeholder='e.g. No dogs allowed / Small cats permitted with consent.'
+                                                    value={houseRules.petPolicy}
+                                                    onChange={(e) => setHouseRules((prev) => ({ ...prev, petPolicy: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                📝 Other Compound Rules (Optional)
+                                            </label>
+                                            <textarea
+                                                rows={2}
+                                                placeholder='Add any additional rules (e.g. compound gate locks at 11pm, no smoking inside flat)...'
+                                                value={houseRules.customRules}
+                                                onChange={(e) => setHouseRules((prev) => ({ ...prev, customRules: e.target.value }))}
+                                                className='w-full p-3 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none resize-none'
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 8: Utility Information (Landlord Customizable) */}
+                                <div className='bg-white rounded-2xl p-5 sm:p-7 border border-[#FF6300]/15 shadow-sm'>
+                                    <div className='mb-4'>
+                                        <h2 className='text-base font-semibold text-[#3D3129] font-poppins flex items-center gap-2'>
+                                            <span>⚡</span>
+                                            <span>Utility Information & Schedules</span>
+                                            <span className='text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase'>
+                                                Customizable
+                                            </span>
+                                        </h2>
+                                        <p className='text-xs text-[#3D3129]/60 mt-0.5'>
+                                            Provide the tenant with your apartment's prepaid meter number and utility routines.
+                                        </p>
+                                    </div>
+
+                                    <div className='space-y-3.5'>
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                ⚡ Prepaid Electricity Meter Number
+                                            </label>
+                                            <input
+                                                type='text'
+                                                placeholder='e.g. 0412-8821-9943'
+                                                value={utilitiesInfo.meterNumber}
+                                                onChange={(e) => setUtilitiesInfo((prev) => ({ ...prev, meterNumber: e.target.value }))}
+                                                className='w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                            />
+                                        </div>
+
+                                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    💧 Water Pumping Hours
+                                                </label>
+                                                <input
+                                                    type='text'
+                                                    placeholder='e.g. 6:00 AM – 8:00 AM & 6:00 PM – 8:00 PM'
+                                                    value={utilitiesInfo.waterHours}
+                                                    onChange={(e) => setUtilitiesInfo((prev) => ({ ...prev, waterHours: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    🔌 Generator Schedule (if applicable)
+                                                </label>
+                                                <input
+                                                    type='text'
+                                                    placeholder='e.g. 7:00 PM – 11:00 PM on grid failure'
+                                                    value={utilitiesInfo.generatorSchedule}
+                                                    onChange={(e) => setUtilitiesInfo((prev) => ({ ...prev, generatorSchedule: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 9: Emergency Facility Contacts (Landlord Customizable) */}
+                                <div className='bg-white rounded-2xl p-5 sm:p-7 border border-[#FF6300]/15 shadow-sm'>
+                                    <div className='mb-4'>
+                                        <h2 className='text-base font-semibold text-[#3D3129] font-poppins flex items-center gap-2'>
+                                            <span>📞</span>
+                                            <span>Emergency Facility Contacts</span>
+                                            <span className='text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase'>
+                                                Customizable
+                                            </span>
+                                        </h2>
+                                        <p className='text-xs text-[#3D3129]/60 mt-0.5'>
+                                            Input real contacts for your estate or building so tenants reach the right technicians in emergencies.
+                                        </p>
+                                    </div>
+
+                                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                Estate Security Post Phone
+                                            </label>
+                                            <input
+                                                type='tel'
+                                                placeholder='e.g. 0801 111 2222'
+                                                value={emergencyContacts.securityPhone}
+                                                onChange={(e) => setEmergencyContacts((prev) => ({ ...prev, securityPhone: e.target.value }))}
+                                                className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                Resident Electrician Phone
+                                            </label>
+                                            <input
+                                                type='tel'
+                                                placeholder='e.g. 0803 333 4444'
+                                                value={emergencyContacts.electricianPhone}
+                                                onChange={(e) => setEmergencyContacts((prev) => ({ ...prev, electricianPhone: e.target.value }))}
+                                                className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                Estate Facility Manager Phone
+                                            </label>
+                                            <input
+                                                type='tel'
+                                                placeholder='e.g. 0805 555 6666'
+                                                value={emergencyContacts.facilityManagerPhone}
+                                                onChange={(e) => setEmergencyContacts((prev) => ({ ...prev, facilityManagerPhone: e.target.value }))}
+                                                className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                Resident Plumber Phone
+                                            </label>
+                                            <input
+                                                type='tel'
+                                                placeholder='e.g. 0802 222 3333'
+                                                value={emergencyContacts.plumberPhone}
+                                                onChange={(e) => setEmergencyContacts((prev) => ({ ...prev, plumberPhone: e.target.value }))}
+                                                className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -804,6 +1166,46 @@ const AddProperty = () => {
                                         </div>
                                     </div>
 
+                                    {/* Landlord Partnership Agreement Checkbox */}
+                                    <div className='mb-4 p-3.5 rounded-xl border border-stone-200 bg-white shadow-xs'>
+                                        <label className='flex items-start gap-2.5 cursor-pointer select-none'>
+                                            <input
+                                                type='checkbox'
+                                                checked={agreedToTerms}
+                                                onChange={(e) => {
+                                                    setAgreedToTerms(e.target.checked);
+                                                    if (e.target.checked && validationErrors.agreement) {
+                                                        setValidationErrors((prev) => {
+                                                            const copy = { ...prev };
+                                                            delete copy.agreement;
+                                                            return copy;
+                                                        });
+                                                    }
+                                                }}
+                                                className='mt-0.5 w-4 h-4 rounded text-primary focus:ring-primary/30 border-stone-300 cursor-pointer accent-primary'
+                                            />
+                                            <div className='text-xs leading-snug text-stone-700'>
+                                                <span>I have read and agree to the </span>
+                                                <button
+                                                    type='button'
+                                                    onClick={() => setShowAgreementModal(true)}
+                                                    className='text-primary font-bold hover:underline inline-flex items-center gap-0.5 cursor-pointer'
+                                                >
+                                                    HYVE Landlord Partnership Agreement
+                                                    <FiExternalLink className='text-[10px]' />
+                                                </button>
+                                                <span className='block text-[11px] text-stone-400 mt-0.5'>
+                                                    5% annual commission upon successful rental · Lagos State compliant
+                                                </span>
+                                            </div>
+                                        </label>
+                                        {validationErrors.agreement && (
+                                            <p className='text-[11px] text-red-500 font-medium mt-1.5 pl-6.5'>
+                                                {validationErrors.agreement}
+                                            </p>
+                                        )}
+                                    </div>
+
                                     {/* Action Buttons */}
                                     <button
                                         type='submit'
@@ -832,6 +1234,25 @@ const AddProperty = () => {
                     </div>
                 </main>
             </div>
+
+            {/* Reusable Landlord Partnership Agreement Modal */}
+            <LandlordAgreementModal
+                isOpen={showAgreementModal}
+                onClose={() => setShowAgreementModal(false)}
+                onAccept={() => {
+                    setAgreedToTerms(true);
+                    if (validationErrors.agreement) {
+                        setValidationErrors((prev) => {
+                            const copy = { ...prev };
+                            delete copy.agreement;
+                            return copy;
+                        });
+                    }
+                }}
+                hasAccepted={agreedToTerms}
+                showAcceptButton={true}
+                propertyAddress={formData.location}
+            />
 
             {/* Mobile Navigation */}
             <MobileNavigationTab currentTab='add_property' />

@@ -355,8 +355,15 @@ const Login = () => {
         </div>
 
         {/* Footer */}
-        <div className="w-full max-w-md mx-auto text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} Hyve Haven Inc. All rights reserved.
+        <div className="w-full max-w-md mx-auto text-center text-xs text-gray-400 space-y-1">
+          <p>© {new Date().getFullYear()} HYVE Haven Limited (RC 9000322). All rights reserved.</p>
+          <div className="flex items-center justify-center gap-3 text-gray-500">
+            <Link to="/legal?policy=privacy" target="_blank" className="hover:text-primary transition">Privacy</Link>
+            <span>•</span>
+            <Link to="/legal?policy=terms" target="_blank" className="hover:text-primary transition">Terms</Link>
+            <span>•</span>
+            <Link to="/legal?policy=cookies" target="_blank" className="hover:text-primary transition">Cookies</Link>
+          </div>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Sidebar from './components/layout/Sidebar/Sidebar'
 import Header from './components/layout/Dashboard/Header'
@@ -30,6 +30,8 @@ import {
     Star,
     ChevronDown,
     ChevronUp,
+    ChevronLeft,
+    ChevronRight,
     RefreshCw,
     X,
     Printer,
@@ -48,12 +50,88 @@ import {
     ExternalLink
 } from 'lucide-react'
 
+const TABS = [
+    { id: 'overview', label: '1. Overview & Contacts', icon: Building2 },
+    { id: 'documents', label: '2. Documents & Receipts', icon: FileText },
+    { id: 'renewal', label: '3. Rent & Renewal', icon: RefreshCw },
+    { id: 'moveout', label: '4. Move-Out & Notice', icon: Calendar },
+    { id: 'rules', label: '5. Rules & Utilities', icon: Shield },
+    { id: 'services', label: '6. Request Services', icon: Wrench },
+    { id: 'reviews', label: '7. Reviews', icon: Star },
+];
+
 const ManageApartment = () => {
     const navigate = useNavigate();
 
     // Active Navigation Tab
-    // 'overview' | 'documents' | 'renewal' | 'rules' | 'services' | 'moveout' | 'reviews'
+    // 'overview' | 'documents' | 'renewal' | 'moveout' | 'rules' | 'services' | 'reviews'
     const [activeTab, setActiveTab] = useState('overview');
+    const [slideDirection, setSlideDirection] = useState('right');
+    const tabRefs = useRef({});
+
+    const currentTabIndex = useMemo(() => {
+        const idx = TABS.findIndex((t) => t.id === activeTab);
+        return idx >= 0 ? idx : 0;
+    }, [activeTab]);
+
+    const nextTab = currentTabIndex < TABS.length - 1 ? TABS[currentTabIndex + 1] : null;
+    const prevTab = currentTabIndex > 0 ? TABS[currentTabIndex - 1] : null;
+
+    const goToTab = useCallback((tabId) => {
+        const nextIdx = TABS.findIndex(t => t.id === tabId);
+        const currIdx = TABS.findIndex(t => t.id === activeTab);
+        if (nextIdx !== currIdx && nextIdx >= 0) {
+            setSlideDirection(nextIdx > currIdx ? 'right' : 'left');
+            setActiveTab(tabId);
+        }
+    }, [activeTab]);
+
+    // Auto-scroll active tab pill into view in the top horizontal bar
+    useEffect(() => {
+        const el = tabRefs.current[activeTab];
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+    }, [activeTab]);
+
+    // Touch gesture swipe handling
+    const touchStartX = useRef(0);
+    const touchStartY = useRef(0);
+    const touchEndX = useRef(0);
+    const touchEndY = useRef(0);
+    const isSwiping = useRef(false);
+
+    const handleTouchStart = (e) => {
+        if (!e.targetTouches || e.targetTouches.length === 0) return;
+        touchStartX.current = e.targetTouches[0].clientX;
+        touchStartY.current = e.targetTouches[0].clientY;
+        touchEndX.current = e.targetTouches[0].clientX;
+        touchEndY.current = e.targetTouches[0].clientY;
+        isSwiping.current = true;
+    };
+
+    const handleTouchMove = (e) => {
+        if (!isSwiping.current || !e.targetTouches || e.targetTouches.length === 0) return;
+        touchEndX.current = e.targetTouches[0].clientX;
+        touchEndY.current = e.targetTouches[0].clientY;
+    };
+
+    const handleTouchEnd = () => {
+        if (!isSwiping.current) return;
+        isSwiping.current = false;
+
+        const deltaX = touchStartX.current - touchEndX.current;
+        const deltaY = touchStartY.current - touchEndY.current;
+
+        // Minimum swipe threshold and dominant horizontal check to preserve vertical scrolling
+        if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
+            if (deltaX > 0 && nextTab) {
+                goToTab(nextTab.id);
+            } else if (deltaX < 0 && prevTab) {
+                goToTab(prevTab.id);
+            }
+        }
+    };
 
     // Tenancy & Property State
     const [lease, setLease] = useState(null);
@@ -178,6 +256,62 @@ const ManageApartment = () => {
     const [isOpeningChat, setIsOpeningChat] = useState(false);
     const [copiedMeter, setCopiedMeter] = useState(false);
 
+    // Landlord Custom Info Parsers with graceful fallbacks
+    const houseRulesData = useMemo(() => {
+        let parsed = null;
+        if (property?.houseRules) {
+            try {
+                parsed = typeof property.houseRules === 'string' ? JSON.parse(property.houseRules) : property.houseRules;
+            } catch {
+                parsed = null;
+            }
+        }
+        return {
+            quietHours: parsed?.quietHours?.trim() || "Quiet hours are observed daily from 10:00 PM to 7:00 AM. Avoid loud music and disturbance.",
+            visitorPolicy: parsed?.visitorPolicy?.trim() || "Overnight visitors staying over 3 consecutive days must be registered with the security post.",
+            wasteDays: parsed?.wasteDays?.trim() || "Waste collection takes place on Tuesdays and Fridays. Bag all refuse securely in estate bins.",
+            petPolicy: parsed?.petPolicy?.trim() || "Small domesticated pets permitted with written consent and vaccination records.",
+            customRules: parsed?.customRules?.trim() || "",
+            isCustomized: !!parsed,
+        };
+    }, [property?.houseRules]);
+
+    const utilitiesData = useMemo(() => {
+        let parsed = null;
+        if (property?.utilitiesInfo) {
+            try {
+                parsed = typeof property.utilitiesInfo === 'string' ? JSON.parse(property.utilitiesInfo) : property.utilitiesInfo;
+            } catch {
+                parsed = null;
+            }
+        }
+        return {
+            meterNumber: parsed?.meterNumber?.trim() || "",
+            waterHours: parsed?.waterHours?.trim() || "6:00 AM – 8:00 AM & 6:00 PM – 8:00 PM",
+            generatorSchedule: parsed?.generatorSchedule?.trim() || "7:00 PM – 7:00 AM (during power outages)",
+            wasteFee: parsed?.wasteFee?.trim() || "",
+            isCustomized: !!parsed,
+        };
+    }, [property?.utilitiesInfo]);
+
+    const emergencyData = useMemo(() => {
+        let parsed = null;
+        if (property?.emergencyContacts) {
+            try {
+                parsed = typeof property.emergencyContacts === 'string' ? JSON.parse(property.emergencyContacts) : property.emergencyContacts;
+            } catch {
+                parsed = null;
+            }
+        }
+        return {
+            securityPhone: parsed?.securityPhone?.trim() || "+234 801 111 2222",
+            electricianPhone: parsed?.electricianPhone?.trim() || "+234 803 333 4444",
+            facilityManagerPhone: parsed?.facilityManagerPhone?.trim() || "+234 805 555 6666",
+            plumberPhone: parsed?.plumberPhone?.trim() || "",
+            isCustomized: !!parsed,
+        };
+    }, [property?.emergencyContacts]);
+
     // Modal States
     const [activeModal, setActiveModal] = useState(null); // 'agreement' | 'receipt' | 'inventory' | 'notice' | 'inspection' | 'reminders' | 'service'
     const [serviceType, setServiceType] = useState('Repairs');
@@ -203,6 +337,22 @@ const ManageApartment = () => {
     const [reviewCategory, setReviewCategory] = useState('Apartment');
     const [reviewText, setReviewText] = useState('');
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+    // Keyboard navigation (ArrowLeft / ArrowRight)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (['input', 'textarea', 'select'].includes(document.activeElement?.tagName?.toLowerCase())) return;
+            if (activeModal) return;
+
+            if (e.key === 'ArrowRight' && nextTab) {
+                goToTab(nextTab.id);
+            } else if (e.key === 'ArrowLeft' && prevTab) {
+                goToTab(prevTab.id);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [nextTab, prevTab, goToTab, activeModal]);
 
     // Handlers
     const handleChatWithLandlord = async () => {
@@ -477,24 +627,17 @@ const ManageApartment = () => {
                                 </div>
 
                                 {/* MODULAR SEGMENTED TAB BAR */}
-                                <div className="flex items-center gap-1 overflow-x-auto pb-2 mb-8 border-b border-[#EAEAEA] scrollbar-none">
-                                    {[
-                                        { id: 'overview', label: '1. Overview & Contacts', icon: Building2 },
-                                        { id: 'documents', label: '2. Documents & Receipts', icon: FileText },
-                                        { id: 'renewal', label: '3. Rent & Renewal', icon: RefreshCw },
-                                        { id: 'moveout', label: '4. Move-Out & Notice', icon: Calendar },
-                                        { id: 'rules', label: '5. Rules & Utilities', icon: Shield },
-                                        { id: 'services', label: '6. Request Services', icon: Wrench },
-                                        { id: 'reviews', label: '7. Reviews', icon: Star },
-                                    ].map((tab) => {
+                                <div className="flex items-center gap-1 overflow-x-auto pb-2 mb-3 border-b border-[#EAEAEA] scrollbar-none">
+                                    {TABS.map((tab) => {
                                         const Icon = tab.icon;
                                         const isActive = activeTab === tab.id;
                                         return (
                                             <button
                                                 key={tab.id}
+                                                ref={(el) => { tabRefs.current[tab.id] = el; }}
                                                 type="button"
-                                                onClick={() => setActiveTab(tab.id)}
-                                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap smooth-transition shrink-0 ${isActive
+                                                onClick={() => goToTab(tab.id)}
+                                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap smooth-transition shrink-0 cursor-pointer ${isActive
                                                         ? 'bg-primary text-white shadow-sm'
                                                         : 'text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#1F2937]'
                                                     }`}
@@ -505,6 +648,53 @@ const ManageApartment = () => {
                                         );
                                     })}
                                 </div>
+
+                                {/* SWIPE / PAGE CONTROLS BAR */}
+                                <div className="flex items-center justify-between gap-2 px-1 mb-6 text-xs text-[#6B7280]">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-[#1F2937]">Page {currentTabIndex + 1} of {TABS.length}:</span>
+                                        <span className="text-primary font-semibold">{TABS[currentTabIndex].label.replace(/^\d+\.\s*/, '')}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[11px] text-[#9CA3AF] hidden sm:inline">
+                                            👈 Swipe horizontally or use arrows 👉
+                                        </span>
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => prevTab && goToTab(prevTab.id)}
+                                                disabled={!prevTab}
+                                                className={`p-1.5 rounded-lg border border-[#EAEAEA] smooth-transition ${prevTab ? 'bg-white hover:bg-primary-light text-[#1F2937] hover:text-primary shadow-sm cursor-pointer' : 'opacity-40 cursor-not-allowed text-[#9CA3AF]'}`}
+                                                title="Previous Category"
+                                                aria-label="Previous Category"
+                                            >
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => nextTab && goToTab(nextTab.id)}
+                                                disabled={!nextTab}
+                                                className={`p-1.5 rounded-lg border border-[#EAEAEA] smooth-transition ${nextTab ? 'bg-white hover:bg-primary-light text-[#1F2937] hover:text-primary shadow-sm cursor-pointer' : 'opacity-40 cursor-not-allowed text-[#9CA3AF]'}`}
+                                                title="Next Category"
+                                                aria-label="Next Category"
+                                            >
+                                                <ChevronRight className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* SWIPABLE TAB CONTENT CONTAINER */}
+                                <div
+                                    className="touch-pan-y relative"
+                                    onTouchStart={handleTouchStart}
+                                    onTouchMove={handleTouchMove}
+                                    onTouchEnd={handleTouchEnd}
+                                >
+                                    <div
+                                        key={activeTab}
+                                        className={slideDirection === 'right' ? 'animate-page-slide-right' : 'animate-page-slide-left'}
+                                    >
 
                                 {/* TAB 1: OVERVIEW & CONTACTS */}
                                 {activeTab === 'overview' && (
@@ -935,33 +1125,46 @@ const ManageApartment = () => {
                                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                                             {/* House Rules */}
                                             <div className="lg:col-span-6 bg-white rounded-2xl border border-[#EAEAEA] p-6 shadow-sm space-y-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center text-primary">
-                                                        <Shield className="w-5 h-5" />
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center text-primary">
+                                                            <Shield className="w-5 h-5" />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="font-bold text-base text-[#1F2937]">House Rules & Estate Policies</h3>
+                                                            <p className="text-xs text-[#6B7280]">Community standards for peaceful coexistence</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h3 className="font-bold text-base text-[#1F2937]">House Rules & Estate Policies</h3>
-                                                        <p className="text-xs text-[#6B7280]">Community standards for peaceful coexistence</p>
-                                                    </div>
+                                                    {houseRulesData.isCustomized && (
+                                                        <span className="text-[10px] font-semibold text-[#059669] bg-[#ECFDF5] px-2 py-0.5 rounded-full border border-[#A7F3D0]">
+                                                            Set by Landlord
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 <div className="space-y-3 text-xs">
                                                     <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA]">
                                                         <p className="font-bold text-[#1F2937]">🌙 Quiet Hours Policy</p>
-                                                        <p className="text-[#6B7280] mt-0.5">Quiet hours are observed daily from 10:00 PM to 7:00 AM. Avoid loud music and disturbance.</p>
+                                                        <p className="text-[#6B7280] mt-0.5">{houseRulesData.quietHours}</p>
                                                     </div>
                                                     <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA]">
                                                         <p className="font-bold text-[#1F2937]">👥 Visitor & Guest Policy</p>
-                                                        <p className="text-[#6B7280] mt-0.5">Overnight visitors staying over 3 consecutive days must be registered with the security post.</p>
+                                                        <p className="text-[#6B7280] mt-0.5">{houseRulesData.visitorPolicy}</p>
                                                     </div>
                                                     <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA]">
                                                         <p className="font-bold text-[#1F2937]">🗑️ Waste Disposal Days</p>
-                                                        <p className="text-[#6B7280] mt-0.5">Waste collection takes place on Tuesdays and Fridays. Bag all refuse securely in estate bins.</p>
+                                                        <p className="text-[#6B7280] mt-0.5">{houseRulesData.wasteDays}</p>
                                                     </div>
                                                     <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA]">
                                                         <p className="font-bold text-[#1F2937]">🐾 Pet Policy</p>
-                                                        <p className="text-[#6B7280] mt-0.5">Small domesticated pets permitted with written consent and vaccination records.</p>
+                                                        <p className="text-[#6B7280] mt-0.5">{houseRulesData.petPolicy}</p>
                                                     </div>
+                                                    {houseRulesData.customRules && (
+                                                        <div className="p-3.5 rounded-xl bg-[#FFF9F5] border border-[#FFE7DB]">
+                                                            <p className="font-bold text-primary">📋 Specific Compound & House Rules</p>
+                                                            <p className="text-[#4B5563] mt-0.5 whitespace-pre-line">{houseRulesData.customRules}</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -969,58 +1172,106 @@ const ManageApartment = () => {
                                             <div className="lg:col-span-6 space-y-6">
                                                 {/* Utilities Card */}
                                                 <div className="bg-white rounded-2xl border border-[#EAEAEA] p-6 shadow-sm space-y-4">
-                                                    <h3 className="text-base font-bold text-[#1F2937]">Utility Information</h3>
+                                                    <div className="flex items-center justify-between">
+                                                        <h3 className="text-base font-bold text-[#1F2937]">Utility Information</h3>
+                                                        {utilitiesData.isCustomized && (
+                                                            <span className="text-[10px] font-semibold text-[#059669] bg-[#ECFDF5] px-2 py-0.5 rounded-full border border-[#A7F3D0]">
+                                                                Set by Landlord
+                                                            </span>
+                                                        )}
+                                                    </div>
 
                                                     <div className="p-4 rounded-xl bg-[#FFF9F5] border border-[#FFE7DB] flex items-center justify-between">
                                                         <div>
                                                             <p className="text-[11px] font-bold text-primary uppercase">Prepaid Electricity Meter</p>
-                                                            <p className="text-base font-mono font-bold text-[#1F2937] mt-0.5">0412-8821-9943</p>
+                                                            <p className="text-base font-mono font-bold text-[#1F2937] mt-0.5">
+                                                                {utilitiesData.meterNumber || "Not specified by landlord"}
+                                                            </p>
                                                         </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                handleCopy("0412-8821-9943", "Prepaid meter number copied!");
-                                                                setCopiedMeter(true);
-                                                                setTimeout(() => setCopiedMeter(false), 2000);
-                                                            }}
-                                                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-primary border border-primary/20 shadow-sm hover:bg-primary hover:text-white smooth-transition"
-                                                        >
-                                                            {copiedMeter ? "Copied!" : "Copy Meter #"}
-                                                        </button>
+                                                        {utilitiesData.meterNumber && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    handleCopy(utilitiesData.meterNumber, "Prepaid meter number copied!");
+                                                                    setCopiedMeter(true);
+                                                                    setTimeout(() => setCopiedMeter(false), 2000);
+                                                                }}
+                                                                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-primary border border-primary/20 shadow-sm hover:bg-primary hover:text-white smooth-transition"
+                                                            >
+                                                                {copiedMeter ? "Copied!" : "Copy Meter #"}
+                                                            </button>
+                                                        )}
                                                     </div>
 
                                                     <div className="space-y-2.5 text-xs">
                                                         <div className="flex justify-between p-3 rounded-lg bg-[#F9FAFB] border border-[#EAEAEA]">
                                                             <span className="text-[#6B7280]">💧 Water Pumping Hours:</span>
-                                                            <span className="font-semibold text-[#1F2937]">6:00 AM – 8:00 AM & 6:00 PM – 8:00 PM</span>
+                                                            <span className="font-semibold text-[#1F2937] text-right ml-2">{utilitiesData.waterHours}</span>
                                                         </div>
                                                         <div className="flex justify-between p-3 rounded-lg bg-[#F9FAFB] border border-[#EAEAEA]">
                                                             <span className="text-[#6B7280]">⚡ Central Generator:</span>
-                                                            <span className="font-semibold text-[#1F2937]">7:00 PM – 7:00 AM (during power outages)</span>
+                                                            <span className="font-semibold text-[#1F2937] text-right ml-2">{utilitiesData.generatorSchedule}</span>
                                                         </div>
+                                                        {utilitiesData.wasteFee && (
+                                                            <div className="flex justify-between p-3 rounded-lg bg-[#F9FAFB] border border-[#EAEAEA]">
+                                                                <span className="text-[#6B7280]">🗑️ Waste & Sanitation:</span>
+                                                                <span className="font-semibold text-[#1F2937] text-right ml-2">{utilitiesData.wasteFee}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
 
                                                 {/* Emergency Contacts */}
                                                 <div className="bg-white rounded-2xl border border-[#EAEAEA] p-6 shadow-sm space-y-3">
-                                                    <h3 className="text-base font-bold text-[#1F2937]">Emergency Facility Contacts</h3>
+                                                    <div className="flex items-center justify-between">
+                                                        <h3 className="text-base font-bold text-[#1F2937]">Emergency Facility Contacts</h3>
+                                                        {emergencyData.isCustomized && (
+                                                            <span className="text-[10px] font-semibold text-[#059669] bg-[#ECFDF5] px-2 py-0.5 rounded-full border border-[#A7F3D0]">
+                                                                Verified Contacts
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="grid grid-cols-2 gap-2.5 text-xs">
                                                         <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA]">
                                                             <p className="text-[#6B7280]">Estate Security Post</p>
-                                                            <a href="tel:+2348011112222" className="font-bold text-primary block mt-0.5">+234 801 111 2222</a>
+                                                            <a href={`tel:${emergencyData.securityPhone.replace(/\s+/g, '')}`} className="font-bold text-primary block mt-0.5">
+                                                                {emergencyData.securityPhone}
+                                                            </a>
                                                         </div>
                                                         <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA]">
                                                             <p className="text-[#6B7280]">Resident Electrician</p>
-                                                            <a href="tel:+2348033334444" className="font-bold text-primary block mt-0.5">+234 803 333 4444</a>
+                                                            <a href={`tel:${emergencyData.electricianPhone.replace(/\s+/g, '')}`} className="font-bold text-primary block mt-0.5">
+                                                                {emergencyData.electricianPhone}
+                                                            </a>
                                                         </div>
                                                         <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA]">
                                                             <p className="text-[#6B7280]">Estate Facility Manager</p>
-                                                            <a href="tel:+2348055556666" className="font-bold text-primary block mt-0.5">+234 805 555 6666</a>
+                                                            <a href={`tel:${emergencyData.facilityManagerPhone.replace(/\s+/g, '')}`} className="font-bold text-primary block mt-0.5">
+                                                                {emergencyData.facilityManagerPhone}
+                                                            </a>
                                                         </div>
-                                                        <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA]">
-                                                            <p className="text-[#6B7280]">Emergency Hotline</p>
-                                                            <a href="tel:112" className="font-bold text-[#DC2626] block mt-0.5">112 (Police & Fire)</a>
-                                                        </div>
+                                                        {emergencyData.plumberPhone ? (
+                                                            <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA]">
+                                                                <p className="text-[#6B7280]">Resident Plumber</p>
+                                                                <a href={`tel:${emergencyData.plumberPhone.replace(/\s+/g, '')}`} className="font-bold text-primary block mt-0.5">
+                                                                    {emergencyData.plumberPhone}
+                                                                </a>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA]">
+                                                                <p className="text-[#6B7280]">Emergency Hotline</p>
+                                                                <a href="tel:112" className="font-bold text-[#DC2626] block mt-0.5">112 (Police & Fire)</a>
+                                                            </div>
+                                                        )}
+                                                        {emergencyData.plumberPhone && (
+                                                            <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#EAEAEA] col-span-2 flex items-center justify-between">
+                                                                <div>
+                                                                    <p className="text-[#6B7280]">Emergency Hotline</p>
+                                                                    <p className="text-[11px] text-[#9CA3AF]">National Police & Fire Service</p>
+                                                                </div>
+                                                                <a href="tel:112" className="font-bold text-[#DC2626] text-sm">112</a>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -1204,6 +1455,49 @@ const ManageApartment = () => {
                                         </div>
                                     </div>
                                 )}
+                                    </div>
+
+                                    {/* BOTTOM PAGE TURN NAVIGATION */}
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-10 pt-6 border-t border-[#EAEAEA] text-xs">
+                                        {prevTab ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => goToTab(prevTab.id)}
+                                                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-[#374151] bg-white border border-[#EAEAEA] hover:bg-[#F9FAFB] shadow-sm smooth-transition cursor-pointer"
+                                            >
+                                                <ChevronLeft className="w-4 h-4 text-primary" />
+                                                Previous: {prevTab.label.replace(/^\d+\.\s*/, '')}
+                                            </button>
+                                        ) : <div className="hidden sm:block" />}
+
+                                        {/* Page progress indicator dots */}
+                                        <div className="flex items-center gap-2">
+                                            {TABS.map((tab, idx) => (
+                                                <button
+                                                    key={tab.id}
+                                                    type="button"
+                                                    onClick={() => goToTab(tab.id)}
+                                                    className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                                                        idx === currentTabIndex ? 'w-7 bg-primary' : 'w-2.5 bg-[#D1D5DB] hover:bg-[#9CA3AF]'
+                                                    }`}
+                                                    title={tab.label}
+                                                    aria-label={tab.label}
+                                                />
+                                            ))}
+                                        </div>
+
+                                        {nextTab ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => goToTab(nextTab.id)}
+                                                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-primary hover:bg-primary-hover shadow-sm smooth-transition cursor-pointer"
+                                            >
+                                                Next: {nextTab.label.replace(/^\d+\.\s*/, '')}
+                                                <ChevronRight className="w-4 h-4" />
+                                            </button>
+                                        ) : <div className="hidden sm:block" />}
+                                    </div>
+                                </div>
                             </>
                         )}
 
@@ -1241,7 +1535,7 @@ const ManageApartment = () => {
                                 <p><strong>1. Lease Term:</strong> 12 Months commencing on {formattedMoveInDate} and ending on {formattedExpiryDate}.</p>
                                 <p><strong>2. Yearly Rent:</strong> ₦ {yearlyRent.toLocaleString()} payable annually in advance via Hyve Escrow.</p>
                                 <p><strong>3. Use of Premises:</strong> Strictly for private residential accommodation.</p>
-                                <p><strong>4. Caution Deposit:</strong> ₦ 50,000 held in escrow trust, refundable upon vacating in clean condition.</p>
+                                <p><strong>4. Caution Deposit:</strong> Held directly by Landlord as security, refundable within 14 days of tenancy expiry less documented itemised deductions.</p>
                             </div>
 
                             <p>

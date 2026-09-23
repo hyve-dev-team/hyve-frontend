@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Sidebar from "../Sidebar/Sidebar";
 import Header from "../Dashboard/Header";
@@ -10,6 +10,7 @@ import { Users, ArrowLeft, ExternalLink, Calendar, Loader2 } from "lucide-react"
 import useFetchApartment from "../../../../../hooks/useFetchApartment";
 import useQueueStore from "../../../../../hooks/useQueueStore";
 import { getPropertyQueueApi, scheduleActiveTourApi, mapBackendQueue } from "../../../../../utils/queueApi";
+import { formatWhatsAppPhone } from "../../../../../utils/inspectionApi";
 import placeholderImage from "../../../../../assets/images/apartments/apartment-image-1.png";
 import JoinQueueModal from "../../../../../components/queue/JoinQueueModal";
 import UpgradeTierModal from "../../../../../components/queue/UpgradeTierModal";
@@ -63,26 +64,31 @@ const ApartmentQueue = () => {
   const [propertyQueue, setPropertyQueue] = useState(null);
   const [isQueueLoading, setIsQueueLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchPropertyQueue = useCallback(async () => {
     if (!apartmentID) return;
     setIsQueueLoading(true);
-    getPropertyQueueApi(apartmentID)
-      .then((data) => {
-        if (cancelled) return;
-        setPropertyQueue(data ? mapBackendQueue(data) : null);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setPropertyQueue(null);
-      })
-      .finally(() => {
-        if (!cancelled) setIsQueueLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const data = await getPropertyQueueApi(apartmentID);
+      setPropertyQueue(data ? mapBackendQueue(data) : null);
+    } catch {
+      setPropertyQueue(null);
+    } finally {
+      setIsQueueLoading(false);
+    }
   }, [apartmentID]);
+
+  useEffect(() => {
+    fetchPropertyQueue();
+
+    const handleQueueUpdate = () => {
+      fetchPropertyQueue();
+    };
+
+    window.addEventListener("hyve_queue_updated", handleQueueUpdate);
+    return () => {
+      window.removeEventListener("hyve_queue_updated", handleQueueUpdate);
+    };
+  }, [fetchPropertyQueue]);
 
   const userQueue = propertyQueue || getQueueForApartment(apartmentID);
 
@@ -126,7 +132,7 @@ const ApartmentQueue = () => {
   const propertyTitle = apartment?.lodgeDesc || "Hyve Apartment";
   const tourDetails = userQueue?.scheduledTour ? `Scheduled Viewing: Today at ${userQueue.scheduledTour}` : "Preferred Viewing: Flexible today";
 
-  const cleanPhone = (userQueue?.agentPhone || "").replace(/\D/g, "");
+  const cleanPhone = formatWhatsAppPhone(userQueue?.agentPhone);
   const waMessage = `Hello ${userQueue?.agentName || "Agent"},\n\nI am currently Position #1 on Hyve Haven for "${propertyTitle}" (${apartmentType}) and have paid my inspection fee.\n\nTenant Details:\n- Name: ${renterName}\n- Phone: ${renterPhone}\n- Apartment: ${propertyTitle} (${apartmentType})\n- Status: ${tourDetails}\n- Hyve Queue Reference: #${userQueue?.id}\n\nPlease confirm our viewing arrangement. Thank you!`;
   const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}` : null;
 
@@ -542,7 +548,11 @@ const ApartmentQueue = () => {
           isOpen={Boolean(passingQueue)}
           onClose={() => setPassingQueue(null)}
           queue={passingQueue}
-          onConfirmPass={passSlot}
+          onConfirmPass={async (qId) => {
+            await passSlot(qId);
+            setPropertyQueue(null);
+            await fetchPropertyQueue();
+          }}
         />
       </div>
     </>

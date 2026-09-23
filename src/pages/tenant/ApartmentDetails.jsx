@@ -79,6 +79,17 @@ const ApartmentDetails = () => {
         if (apartmentID && !isNaN(Number(apartmentID))) {
             fetchPropertyQueueStatus();
         }
+
+        const handleQueueUpdate = () => {
+            if (apartmentID && !isNaN(Number(apartmentID))) {
+                fetchPropertyQueueStatus();
+            }
+        };
+
+        window.addEventListener("hyve_queue_updated", handleQueueUpdate);
+        return () => {
+            window.removeEventListener("hyve_queue_updated", handleQueueUpdate);
+        };
     }, [apartmentID]);
 
     const existingQueue = propertyQueue || getQueueForApartment(apartmentID);

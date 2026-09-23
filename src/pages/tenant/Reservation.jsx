@@ -11,7 +11,9 @@ import { createLease } from '../../utils/leaseApi'
 import { getPropertyQueueApi, commitAndPayRentApi } from '../../utils/queueApi'
 import { BsShieldCheck } from 'react-icons/bs'
 import { IoCheckmarkCircle, IoKeyOutline } from 'react-icons/io5'
+import { FiFileText, FiExternalLink } from 'react-icons/fi'
 import { hyveSuccess } from '../../utils/hyveToast'
+import TenancyAgreementModal from '../../components/modals/TenancyAgreementModal'
 
 const Reservation = () => {
     const { apartmentID } = useParams();
@@ -19,8 +21,10 @@ const Reservation = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [hasAgreedTerms, setHasAgreedTerms] = useState(false);
     const [hasAgreedPolicy, setHasAgreedPolicy] = useState(false);
+    const [hasAgreedTenancy, setHasAgreedTenancy] = useState(false);
+    const [showTenancyModal, setShowTenancyModal] = useState(false);
 
-    const isReadyToPay = hasAgreedTerms && hasAgreedPolicy;
+    const isReadyToPay = hasAgreedTerms && hasAgreedPolicy && hasAgreedTenancy;
 
     const { apartment: lodge, isLoading: isApartmentLoading } = useFetchApartment(apartmentID);
 
@@ -186,6 +190,78 @@ const Reservation = () => {
                                 </div>
                             </div>
 
+                            {/* Tenancy Agreement Acceptance Card */}
+                            <div className='mt-6 bg-white border border-[#FF6300]/25 rounded-2xl p-5 sm:p-6 shadow-xs'>
+                                <div className='flex items-start sm:items-center justify-between gap-3 mb-3'>
+                                    <div className='flex items-center gap-2.5'>
+                                        <div className='w-9 h-9 rounded-xl bg-orange-100 text-primary flex items-center justify-center text-lg shrink-0'>
+                                            <FiFileText />
+                                        </div>
+                                        <div>
+                                            <h4 className='font-bold text-sm sm:text-base font-poppins text-gray-900'>
+                                                Standard Residential Tenancy Agreement
+                                            </h4>
+                                            <p className='text-xs text-stone-500'>
+                                                Lagos State Tenancy Law compliant · Mandatory review before rent payment
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type='button'
+                                        onClick={() => setShowTenancyModal(true)}
+                                        className='text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 shrink-0'
+                                    >
+                                        <span>Read Full Agreement</span>
+                                        <FiExternalLink className='text-[11px]' />
+                                    </button>
+                                </div>
+
+                                <p className='text-xs text-stone-600 leading-relaxed mb-4'>
+                                    By proceeding, you enter into a 12-month residential tenancy with the landlord. Caution fees (₦{Number(lodge?.lodgePrice ? Math.round(Number(lodge.lodgePrice) * 0.1) : 0).toLocaleString()} or as specified) are held directly with the landlord and refundable within 14 days of move-out.
+                                </p>
+
+                                {lodge?.landlordDocUrls && lodge.landlordDocUrls.length > 0 && (
+                                    <div className='mb-4 p-3 bg-amber-50/70 border border-amber-200/60 rounded-xl text-xs text-stone-700 flex items-center justify-between'>
+                                        <div className='flex items-center gap-2'>
+                                            <FiFileText className='text-amber-600' />
+                                            <span>The landlord has attached <strong>{lodge.landlordDocUrls.length} custom addendum/estate bylaws document(s)</strong>.</span>
+                                        </div>
+                                        <button
+                                            type='button'
+                                            onClick={() => setShowTenancyModal(true)}
+                                            className='text-primary font-bold hover:underline shrink-0'
+                                        >
+                                            View in agreement
+                                        </button>
+                                    </div>
+                                )}
+
+                                <label className='flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-stone-100'>
+                                    <input
+                                        type="checkbox"
+                                        id="tenancyAgreement"
+                                        checked={hasAgreedTenancy}
+                                        onChange={(e) => setHasAgreedTenancy(e.target.checked)}
+                                        className='mt-0.5 w-4 h-4 accent-primary cursor-pointer'
+                                        required
+                                    />
+                                    <div className='text-xs leading-snug text-stone-700'>
+                                        <span>I have reviewed and agree to the </span>
+                                        <button
+                                            type='button'
+                                            onClick={() => setShowTenancyModal(true)}
+                                            className='text-primary font-bold hover:underline inline-flex items-center gap-0.5 cursor-pointer'
+                                        >
+                                            Tenancy Agreement Template & Landlord Terms
+                                            <FiExternalLink className='text-[10px]' />
+                                        </button>
+                                        <span className='block text-[11px] text-stone-400 mt-0.5'>
+                                            Governing your tenancy, caution deposit return timeline (14 days), and dispute resolution.
+                                        </span>
+                                    </div>
+                                </label>
+                            </div>
+
                             <div className='flex justify-center mt-6'>
                                 <button
                                     type='submit'
@@ -210,6 +286,20 @@ const Reservation = () => {
                     </div>
                 </main>
             </div>
+
+            {/* Tenancy Agreement Modal */}
+            <TenancyAgreementModal
+                isOpen={showTenancyModal}
+                onClose={() => setShowTenancyModal(false)}
+                onAccept={() => setHasAgreedTenancy(true)}
+                hasAccepted={hasAgreedTenancy}
+                showAcceptButton={true}
+                propertyTitle={lodge?.lodgeDesc || lodge?.title || "Apartment"}
+                propertyAddress={lodge?.nearbyDistance || lodge?.location || "Lagos, Nigeria"}
+                annualRent={lodge?.lodgePrice || lodge?.price || 0}
+                cautionFee={lodge?.lodgePrice ? Math.round(Number(lodge.lodgePrice) * 0.1) : 0}
+                landlordDocUrls={lodge?.landlordDocUrls || []}
+            />
 
             {/* Mobile navigation */}
             <MobileNavigationTab />

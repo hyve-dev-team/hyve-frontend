@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { MdOutlineNotificationsActive } from 'react-icons/md'
 import userProfileImage from "../../../../../assets/images/shared-images/user-1.png"
 import { PiHandWavingFill } from 'react-icons/pi'
+import { getNotifications } from '../../../../../utils/notificationsApi'
 
 const Header = () => {
     const navigate = useNavigate();
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const handleNotification = () => {
         navigate("/landlord/notifications")
@@ -35,6 +37,14 @@ const Header = () => {
             window.removeEventListener('storage', syncUser);
             window.removeEventListener('focus', syncUser);
         };
+    }, []);
+
+    useEffect(() => {
+        getNotifications({ unreadOnly: true })
+            .then((data) => {
+                if (Array.isArray(data)) setUnreadCount(data.length);
+            })
+            .catch(() => {});
     }, []);
 
     const rawFirstName = 
@@ -73,8 +83,11 @@ const Header = () => {
             </div>
 
             {/* Notification Icon */}
-            <button onClick={handleNotification} title="Notifications">
-                <MdOutlineNotificationsActive className='text-[22px] lg:text-[24px] cursor-pointer hover:text-primary smooth-transition text-black/70' />
+            <button onClick={handleNotification} title="Notifications" className="relative cursor-pointer">
+                <MdOutlineNotificationsActive className='text-[22px] lg:text-[24px] hover:text-primary smooth-transition text-black/70' />
+                {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-white" />
+                )}
             </button>
         </header>
     )

@@ -53,6 +53,10 @@ export function mapProperty(item) {
         reviews: mappedReviews,
         landlord: p.landlord || null,
         createdAt: p.createdAt || null,
+        houseRules: p.houseRules || null,
+        utilitiesInfo: p.utilitiesInfo || null,
+        emergencyContacts: p.emergencyContacts || null,
+        raw: p,
     };
 }
 

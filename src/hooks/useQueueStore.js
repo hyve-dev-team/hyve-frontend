@@ -94,6 +94,7 @@ export const useQueueStore = () => {
   const leaveQueue = useCallback(
     async (queueId) => {
       await leaveQueueApi(queueId);
+      setQueues((prev) => prev.filter((q) => q.id !== queueId));
       await refresh();
       window.dispatchEvent(new Event("hyve_queue_updated"));
       return { success: true };
@@ -114,6 +115,7 @@ export const useQueueStore = () => {
   const passSlot = useCallback(
     async (queueId) => {
       await passTurnApi(queueId);
+      setQueues((prev) => prev.filter((q) => q.id !== queueId));
       await refresh();
       window.dispatchEvent(new Event("hyve_queue_updated"));
       return { success: true };

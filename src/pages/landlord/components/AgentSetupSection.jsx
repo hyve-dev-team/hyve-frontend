@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FaWhatsapp, FaUserShield, FaTrash, FaPlus, FaCheckCircle, FaUserTie, FaPhoneAlt } from 'react-icons/fa';
-import { getPropertyAgents, addPropertyAgent, deletePropertyAgent, formatWhatsAppPhone } from '../../../utils/inspectionApi';
+import { getPropertyAgents, addPropertyAgent, deletePropertyAgent, formatWhatsAppPhone, formatDisplayPhone } from '../../../utils/inspectionApi';
 import { hyveSuccess, hyveError } from '../../../utils/hyveToast';
 
 const AgentSetupSection = ({ propertyId, propertyTitle, landlordPhone, landlordName }) => {
@@ -40,11 +40,13 @@ const AgentSetupSection = ({ propertyId, propertyTitle, landlordPhone, landlordN
             return;
         }
 
+        const normalizedPhone = formatDisplayPhone(whatsappNumber.trim());
+
         setIsSaving(true);
         try {
             await addPropertyAgent(propertyId, {
                 fullName: fullName.trim(),
-                whatsappNumber: whatsappNumber.trim(),
+                whatsappNumber: normalizedPhone,
                 roleTitle: roleTitle.trim() || "Caretaker",
                 isPrimary: isPrimary || agents.length === 0,
             });
@@ -135,19 +137,29 @@ const AgentSetupSection = ({ propertyId, propertyTitle, landlordPhone, landlordN
 
                         <div>
                             <label className="block text-xs font-medium text-[#4B5563] mb-1">WhatsApp Number *</label>
-                            <div className="relative">
-                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#10B981]">
-                                    <FaWhatsapp className="w-3.5 h-3.5" />
-                                </span>
+                            <div className="flex items-center rounded-xl border border-[#D1D5DB] bg-white overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+                                <div className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 border-r border-[#E5E7EB] text-xs font-semibold text-gray-700 select-none shrink-0">
+                                    <span>🇳🇬</span>
+                                    <span>+234</span>
+                                </div>
                                 <input
                                     type="tel"
-                                    placeholder="e.g. 08012345678 or +234..."
+                                    placeholder="805 623 7380 (or 080...)"
                                     value={whatsappNumber}
-                                    onChange={(e) => setWhatsappNumber(e.target.value)}
-                                    className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-white border border-[#D1D5DB] rounded-xl outline-none focus:border-primary"
+                                    onChange={(e) => {
+                                        let val = e.target.value;
+                                        if (val.startsWith("+234")) val = val.slice(4).trim();
+                                        else if (val.startsWith("234") && val.length > 5) val = val.slice(3).trim();
+                                        if (val.startsWith("0")) val = val.slice(1).trim();
+                                        setWhatsappNumber(val);
+                                    }}
+                                    className="w-full px-3 py-2.5 text-xs bg-transparent outline-none"
                                     required
                                 />
                             </div>
+                            <p className="text-[10px] text-gray-500 mt-1">
+                                Country code +234 is handled automatically.
+                            </p>
                         </div>
 
                         <div>

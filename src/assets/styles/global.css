@@ -213,4 +213,35 @@
   .scroll-bar-hidden {
     @apply [&::-webkit-scrollbar]:hidden;
   }
+
+  /* Page slide animations for tab page flipping */
+  @keyframes pageSlideInRight {
+    0% {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes pageSlideInLeft {
+    0% {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-page-slide-right {
+    animation: pageSlideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-page-slide-left {
+    animation: pageSlideInLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }

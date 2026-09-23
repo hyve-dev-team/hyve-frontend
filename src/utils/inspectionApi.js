@@ -1,15 +1,40 @@
 import config from "../config";
 
 /**
- * Format phone number to international WhatsApp format (defaults to Nigeria +234)
+ * Format phone number to international WhatsApp format digits (e.g. 2348056237380)
+ * Works for 080..., 80..., +234..., 2340...
  */
 export function formatWhatsAppPhone(phone) {
     if (!phone) return "";
-    let cleaned = phone.replace(/[^0-9]/g, "");
-    if (cleaned.startsWith("0")) {
+    let cleaned = String(phone).replace(/\D/g, "");
+    if (!cleaned) return "";
+
+    // Handle erroneous +2340... (e.g. 234080...)
+    if (cleaned.startsWith("2340") && cleaned.length >= 14) {
+        cleaned = "234" + cleaned.substring(4);
+    }
+    // Standard Nigerian 11-digit local format: 080..., 070..., 090..., 081...
+    else if (cleaned.startsWith("0")) {
         cleaned = "234" + cleaned.substring(1);
     }
+    // 10-digit format without leading 0: 805..., 703..., 901...
+    else if (cleaned.length === 10 && /^[789]/.test(cleaned)) {
+        cleaned = "234" + cleaned;
+    }
+
     return cleaned;
+}
+
+/**
+ * Format phone number for display/storage with standard "+234 800 000 0000" formatting
+ */
+export function formatDisplayPhone(phone) {
+    const wa = formatWhatsAppPhone(phone);
+    if (!wa) return phone || "";
+    if (wa.startsWith("234") && wa.length === 13) {
+        return `+234 ${wa.substring(3, 6)} ${wa.substring(6, 9)} ${wa.substring(9)}`;
+    }
+    return String(phone).startsWith("+") ? String(phone) : `+${wa}`;
 }
 
 /**

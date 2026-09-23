@@ -24,6 +24,7 @@ import useQueueStore from "../../../../../hooks/useQueueStore";
 import UpgradeTierModal from "../../../../../components/queue/UpgradeTierModal";
 import PayInspectionModal from "../../../../../components/queue/PayInspectionModal";
 import PassSlotModal from "../../../../../components/queue/PassSlotModal";
+import { formatWhatsAppPhone } from "../../../../../utils/inspectionApi";
 import { hyveSuccess } from "../../../../../utils/hyveToast";
 
 // Digital Block Countdown Component
@@ -551,7 +552,7 @@ const MyQueues = () => {
                                           <IoCallOutline size={16} />
                                         </a>
                                         <a
-                                          href={`https://wa.me/${queue.agentPhone?.replace(/\D/g, "")}`}
+                                          href={`https://wa.me/${formatWhatsAppPhone(queue.agentPhone)}`}
                                           target="_blank"
                                           rel="noopener noreferrer"
                                           className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs transition-colors cursor-pointer"

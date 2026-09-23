@@ -1,21 +1,31 @@
-import React from "react";
+import React, { useState } from "react";
 import { CgClose } from "react-icons/cg";
-import { AlertTriangle } from "lucide-react";
-import { hyveSuccess } from "../../utils/hyveToast";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { hyveSuccess, hyveError } from "../../utils/hyveToast";
 
 const PassSlotModal = ({ isOpen, onClose, queue, onConfirmPass }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!isOpen || !queue) return null;
 
-  const handlePass = () => {
-    onConfirmPass(queue.id);
-    hyveSuccess("Turn Passed", "Your slot has been passed to the next person in line. 1 queue slot freed.");
-    onClose();
+  const handlePass = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onConfirmPass(queue.id);
+      hyveSuccess("Turn Passed", "Your slot has been passed to the next person in line. 1 queue slot freed.");
+      onClose();
+    } catch (err) {
+      hyveError("Pass Turn Failed", err?.message || "Could not pass your turn. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div
       className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
-      onClick={onClose}
+      onClick={isSubmitting ? undefined : onClose}
     >
       <div
         className="bg-white rounded-2xl w-full max-w-md p-6 md:p-8 shadow-2xl relative text-center"
@@ -23,7 +33,8 @@ const PassSlotModal = ({ isOpen, onClose, queue, onConfirmPass }) => {
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full text-gray-400 hover:text-gray-700"
+          disabled={isSubmitting}
+          className="absolute top-4 right-4 p-2 rounded-full text-gray-400 hover:text-gray-700 disabled:opacity-50 cursor-pointer"
         >
           <CgClose size={18} />
         </button>
@@ -43,14 +54,23 @@ const PassSlotModal = ({ isOpen, onClose, queue, onConfirmPass }) => {
           <button
             type="button"
             onClick={handlePass}
-            className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold text-sm shadow-md transition-colors cursor-pointer"
+            disabled={isSubmitting}
+            className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-xl font-semibold text-sm shadow-md transition-colors cursor-pointer flex items-center justify-center gap-2"
           >
-            Yes, Pass to Next Person
+            {isSubmitting ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Passing Turn...</span>
+              </>
+            ) : (
+              "Yes, Pass to Next Person"
+            )}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2.5 border border-gray-200 text-gray-700 rounded-xl text-xs font-medium hover:bg-gray-50"
+            disabled={isSubmitting}
+            className="w-full py-2.5 border border-gray-200 text-gray-700 rounded-xl text-xs font-medium hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
           >
             Cancel & Keep My Slot
           </button>

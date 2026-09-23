@@ -73,6 +73,31 @@ const UpdateProperty = () => {
     // Images state: array of { file: File | null, preview: string, isExisting: boolean }
     const [images, setImages] = useState([]);
 
+    // Landlord Custom House Rules State
+    const [houseRules, setHouseRules] = useState({
+        quietHours: '',
+        visitorPolicy: '',
+        wasteDays: '',
+        petPolicy: '',
+        customRules: '',
+    });
+
+    // Landlord Custom Utility Info State
+    const [utilitiesInfo, setUtilitiesInfo] = useState({
+        meterNumber: '',
+        waterHours: '',
+        generatorSchedule: '',
+        wasteFee: '',
+    });
+
+    // Landlord Emergency Facility Contacts State
+    const [emergencyContacts, setEmergencyContacts] = useState({
+        securityPhone: '',
+        electricianPhone: '',
+        facilityManagerPhone: '',
+        plumberPhone: '',
+    });
+
     // Validation & submitting states
     const [validationErrors, setValidationErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -128,6 +153,52 @@ const UpdateProperty = () => {
                 isExisting: true,
             }));
             setImages(existingImgs);
+
+            // Populate existing custom rules if present
+            if (data.houseRules) {
+                try {
+                    const parsedRules = typeof data.houseRules === 'string' ? JSON.parse(data.houseRules) : data.houseRules;
+                    setHouseRules({
+                        quietHours: parsedRules.quietHours || '',
+                        visitorPolicy: parsedRules.visitorPolicy || '',
+                        wasteDays: parsedRules.wasteDays || '',
+                        petPolicy: parsedRules.petPolicy || '',
+                        customRules: parsedRules.customRules || '',
+                    });
+                } catch (e) {
+                    console.warn('Could not parse existing houseRules:', e);
+                }
+            }
+
+            // Populate existing utility info if present
+            if (data.utilitiesInfo) {
+                try {
+                    const parsedUtils = typeof data.utilitiesInfo === 'string' ? JSON.parse(data.utilitiesInfo) : data.utilitiesInfo;
+                    setUtilitiesInfo({
+                        meterNumber: parsedUtils.meterNumber || '',
+                        waterHours: parsedUtils.waterHours || '',
+                        generatorSchedule: parsedUtils.generatorSchedule || '',
+                        wasteFee: parsedUtils.wasteFee || '',
+                    });
+                } catch (e) {
+                    console.warn('Could not parse existing utilitiesInfo:', e);
+                }
+            }
+
+            // Populate existing emergency contacts if present
+            if (data.emergencyContacts) {
+                try {
+                    const parsedEmerg = typeof data.emergencyContacts === 'string' ? JSON.parse(data.emergencyContacts) : data.emergencyContacts;
+                    setEmergencyContacts({
+                        securityPhone: parsedEmerg.securityPhone || '',
+                        electricianPhone: parsedEmerg.electricianPhone || '',
+                        facilityManagerPhone: parsedEmerg.facilityManagerPhone || '',
+                        plumberPhone: parsedEmerg.plumberPhone || '',
+                    });
+                } catch (e) {
+                    console.warn('Could not parse existing emergencyContacts:', e);
+                }
+            }
         } catch (err) {
             console.error('Error loading property for edit:', err);
             setPageError(err?.message || 'Failed to load property details. Please try again.');
@@ -276,6 +347,9 @@ const UpdateProperty = () => {
                 propertyType: formData.propertyType,
                 amenities: selectedAmenities,
                 images: finalImages,
+                houseRules: JSON.stringify(houseRules),
+                utilitiesInfo: JSON.stringify(utilitiesInfo),
+                emergencyContacts: JSON.stringify(emergencyContacts),
                 minimumRentalPeriod: Number(formData.minimumRentalPeriod) || 12,
             };
 
@@ -693,6 +767,220 @@ const UpdateProperty = () => {
                                             placeholder='Highlight what makes this accommodation attractive to prospective tenants...'
                                             className='w-full p-4 rounded-xl text-sm border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none smooth-transition resize-none'
                                         />
+                                    </div>
+
+                                    {/* Section 5: House Rules & Estate Policies (Landlord Customizable) */}
+                                    <div className='bg-white rounded-2xl p-5 sm:p-7 border border-[#FF6300]/15 shadow-sm'>
+                                        <div className='mb-4'>
+                                            <h2 className='text-base font-semibold text-[#3D3129] font-poppins flex items-center gap-2'>
+                                                <span>🌙</span>
+                                                <span>House Rules & Estate Policies</span>
+                                                <span className='text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase'>
+                                                    Customizable
+                                                </span>
+                                            </h2>
+                                            <p className='text-xs text-[#3D3129]/60 mt-0.5'>
+                                                Update your property's actual rules for tenants.
+                                            </p>
+                                        </div>
+
+                                        <div className='space-y-3.5'>
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    🌙 Quiet Hours Policy
+                                                </label>
+                                                <input
+                                                    type='text'
+                                                    placeholder='e.g. Observed daily from 10:00 PM to 7:00 AM. Avoid loud music.'
+                                                    value={houseRules.quietHours}
+                                                    onChange={(e) => setHouseRules((prev) => ({ ...prev, quietHours: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    👥 Visitor & Guest Policy
+                                                </label>
+                                                <input
+                                                    type='text'
+                                                    placeholder='e.g. Overnight visitors staying over 3 consecutive days must register with security.'
+                                                    value={houseRules.visitorPolicy}
+                                                    onChange={(e) => setHouseRules((prev) => ({ ...prev, visitorPolicy: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+
+                                            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                                                <div>
+                                                    <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                        🗑️ Waste Disposal Days
+                                                    </label>
+                                                    <input
+                                                        type='text'
+                                                        placeholder='e.g. Tuesdays & Fridays, bag refuse neatly.'
+                                                        value={houseRules.wasteDays}
+                                                        onChange={(e) => setHouseRules((prev) => ({ ...prev, wasteDays: e.target.value }))}
+                                                        className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                        🐾 Pet Policy
+                                                    </label>
+                                                    <input
+                                                        type='text'
+                                                        placeholder='e.g. No dogs allowed / Small pets permitted with written consent.'
+                                                        value={houseRules.petPolicy}
+                                                        onChange={(e) => setHouseRules((prev) => ({ ...prev, petPolicy: e.target.value }))}
+                                                        className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    📝 Other Compound Rules (Optional)
+                                                </label>
+                                                <textarea
+                                                    rows={2}
+                                                    placeholder='Add any additional rules (e.g. compound gate locks at 11pm, no smoking inside flat)...'
+                                                    value={houseRules.customRules}
+                                                    onChange={(e) => setHouseRules((prev) => ({ ...prev, customRules: e.target.value }))}
+                                                    className='w-full p-3 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none resize-none'
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Section 6: Utility Information (Landlord Customizable) */}
+                                    <div className='bg-white rounded-2xl p-5 sm:p-7 border border-[#FF6300]/15 shadow-sm'>
+                                        <div className='mb-4'>
+                                            <h2 className='text-base font-semibold text-[#3D3129] font-poppins flex items-center gap-2'>
+                                                <span>⚡</span>
+                                                <span>Utility Information & Schedules</span>
+                                                <span className='text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase'>
+                                                    Customizable
+                                                </span>
+                                            </h2>
+                                            <p className='text-xs text-[#3D3129]/60 mt-0.5'>
+                                                Update your apartment's prepaid meter number and utility routines.
+                                            </p>
+                                        </div>
+
+                                        <div className='space-y-3.5'>
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    ⚡ Prepaid Electricity Meter Number
+                                                </label>
+                                                <input
+                                                    type='text'
+                                                    placeholder='e.g. 0412-8821-9943'
+                                                    value={utilitiesInfo.meterNumber}
+                                                    onChange={(e) => setUtilitiesInfo((prev) => ({ ...prev, meterNumber: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+
+                                            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                                                <div>
+                                                    <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                        💧 Water Pumping Hours
+                                                    </label>
+                                                    <input
+                                                        type='text'
+                                                        placeholder='e.g. 6:00 AM – 8:00 AM & 6:00 PM – 8:00 PM'
+                                                        value={utilitiesInfo.waterHours}
+                                                        onChange={(e) => setUtilitiesInfo((prev) => ({ ...prev, waterHours: e.target.value }))}
+                                                        className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                        🔌 Generator Schedule (if applicable)
+                                                    </label>
+                                                    <input
+                                                        type='text'
+                                                        placeholder='e.g. 7:00 PM – 11:00 PM on grid failure'
+                                                        value={utilitiesInfo.generatorSchedule}
+                                                        onChange={(e) => setUtilitiesInfo((prev) => ({ ...prev, generatorSchedule: e.target.value }))}
+                                                        className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Section 7: Emergency Facility Contacts (Landlord Customizable) */}
+                                    <div className='bg-white rounded-2xl p-5 sm:p-7 border border-[#FF6300]/15 shadow-sm'>
+                                        <div className='mb-4'>
+                                            <h2 className='text-base font-semibold text-[#3D3129] font-poppins flex items-center gap-2'>
+                                                <span>📞</span>
+                                                <span>Emergency Facility Contacts</span>
+                                                <span className='text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase'>
+                                                    Customizable
+                                                </span>
+                                            </h2>
+                                            <p className='text-xs text-[#3D3129]/60 mt-0.5'>
+                                                Provide emergency phone numbers for building security and facility technicians.
+                                            </p>
+                                        </div>
+
+                                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3.5'>
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    Estate Security Post Phone
+                                                </label>
+                                                <input
+                                                    type='tel'
+                                                    placeholder='e.g. 0801 111 2222'
+                                                    value={emergencyContacts.securityPhone}
+                                                    onChange={(e) => setEmergencyContacts((prev) => ({ ...prev, securityPhone: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    Resident Electrician Phone
+                                                </label>
+                                                <input
+                                                    type='tel'
+                                                    placeholder='e.g. 0803 333 4444'
+                                                    value={emergencyContacts.electricianPhone}
+                                                    onChange={(e) => setEmergencyContacts((prev) => ({ ...prev, electricianPhone: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    Estate Facility Manager Phone
+                                                </label>
+                                                <input
+                                                    type='tel'
+                                                    placeholder='e.g. 0805 555 6666'
+                                                    value={emergencyContacts.facilityManagerPhone}
+                                                    onChange={(e) => setEmergencyContacts((prev) => ({ ...prev, facilityManagerPhone: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className='block text-xs font-medium text-[#4B5563] mb-1'>
+                                                    Resident Plumber Phone
+                                                </label>
+                                                <input
+                                                    type='tel'
+                                                    placeholder='e.g. 0802 222 3333'
+                                                    value={emergencyContacts.plumberPhone}
+                                                    onChange={(e) => setEmergencyContacts((prev) => ({ ...prev, plumberPhone: e.target.value }))}
+                                                    className='w-full px-3.5 py-2.5 rounded-xl text-xs border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none'
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
