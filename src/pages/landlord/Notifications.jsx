@@ -5,14 +5,17 @@ import Sidebar from './components/layout/Sidebar/Sidebar'
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
 import { LuArrowLeft } from "react-icons/lu";
 import NotificationItem from './components/layout/Notification/NotificationItem';
-import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../utils/notificationsApi';
-import { hyveError } from '../../utils/hyveToast';
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications } from '../../utils/notificationsApi';
+import { hyveSuccess, hyveError } from '../../utils/hyveToast';
 
 function linkForType(type = "") {
     const t = type.toLowerCase();
     if (t.includes("message") || t.includes("chat")) return "/landlord/chats";
     if (t.includes("review") || t.includes("property")) return "/landlord/activity";
-    return null;
+    if (t.includes("escrow") || t.includes("payment")) return "/landlord/activity";
+    if (t.includes("tour") || t.includes("inspection")) return "/landlord/activity";
+    if (t.includes("move_in") || t.includes("move")) return "/landlord/dashboard";
+    return "/landlord/dashboard";
 }
 
 const LandlordNotifications = () => {
@@ -57,6 +60,19 @@ const LandlordNotifications = () => {
         } catch (err) {
             console.error("Failed to mark all as read:", err);
             hyveError("Couldn't mark all as read", "Please try again.");
+        }
+    };
+
+    const handleClearAll = async () => {
+        const prev = [...notifications];
+        setNotifications([]);
+        try {
+            await clearAllNotifications();
+            hyveSuccess("Notifications Cleared", "All notifications have been cleared.");
+        } catch (err) {
+            console.error("Failed to clear notifications:", err);
+            setNotifications(prev);
+            hyveError("Couldn't clear notifications", "Please try again.");
         }
     };
 
@@ -109,15 +125,26 @@ const LandlordNotifications = () => {
                                             </span>
                                         )}
                                     </div>
-                                    {unreadCount > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={handleMarkAllRead}
-                                            className="text-xs text-primary hover:underline font-medium cursor-pointer"
-                                        >
-                                            Mark all as read
-                                        </button>
-                                    )}
+                                    <div className="flex items-center gap-3">
+                                        {unreadCount > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={handleMarkAllRead}
+                                                className="text-xs text-primary hover:underline font-medium cursor-pointer"
+                                            >
+                                                Mark all as read
+                                            </button>
+                                        )}
+                                        {notifications.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={handleClearAll}
+                                                className="text-xs text-red-600 hover:underline font-medium cursor-pointer"
+                                            >
+                                                Clear all
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Notification Items */}
@@ -127,7 +154,7 @@ const LandlordNotifications = () => {
                                     </div>
                                 ) : notifications.length === 0 ? (
                                     <div className="py-12 text-center text-sm text-[#AAAAAA]">
-                                        No notifications yet. When potential tenants message you or drop a chat, you'll see them here.
+                                        No notifications yet. When prospective tenants inspect your property, pay rent into escrow, or schedule move-in, you'll receive real-time updates here.
                                     </div>
                                 ) : (
                                     <div className="divide-y divide-[#0000000D]">
@@ -135,6 +162,7 @@ const LandlordNotifications = () => {
                                             <NotificationItem
                                                 key={notification.id}
                                                 title={notification.message || notification.title}
+                                                type={notification.type}
                                                 date={formatDate(notification.createdAt)}
                                                 read={notification.read}
                                                 onClick={() => handleNotificationClick(notification)}

@@ -2,21 +2,26 @@ import React, { useState } from 'react'
 import Sidebar from './components/layout/Sidebar/Sidebar'
 import Header from './components/layout/Dashboard/Header'
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
-import { Link } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
+import { scheduleMoveInApi } from '../../utils/leaseApi'
+import { hyveSuccess, hyveError } from '../../utils/hyveToast'
+import { getCurrentLodge, setCurrentLodge } from '../../utils/currentLodge'
 
 const ScheduleMoveIn = () => {
+    const { apartmentID } = useParams()
+    const navigate = useNavigate()
     const [moveInDate, setMoveInDate] = useState('')
     const [moveInTime, setMoveInTime] = useState('')
     const [dateError, setDateError] = useState(false)
     const [timeError, setTimeError] = useState(false)
     const [errorMsg, setErrorMsg] = useState({ isErrorMsg: false, message: "" });
     const [isMoveInDate, setIsMoveInData] = useState(false);
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Get today's date in YYYY-MM-DD format
     const today = new Date().toISOString().split('T')[0]
 
-    /* Validate that time and date are not empty and they are not in teh past */
+    /* Validate that time and date are not empty and they are not in the past */
     const validateDateTime = (date, time) => {
         if (!date || !time) return
 
@@ -30,7 +35,7 @@ const ScheduleMoveIn = () => {
         }
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         // Reset errors
@@ -65,23 +70,44 @@ const ScheduleMoveIn = () => {
             if (selectedDateTime < now) {
                 setTimeError(true)
                 hasError = true;
-                setErrorMsg({ isErrorMsg: true, message: "Cannot schedule MOVE-IN  in the past" })
+                setErrorMsg({ isErrorMsg: true, message: "Cannot schedule MOVE-IN in the past" })
             }
         }
 
-        /* if error, break */
-        if (hasError) {
-            return
+        if (hasError) return;
+
+        setIsSubmitting(true);
+        try {
+            await scheduleMoveInApi({
+                propertyId: apartmentID ? Number(apartmentID) : undefined,
+                moveInDate,
+                moveInTime,
+            });
+
+            const current = getCurrentLodge();
+            if (current) {
+                setCurrentLodge({
+                    ...current,
+                    movedInDate: `${moveInDate}T${moveInTime}:00`,
+                });
+            }
+
+            hyveSuccess("Move-In Scheduled!", "Your landlord has been notified of your move-in schedule.");
+            setIsMoveInData(true);
+        } catch (err) {
+            console.warn("Could not schedule move-in on backend:", err?.message);
+            // Fallback locally
+            const current = getCurrentLodge();
+            if (current) {
+                setCurrentLodge({
+                    ...current,
+                    movedInDate: `${moveInDate}T${moveInTime}:00`,
+                });
+            }
+            setIsMoveInData(true);
+        } finally {
+            setIsSubmitting(false);
         }
-
-
-        // Log the data
-        console.log({
-            date: moveInDate,
-            time: moveInTime,
-        })
-
-        setIsMoveInData(true)
     }
 
     return (

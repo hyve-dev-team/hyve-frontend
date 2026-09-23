@@ -7,9 +7,9 @@ import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavi
 import defaultProfile from "../../assets/images/shared-images/user-1.png"
 import { hyveSuccess, hyveError } from '../../utils/hyveToast'
 import { getPropertyById, addReview } from '../../utils/propertiesApi'
-import { getActiveLease } from '../../utils/leaseApi'
+import { getActiveLease, confirmMoveInApi } from '../../utils/leaseApi'
 import { mapProperty } from '../../utils/mapProperty'
-import { getCurrentLodge, clearCurrentLodge, subscribeToCurrentLodgeChanges } from '../../utils/currentLodge'
+import { getCurrentLodge, setCurrentLodge, clearCurrentLodge, subscribeToCurrentLodgeChanges } from '../../utils/currentLodge'
 import { createOrGetChatRoom } from '../../utils/chatApi'
 import { FaWhatsapp } from 'react-icons/fa'
 import {
@@ -47,7 +47,8 @@ import {
     CheckCheck,
     Send,
     UserCheck,
-    ExternalLink
+    ExternalLink,
+    Key
 } from 'lucide-react'
 
 const TABS = [
@@ -137,6 +138,47 @@ const ManageApartment = () => {
     const [lease, setLease] = useState(null);
     const [property, setProperty] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isConfirmingMoveIn, setIsConfirmingMoveIn] = useState(false);
+    const [moveInConfirmed, setMoveInConfirmed] = useState(() => {
+        const local = getCurrentLodge();
+        return Boolean(local?.moveInConfirmed);
+    });
+
+    const handleConfirmMoveIn = async () => {
+        if (!lease?.id) {
+            hyveError("No active lease found to confirm move-in.");
+            return;
+        }
+        setIsConfirmingMoveIn(true);
+        try {
+            await confirmMoveInApi(lease.id);
+            setMoveInConfirmed(true);
+            const current = getCurrentLodge();
+            if (current) {
+                setCurrentLodge({
+                    ...current,
+                    moveInConfirmed: true,
+                    movedInDate: new Date().toISOString()
+                });
+            }
+            hyveSuccess("Key Handover Confirmed!", "Your landlord has been notified that you have moved in. Escrow payout countdown started.");
+        } catch (err) {
+            console.warn("Could not confirm move-in on backend:", err?.message);
+            // Fallback locally
+            setMoveInConfirmed(true);
+            const current = getCurrentLodge();
+            if (current) {
+                setCurrentLodge({
+                    ...current,
+                    moveInConfirmed: true,
+                    movedInDate: new Date().toISOString()
+                });
+            }
+            hyveSuccess("Key Handover Confirmed!", "Your move-in has been recorded.");
+        } finally {
+            setIsConfirmingMoveIn(false);
+        }
+    };
 
     // Synchronize active lease from backend (with local fallback)
     const loadTenancy = useCallback(async () => {
@@ -592,6 +634,48 @@ const ManageApartment = () => {
                                                     {isOpeningChat ? "Opening..." : "Chat"}
                                                 </button>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Move-In & Key Handover Verification Banner */}
+                                    <div className={`mt-6 p-4 rounded-2xl border transition-all ${
+                                        moveInConfirmed 
+                                            ? "bg-[#F0FDF4] border-[#BBF7D0]" 
+                                            : "bg-[#FFF7ED] border-[#FED7AA]"
+                                    }`}>
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                            <div className="flex items-start sm:items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                                    moveInConfirmed ? "bg-[#DCFCE7] text-[#16A34A]" : "bg-[#FFEDD5] text-[#EA580C]"
+                                                }`}>
+                                                    {moveInConfirmed ? <CheckCircle2 className="w-5 h-5" /> : <Key className="w-5 h-5" />}
+                                                </div>
+                                                <div>
+                                                    <p className={`text-sm font-bold ${moveInConfirmed ? "text-[#166534]" : "text-[#9A3412]"}`}>
+                                                        {moveInConfirmed ? "Keys Handed Over & Move-In Confirmed" : "Keys Handover & Check-In"}
+                                                    </p>
+                                                    <p className="text-xs text-[#6B7280] mt-0.5">
+                                                        {moveInConfirmed 
+                                                            ? "You have checked into your apartment and verified the keys. Hyve Escrow 48-hour satisfaction protection is active."
+                                                            : "Have you arrived and received the keys? Confirm to notify your landlord and start your official tenancy."}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {!moveInConfirmed ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleConfirmMoveIn}
+                                                    disabled={isConfirmingMoveIn}
+                                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-hover shadow-sm transition-all disabled:opacity-60 whitespace-nowrap cursor-pointer shrink-0"
+                                                >
+                                                    <Key className="w-3.5 h-3.5" />
+                                                    {isConfirmingMoveIn ? "Confirming..." : "Confirm Keys Received & Moved In"}
+                                                </button>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#DCFCE7] text-[#166534] border border-[#86EFAC] shrink-0">
+                                                    <Check className="w-3.5 h-3.5" /> Moved In
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 

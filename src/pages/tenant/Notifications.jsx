@@ -6,8 +6,8 @@ import Sidebar from './components/layout/Sidebar/Sidebar'
 import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
 import { LuArrowLeft } from "react-icons/lu";
 import NotificationItem from './components/layout/Notification/NotificationItem';
-import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../../utils/notificationsApi';
-import { hyveError } from '../../utils/hyveToast';
+import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead, clearAllNotifications } from '../../utils/notificationsApi';
+import { hyveSuccess, hyveError } from '../../utils/hyveToast';
 
 // The real Notification object only has a `type` string (server-defined, e.g.
 // "MESSAGE", "SAVE", "REVIEW"), not a direct link — so route by best-effort
@@ -68,6 +68,19 @@ const Notifications = () => {
         }
     };
 
+    const handleClearAll = async () => {
+        const prev = [...notifications];
+        setNotifications([]);
+        try {
+            await clearAllNotifications();
+            hyveSuccess("Notifications Cleared", "All notifications have been cleared.");
+        } catch (err) {
+            console.error("Failed to clear notifications:", err);
+            setNotifications(prev);
+            hyveError("Couldn't clear notifications", "Please try again.");
+        }
+    };
+
     const unreadCount = notifications.filter((n) => !n.read).length;
 
     const formatDate = (iso) => {
@@ -113,15 +126,26 @@ const Notifications = () => {
                                         )}
                                     </h3>
 
-                                    {unreadCount > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={handleMarkAllRead}
-                                            className="text-xs md:text-sm font-medium text-primary hover:underline"
-                                        >
-                                            Mark all as read
-                                        </button>
-                                    )}
+                                    <div className="flex items-center gap-3">
+                                        {unreadCount > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={handleMarkAllRead}
+                                                className="text-xs md:text-sm font-medium text-primary hover:underline cursor-pointer"
+                                            >
+                                                Mark all as read
+                                            </button>
+                                        )}
+                                        {notifications.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={handleClearAll}
+                                                className="text-xs md:text-sm font-medium text-red-600 hover:underline cursor-pointer"
+                                            >
+                                                Clear all
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {isLoading ? (

@@ -30,3 +30,25 @@ export async function getLeaseHistory() {
     if (!res?.success) throw new Error(res?.message || "Failed to load lease history");
     return res.data; // LeaseResponse[]
 }
+
+export async function scheduleMoveInApi({ propertyId, leaseId, moveInDate, moveInTime }) {
+    const res = await config.postAPI({
+        url: "/api/v1/user/lease/schedule-move-in",
+        params: {
+            propertyId: propertyId ? Number(propertyId) : undefined,
+            leaseId: leaseId ? Number(leaseId) : undefined,
+            moveInDate,
+            moveInTime,
+        },
+    });
+    if (!res?.success) throw new Error(res?.message || "Failed to schedule move-in");
+    return res.data; // LeaseResponse
+}
+
+export async function confirmMoveInApi(leaseId) {
+    const res = await config.postAPI({
+        url: `/api/v1/user/lease/confirm-move-in/${leaseId}`,
+    });
+    if (!res?.success) throw new Error(res?.message || "Failed to confirm move-in");
+    return res.data; // LeaseResponse
+}

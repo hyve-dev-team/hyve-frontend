@@ -20,3 +20,16 @@ export async function markAllNotificationsAsRead() {
     if (!res?.success) throw new Error(res?.message || "Failed to mark all as read");
     return true;
 }
+
+export async function clearAllNotifications() {
+    const res = await config.allAPI({ url: "/api/v1/notifications/clear-all", method: "DELETE", params: {} });
+    if (!res?.success) throw new Error(res?.message || "Failed to clear notifications");
+    return true;
+}
+
+export async function deleteNotification(id) {
+    const res = await config.allAPI({ url: `/api/v1/notifications/${id}`, method: "DELETE", params: {} });
+    if (!res?.success) throw new Error(res?.message || "Failed to delete notification");
+    return true;
+}
+
