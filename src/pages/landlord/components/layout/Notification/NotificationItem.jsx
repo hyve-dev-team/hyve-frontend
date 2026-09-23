@@ -2,19 +2,19 @@ const NotificationItem = ({ title, date, type, read = false, onClick }) => {
     const getBadge = (t = "") => {
         const typeStr = (t || "").toUpperCase();
         if (typeStr.includes("ESCROW") || typeStr.includes("PAYMENT")) {
-            return <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 mr-2 mb-1">💰 Rent Paid (Escrow)</span>;
+            return <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 mr-2 mb-1">Rent Paid (Escrow)</span>;
         }
         if (typeStr.includes("TOUR") || typeStr.includes("INSPECTION")) {
-            return <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 mr-2 mb-1">👀 Inspection / Viewing</span>;
+            return <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 mr-2 mb-1">Inspection / Viewing</span>;
         }
         if (typeStr.includes("MOVE_IN") || typeStr.includes("MOVE")) {
-            return <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-primary border border-primary/20 mr-2 mb-1">🏠 Tenant Move-In</span>;
+            return <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-primary border border-primary/20 mr-2 mb-1">Tenant Move-In</span>;
         }
         if (typeStr.includes("QUEUE")) {
-            return <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 mr-2 mb-1">👥 Queue Update</span>;
+            return <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 mr-2 mb-1">Queue Update</span>;
         }
         if (typeStr.includes("CHAT") || typeStr.includes("MESSAGE")) {
-            return <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 mr-2 mb-1">💬 Message</span>;
+            return <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 mr-2 mb-1">Message</span>;
         }
         return null;
     };
