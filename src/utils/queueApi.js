@@ -3,8 +3,18 @@ import config from "../config";
 
 export const TIER_LIMITS = {
   FREE: { name: "Free Tier", limit: 3, price: 0, decisionWindowHours: 24 },
-  PREMIUM: { name: "Hyve Haven Plus", limit: 6, price: 4999, decisionWindowHours: 24 },
-  PRO: { name: "Hyve Haven Pro", limit: 10, price: 9999, decisionWindowHours: 36 },
+  PREMIUM: {
+    name: "Hyve Haven Plus",
+    limit: 6,
+    price: 4999,
+    decisionWindowHours: 24,
+  },
+  PRO: {
+    name: "Hyve Haven Pro",
+    limit: 10,
+    price: 9999,
+    decisionWindowHours: 36,
+  },
 };
 
 export async function getMyQueuesApi() {
@@ -14,14 +24,19 @@ export async function getMyQueuesApi() {
 }
 
 export async function getPropertyQueueApi(propertyId) {
-  const res = await config.getAPI({ url: `/api/v1/queue/property/${propertyId}` });
-  if (!res?.success) throw new Error(res?.message || "Failed to load property queue");
+  const res = await config.getAPI({
+    url: `/api/v1/queue/property/${propertyId}`,
+  });
+  if (!res?.success)
+    throw new Error(res?.message || "Failed to load property queue");
   return res.data; // PropertyQueueResponse
 }
 
 export async function getPropertyQueueSummaryApi(propertyId) {
   try {
-    const res = await config.getAPI({ url: `/api/v1/queue/property/${propertyId}/summary` });
+    const res = await config.getAPI({
+      url: `/api/v1/queue/property/${propertyId}/summary`,
+    });
     if (res?.success && res.data) return res.data;
   } catch (err) {
     console.warn("Could not load queue summary:", err?.message);
@@ -34,13 +49,15 @@ export async function scheduleActiveTourApi(queueId, tourTime) {
     url: `/api/v1/queue/${queueId}/schedule-tour`,
     params: { tourTime },
   });
-  if (!res?.success) throw new Error(res?.message || "Failed to schedule viewing");
+  if (!res?.success)
+    throw new Error(res?.message || "Failed to schedule viewing");
   return res.data; // PropertyQueueResponse
 }
 
 export async function getQueueCapacityApi() {
   const res = await config.getAPI({ url: "/api/v1/queue/capacity" });
-  if (!res?.success) throw new Error(res?.message || "Failed to load queue capacity");
+  if (!res?.success)
+    throw new Error(res?.message || "Failed to load queue capacity");
   return res.data; // QueueCapacityResponse
 }
 
@@ -62,7 +79,8 @@ export async function payInspectionFeeApi(queueId) {
     url: `/api/v1/queue/${queueId}/pay-inspection`,
     params: {},
   });
-  if (!res?.success) throw new Error(res?.message || "Failed to pay inspection fee");
+  if (!res?.success)
+    throw new Error(res?.message || "Failed to pay inspection fee");
   return res.data; // PropertyQueueResponse
 }
 
@@ -89,7 +107,8 @@ export async function commitAndPayRentApi(queueId) {
     url: `/api/v1/queue/${queueId}/commit`,
     params: {},
   });
-  if (!res?.success) throw new Error(res?.message || "Failed to commit rent payment");
+  if (!res?.success)
+    throw new Error(res?.message || "Failed to commit rent payment");
   return true;
 }
 
@@ -102,16 +121,39 @@ export async function upgradeTierApi(tier) {
   return res.data; // QueueCapacityResponse
 }
 
+export function parseServerDate(d) {
+  if (!d) return null;
+  if (typeof d === "number") return d;
+  if (typeof d === "string") {
+    // If backend returns ISO string without explicit timezone (e.g. '2026-09-26T14:00:00'),
+    // appending 'Z' forces it to be treated as UTC so the user's local timezone (e.g. WAT/UTC+1)
+    // doesn't cause the browser to subtract 1 hour (which made 24h start at 22h59m).
+    const hasTimezone = d.endsWith("Z") || /[+-]\d{2}(:\d{2})?$/.test(d);
+    const normalized = hasTimezone ? d : `${d}Z`;
+    const parsed = new Date(normalized).getTime();
+    return isNaN(parsed) ? new Date(d).getTime() : parsed;
+  }
+  return new Date(d).getTime();
+}
+
 // Maps backend PropertyQueueResponse to frontend queue shape
 export function mapBackendQueue(bq) {
   if (!bq) return null;
+  const windowHours = bq.ownWindowHours || 24;
+  const parsedExpiresAt = parseServerDate(bq.expiresAt);
+  const expiryMs = parsedExpiresAt || Date.now() + windowHours * 60 * 60 * 1000;
+  const turnStartedMs = parsedExpiresAt
+    ? parsedExpiresAt - windowHours * 60 * 60 * 1000
+    : Date.now();
+
   return {
     id: bq.id,
     apartmentId: bq.propertyId,
     property: bq.propertyTitle || "Apartment Listing",
     location: bq.propertyLocation || "",
     image: bq.propertyImage || "/images/apartments/apartment-image-1.png",
-    price: bq.price != null ? Math.round(Number(bq.price)).toLocaleString() : "0",
+    price:
+      bq.price != null ? Math.round(Number(bq.price)).toLocaleString() : "0",
     position: bq.position || 1,
     total: bq.totalInQueue || 1,
     peopleAhead: Math.max(0, (bq.position || 1) - 1),
@@ -122,17 +164,22 @@ export function mapBackendQueue(bq) {
     agentPhone: bq.agentPhone || "+234 800 000 0000",
     agentEmail: "agent@hyvehaven.com",
     scheduledTour: bq.scheduledTour || "Scheduled Inspection",
-    turnStartedAt: bq.expiresAt ? new Date(new Date(bq.expiresAt).getTime() - 24 * 60 * 60 * 1000).getTime() : Date.now(),
-    expiresAt: bq.expiresAt ? new Date(bq.expiresAt).getTime() : Date.now() + 24 * 60 * 60 * 1000,
-    currentPersonExpiresAt: bq.expiresAt ? new Date(bq.expiresAt).getTime() : Date.now() + 12 * 60 * 60 * 1000,
-    ownWindowHours: bq.ownWindowHours || 24,
+    turnStartedAt: turnStartedMs,
+    expiresAt: expiryMs,
+    currentPersonExpiresAt: expiryMs,
+    ownWindowHours: windowHours,
   };
 }
 
 // Maps backend QueueCapacityResponse to frontend capacity shape
 export function mapBackendCapacity(bc) {
   if (!bc) return null;
-  const tierName = bc.tier === "PRO" ? "Hyve Haven Pro" : bc.tier === "PREMIUM" ? "Hyve Haven Plus" : "Free Tier";
+  const tierName =
+    bc.tier === "PRO"
+      ? "Hyve Haven Pro"
+      : bc.tier === "PREMIUM"
+        ? "Hyve Haven Plus"
+        : "Free Tier";
   return {
     canJoin: bc.canJoin,
     currentCount: bc.currentCount,

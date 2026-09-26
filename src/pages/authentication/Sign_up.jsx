@@ -24,7 +24,7 @@ const Sign_up = () => {
   const { userRole } = useParams();
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState(
-    userRole === "landlord" ? "landlord" : "user"
+    userRole === "landlord" ? "landlord" : "user",
   );
 
   const backgroundStyle = {
@@ -62,11 +62,11 @@ const Sign_up = () => {
     formData.firstName?.trim()?.length >= 3 &&
     formData.lastName?.trim()?.length >= 3 &&
     formData.email?.trim() &&
-    formData.phone?.trim() &&
+    formData.phone?.trim().length === 11 &&
     formData.gender?.trim() &&
     formData.password?.trim() &&
     formData.confirmPassword?.trim() &&
-    agreedToTerms
+    agreedToTerms,
   );
 
   /* handle form input change */
@@ -81,8 +81,10 @@ const Sign_up = () => {
   const isEmptyOrWhitespace = (str) => !str || str.trim().length === 0;
 
   const validateAll = () => {
-    const isFirstNameInvalid = !formData.firstName || formData.firstName.trim().length < 3;
-    const isLastNameInvalid = !formData.lastName || formData.lastName.trim().length < 3;
+    const isFirstNameInvalid =
+      !formData.firstName || formData.firstName.trim().length < 3;
+    const isLastNameInvalid =
+      !formData.lastName || formData.lastName.trim().length < 3;
 
     const newErrors = {
       firstName: isFirstNameInvalid,
@@ -111,30 +113,51 @@ const Sign_up = () => {
 
     if (!validateAll()) {
       if (!formData.firstName?.trim() || formData.firstName.trim().length < 3) {
-        hyveError("Invalid First Name", "First name must be at least 3 characters.");
-      } else if (!formData.lastName?.trim() || formData.lastName.trim().length < 3) {
-        hyveError("Invalid Last Name", "Last name must be at least 3 characters.");
+        hyveError(
+          "Invalid First Name",
+          "First name must be at least 3 characters.",
+        );
+      } else if (
+        !formData.lastName?.trim() ||
+        formData.lastName.trim().length < 3
+      ) {
+        hyveError(
+          "Invalid Last Name",
+          "Last name must be at least 3 characters.",
+        );
       } else {
-        hyveError("Missing Information", "Please fill in all required fields correctly.");
+        hyveError(
+          "Missing Information",
+          "Please fill in all required fields correctly.",
+        );
       }
       return;
     }
 
     if (formData.firstName.trim().length < 3) {
       setInputError((prev) => ({ ...prev, firstName: true }));
-      hyveError("Invalid First Name", "First name must be at least 3 characters.");
+      hyveError(
+        "Invalid First Name",
+        "First name must be at least 3 characters.",
+      );
       return;
     }
 
     if (formData.lastName.trim().length < 3) {
       setInputError((prev) => ({ ...prev, lastName: true }));
-      hyveError("Invalid Last Name", "Last name must be at least 3 characters.");
+      hyveError(
+        "Invalid Last Name",
+        "Last name must be at least 3 characters.",
+      );
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
       setIsMatch(false);
-      hyveError("Passwords Mismatch", "Passwords do not match. Please re-check.");
+      hyveError(
+        "Passwords Mismatch",
+        "Passwords do not match. Please re-check.",
+      );
       return;
     }
 
@@ -170,9 +193,15 @@ const Sign_up = () => {
 
         if (isEmailTaken) {
           setInputError((prev) => ({ ...prev, email: true }));
-          hyveError("Email Already Taken", "This email is already registered. Try logging in instead.");
+          hyveError(
+            "Email Already Taken",
+            "This email is already registered. Try logging in instead.",
+          );
         } else {
-          hyveError("Registration Failed", serverMsg || "Registration failed. Please try again.");
+          hyveError(
+            "Registration Failed",
+            serverMsg || "Registration failed. Please try again.",
+          );
         }
         return;
       }
@@ -180,7 +209,10 @@ const Sign_up = () => {
       localStorage.setItem("userEmail", formData.email.trim().toLowerCase());
       localStorage.setItem("userRole", activeRole);
 
-      hyveSuccess("Account Created!", "Check your email for your verification OTP.");
+      hyveSuccess(
+        "Account Created!",
+        "Check your email for your verification OTP.",
+      );
       navigate("/auth/verify");
     } catch (error) {
       console.error("Registration error:", error);
@@ -193,11 +225,15 @@ const Sign_up = () => {
 
       if (isEmailTaken) {
         setInputError((prev) => ({ ...prev, email: true }));
-        hyveError("Email Already Taken", "This email is already registered. Try logging in instead.");
+        hyveError(
+          "Email Already Taken",
+          "This email is already registered. Try logging in instead.",
+        );
       } else {
         hyveError(
           "Registration Failed",
-          msg || "Something went wrong. Please check your connection and try again."
+          msg ||
+            "Something went wrong. Please check your connection and try again.",
         );
       }
     } finally {
@@ -207,18 +243,25 @@ const Sign_up = () => {
 
   return (
     <main className="min-h-screen bg-[#FAFAFA]">
-      <div className="min-h-screen flex flex-col md:flex-row">
+      <div className="flex flex-col min-h-screen md:flex-row">
         {/* Left Column - Form */}
-        <div className="w-full md:w-1/2 min-h-screen overflow-y-auto bg-white flex flex-col justify-between px-6 sm:px-12 lg:px-16 py-8 md:py-10">
+        <div className="flex flex-col justify-between w-full min-h-screen px-6 py-8 overflow-y-auto bg-white md:w-1/2 sm:px-12 lg:px-16 md:py-10">
           <div className="w-full max-w-lg mx-auto">
             {/* Header: Logo & Back Link */}
             <div className="flex items-center justify-between mb-6">
-              <Link to="/" className="inline-block transition-transform hover:scale-105">
-                <img src={hyveLogo} alt="Hyve Haven" className="h-8 md:h-9 object-contain" />
+              <Link
+                to="/"
+                className="inline-block transition-transform hover:scale-105"
+              >
+                <img
+                  src={hyveLogo}
+                  alt="Hyve Haven"
+                  className="object-contain h-8 md:h-9"
+                />
               </Link>
               <Link
                 to="/"
-                className="md:hidden flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-primary transition-colors"
+                className="flex items-center gap-1 text-xs font-medium text-gray-500 transition-colors md:hidden hover:text-primary"
               >
                 <IoIosArrowBack size={14} />
                 <span>Home</span>
@@ -227,10 +270,10 @@ const Sign_up = () => {
 
             {/* Title & Subtitle */}
             <div className="mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 font-montserrat tracking-tight">
+              <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl font-montserrat">
                 Create an account
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="mt-1 text-sm text-gray-500">
                 Join Hyve Haven for safer, escrow-protected rentals in Lagos.
               </p>
             </div>
@@ -261,14 +304,16 @@ const Sign_up = () => {
                     <img
                       src={userSearchIcon}
                       alt="User"
-                      className="w-6 h-6 object-contain"
+                      className="object-contain w-6 h-6"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span
                         className={`font-semibold text-sm ${
-                          selectedRole === "user" ? "text-primary" : "text-gray-900"
+                          selectedRole === "user"
+                            ? "text-primary"
+                            : "text-gray-900"
                         }`}
                       >
                         User
@@ -303,14 +348,16 @@ const Sign_up = () => {
                     <img
                       src={houseIcon}
                       alt="Landlord"
-                      className="w-6 h-6 object-contain"
+                      className="object-contain w-6 h-6"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span
                         className={`font-semibold text-sm ${
-                          selectedRole === "landlord" ? "text-primary" : "text-gray-900"
+                          selectedRole === "landlord"
+                            ? "text-primary"
+                            : "text-gray-900"
                         }`}
                       >
                         Landlord
@@ -330,14 +377,16 @@ const Sign_up = () => {
             {/* Registration Form */}
             <form className="flex flex-col gap-4" onSubmit={handleRegistration}>
               {/* Name Fields (2 Columns) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className="block mb-1 text-xs font-semibold tracking-wider text-gray-700 uppercase">
                     First Name
                   </label>
                   <div
                     className={`form-group ${
-                      inputError.firstName ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                      inputError.firstName
+                        ? "border-red-400 bg-red-50/20"
+                        : "border-gray-200 focus-within:border-primary"
                     } transition-colors`}
                   >
                     <span>
@@ -350,7 +399,7 @@ const Sign_up = () => {
                       minLength={3}
                       value={formData.firstName}
                       onChange={handleFormdataChange}
-                      className="form-input text-gray-900"
+                      className="text-gray-900 form-input"
                       placeholder="e.g. John"
                     />
                   </div>
@@ -362,12 +411,14 @@ const Sign_up = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className="block mb-1 text-xs font-semibold tracking-wider text-gray-700 uppercase">
                     Last Name
                   </label>
                   <div
                     className={`form-group ${
-                      inputError.lastName ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                      inputError.lastName
+                        ? "border-red-400 bg-red-50/20"
+                        : "border-gray-200 focus-within:border-primary"
                     } transition-colors`}
                   >
                     <span>
@@ -380,7 +431,7 @@ const Sign_up = () => {
                       minLength={3}
                       value={formData.lastName}
                       onChange={handleFormdataChange}
-                      className="form-input text-gray-900"
+                      className="text-gray-900 form-input"
                       placeholder="e.g. Doe"
                     />
                   </div>
@@ -394,12 +445,14 @@ const Sign_up = () => {
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block mb-1 text-xs font-semibold tracking-wider text-gray-700 uppercase">
                   Email Address
                 </label>
                 <div
                   className={`form-group ${
-                    inputError.email ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                    inputError.email
+                      ? "border-red-400 bg-red-50/20"
+                      : "border-gray-200 focus-within:border-primary"
                   } transition-colors`}
                 >
                   <span>
@@ -411,22 +464,24 @@ const Sign_up = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleFormdataChange}
-                    className="form-input text-gray-900"
+                    className="text-gray-900 form-input"
                     placeholder="name@example.com"
                   />
                 </div>
               </div>
 
               {/* Phone & Gender (2 Columns) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 {/* Phone */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className="block mb-1 text-xs font-semibold tracking-wider text-gray-700 uppercase">
                     Phone Number
                   </label>
                   <div
                     className={`form-group ${
-                      inputError.phone ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                      inputError.phone
+                        ? "border-red-400 bg-red-50/20"
+                        : "border-gray-200 focus-within:border-primary"
                     } transition-colors`}
                   >
                     <span className="pl-1">
@@ -436,7 +491,7 @@ const Sign_up = () => {
                       name="countryCode"
                       value={formData.countryCode}
                       onChange={handleFormdataChange}
-                      className="bg-transparent text-gray-800 text-xs sm:text-sm font-medium outline-none border-none pr-1 focus:ring-0 cursor-pointer"
+                      className="pr-1 text-xs font-medium text-gray-800 bg-transparent border-none outline-none cursor-pointer sm:text-sm focus:ring-0"
                     >
                       <option value="+234">🇳🇬 +234</option>
                     </select>
@@ -447,7 +502,7 @@ const Sign_up = () => {
                       value={formData.phone}
                       onChange={handleFormdataChange}
                       placeholder="801 234 5678"
-                      className="form-input text-gray-900 placeholder:text-gray-400"
+                      className="text-gray-900 form-input placeholder:text-gray-400"
                       maxLength={11}
                     />
                   </div>
@@ -455,12 +510,14 @@ const Sign_up = () => {
 
                 {/* Gender */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className="block mb-1 text-xs font-semibold tracking-wider text-gray-700 uppercase">
                     Gender
                   </label>
                   <div
                     className={`form-group ${
-                      inputError.gender ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                      inputError.gender
+                        ? "border-red-400 bg-red-50/20"
+                        : "border-gray-200 focus-within:border-primary"
                     } transition-colors`}
                   >
                     <select
@@ -468,7 +525,7 @@ const Sign_up = () => {
                       name="gender"
                       value={formData.gender}
                       onChange={handleFormdataChange}
-                      className="form-input text-gray-900 bg-transparent cursor-pointer"
+                      className="text-gray-900 bg-transparent cursor-pointer form-input"
                     >
                       <option value="" disabled className="text-gray-400">
                         Select Gender
@@ -482,14 +539,16 @@ const Sign_up = () => {
               </div>
 
               {/* Password & Confirm Password (2 Columns) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className="block mb-1 text-xs font-semibold tracking-wider text-gray-700 uppercase">
                     Password
                   </label>
                   <div
                     className={`form-group ${
-                      inputError.password ? "border-red-400 bg-red-50/20" : "border-gray-200 focus-within:border-primary"
+                      inputError.password
+                        ? "border-red-400 bg-red-50/20"
+                        : "border-gray-200 focus-within:border-primary"
                     } transition-colors`}
                   >
                     <span>
@@ -501,7 +560,7 @@ const Sign_up = () => {
                       name="password"
                       value={formData.password}
                       onChange={handleFormdataChange}
-                      className="form-input text-gray-900"
+                      className="text-gray-900 form-input"
                       placeholder="At least 6 chars"
                     />
                     <button
@@ -510,13 +569,17 @@ const Sign_up = () => {
                       className="text-[#808080] hover:text-gray-700 transition-colors p-1 cursor-pointer"
                       aria-label="Toggle password"
                     >
-                      {showPassword ? <IoEyeOffOutline size={18} /> : <IoEyeOutline size={18} />}
+                      {showPassword ? (
+                        <IoEyeOffOutline size={18} />
+                      ) : (
+                        <IoEyeOutline size={18} />
+                      )}
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className="block mb-1 text-xs font-semibold tracking-wider text-gray-700 uppercase">
                     Confirm Password
                   </label>
                   <div
@@ -536,22 +599,30 @@ const Sign_up = () => {
                       value={formData.confirmPassword}
                       onChange={handleFormdataChange}
                       onKeyUp={handleIsPasswordsMatch}
-                      className="form-input text-gray-900"
+                      className="text-gray-900 form-input"
                       placeholder="Re-enter password"
                     />
                     <button
                       type="button"
-                      onClick={() => setConfirmShowPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setConfirmShowPassword(!showConfirmPassword)
+                      }
                       className="text-[#808080] hover:text-gray-700 transition-colors p-1 cursor-pointer"
                       aria-label="Toggle confirm password"
                     >
-                      {showConfirmPassword ? <IoEyeOffOutline size={18} /> : <IoEyeOutline size={18} />}
+                      {showConfirmPassword ? (
+                        <IoEyeOffOutline size={18} />
+                      ) : (
+                        <IoEyeOutline size={18} />
+                      )}
                     </button>
                   </div>
                 </div>
               </div>
               {!isMatch && formData.confirmPassword && (
-                <p className="text-xs text-red-500 -mt-2">Passwords do not match</p>
+                <p className="-mt-2 text-xs text-red-500">
+                  Passwords do not match
+                </p>
               )}
 
               {/* Terms and policy */}
@@ -562,18 +633,18 @@ const Sign_up = () => {
                   name="terms-policy"
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="w-4 h-4 rounded text-primary accent-primary focus:ring-primary cursor-pointer"
+                  className="w-4 h-4 rounded cursor-pointer text-primary accent-primary focus:ring-primary"
                 />
                 <label
                   htmlFor="terms-policy"
-                  className="text-xs sm:text-sm text-gray-600 cursor-pointer select-none"
+                  className="text-xs text-gray-600 cursor-pointer select-none sm:text-sm"
                 >
                   I agree to Hyve Haven's{" "}
                   <Link
                     to="/legal?policy=terms"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline font-semibold"
+                    className="font-semibold text-primary hover:underline"
                   >
                     Terms of Service
                   </Link>
@@ -582,7 +653,7 @@ const Sign_up = () => {
                     to="/legal?policy=privacy"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline font-semibold"
+                    className="font-semibold text-primary hover:underline"
                   >
                     Privacy Policy (NDPR)
                   </Link>
@@ -591,7 +662,7 @@ const Sign_up = () => {
                     to="/legal?policy=acceptable-use"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline font-semibold"
+                    className="font-semibold text-primary hover:underline"
                   >
                     Acceptable Use
                   </Link>
@@ -599,7 +670,7 @@ const Sign_up = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-2 flex flex-col gap-3">
+              <div className="flex flex-col gap-3 mt-2">
                 <button
                   type="submit"
                   disabled={!isFormFilled || !isMatch || isLoading}
@@ -608,12 +679,12 @@ const Sign_up = () => {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
-                      <span className="text-sm font-semibold text-white tracking-wide">
+                      <span className="text-sm font-semibold tracking-wide text-white">
                         CREATING ACCOUNT...
                       </span>
                     </>
                   ) : (
-                    <span className="text-sm font-semibold text-white tracking-wide">
+                    <span className="text-sm font-semibold tracking-wide text-white">
                       CREATE ACCOUNT
                     </span>
                   )}
@@ -633,38 +704,62 @@ const Sign_up = () => {
             </form>
 
             {/* Already have an account */}
-            <div className="mt-8 text-center pt-4 border-t border-gray-100">
+            <div className="pt-4 mt-8 text-center border-t border-gray-100">
               <p className="text-sm text-gray-600">
                 Already have an account?{" "}
-                <Link to="/auth/signin" className="text-primary font-semibold hover:underline">
+                <Link
+                  to="/auth/signin"
+                  className="font-semibold text-primary hover:underline"
+                >
                   Log in
                 </Link>
               </p>
             </div>
           </div>
 
-          <div className="w-full max-w-lg mx-auto text-center pt-6 text-xs text-gray-400 space-y-1">
-            <p>© {new Date().getFullYear()} HYVE Haven Limited (RC 9000322). All rights reserved.</p>
+          <div className="w-full max-w-lg pt-6 mx-auto space-y-1 text-xs text-center text-gray-400">
+            <p>
+              © {new Date().getFullYear()} HYVE Haven Limited (RC 9000322). All
+              rights reserved.
+            </p>
             <div className="flex items-center justify-center gap-3 text-gray-500">
-              <Link to="/legal?policy=privacy" target="_blank" className="hover:text-primary transition">Privacy</Link>
+              <Link
+                to="/legal?policy=privacy"
+                target="_blank"
+                className="transition hover:text-primary"
+              >
+                Privacy
+              </Link>
               <span>•</span>
-              <Link to="/legal?policy=terms" target="_blank" className="hover:text-primary transition">Terms</Link>
+              <Link
+                to="/legal?policy=terms"
+                target="_blank"
+                className="transition hover:text-primary"
+              >
+                Terms
+              </Link>
               <span>•</span>
-              <Link to="/legal?policy=caution-fee" target="_blank" className="hover:text-primary transition">Caution Deposit</Link>
+              <Link
+                to="/legal?policy=caution-fee"
+                target="_blank"
+                className="transition hover:text-primary"
+              >
+                Caution Deposit
+              </Link>
             </div>
           </div>
         </div>
 
         {/* Right Column - Hero Side Panel */}
         <div
-          className="relative hidden md:flex md:w-1/2 bg-cover bg-center min-h-screen items-end p-8 lg:p-14"
+          className="relative items-end hidden min-h-screen p-8 bg-center bg-cover md:flex md:w-1/2 lg:p-14"
           style={backgroundStyle}
         >
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/30 backdrop-blur-[1px]" />
 
           {/* Floating Back Home Button */}
-          <div className="absolute top-8 right-10 z-10">
+          <div className="absolute z-10 top-8 right-10">
             <Link
               to="/"
               className="flex items-center gap-1.5 text-white/90 hover:text-white bg-white/15 hover:bg-white/25 backdrop-blur-md px-4 py-2 rounded-full text-xs font-medium border border-white/20 smooth-transition"
@@ -675,34 +770,40 @@ const Sign_up = () => {
           </div>
 
           {/* Trust Highlights Card */}
-          <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-white shadow-2xl">
+          <div className="relative z-10 w-full max-w-md p-6 text-white border shadow-2xl bg-white/10 backdrop-blur-md border-white/20 rounded-2xl">
             <div className="flex items-center gap-2 mb-3">
               <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary text-white tracking-wider uppercase">
                 Why Hyve Haven
               </span>
-              <span className="text-xs text-white/80 font-light">Built for Lagos rentals</span>
+              <span className="text-xs font-light text-white/80">
+                Built for Lagos rentals
+              </span>
             </div>
-            <h3 className="text-xl font-bold font-montserrat leading-snug">
+            <h3 className="text-xl font-bold leading-snug font-montserrat">
               Rent with complete confidence and protection.
             </h3>
             <ul className="mt-4 space-y-2.5 text-xs sm:text-sm text-white/90">
               <li className="flex items-center gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                <span className="flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-primary/20 text-primary shrink-0">
                   ✓
                 </span>
                 <span>Verified apartments and authenticated landlords</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                <span className="flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-primary/20 text-primary shrink-0">
                   ✓
                 </span>
-                <span>Protected escrow payments released only after inspection</span>
+                <span>
+                  Protected escrow payments released only after inspection
+                </span>
               </li>
               <li className="flex items-center gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                <span className="flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-primary/20 text-primary shrink-0">
                   ✓
                 </span>
-                <span>Transparent digital agreements and real-time records</span>
+                <span>
+                  Transparent digital agreements and real-time records
+                </span>
               </li>
             </ul>
           </div>

@@ -4,12 +4,27 @@ import Sidebar from "../Sidebar/Sidebar";
 import Header from "../Dashboard/Header";
 import MobileNavigationTab from "../MobileNavigation/MobileNavigationTab";
 import { BsPeople, BsCheck2Circle } from "react-icons/bs";
-import { IoTimeOutline, IoCallOutline, IoShieldCheckmarkOutline } from "react-icons/io5";
+import {
+  IoTimeOutline,
+  IoCallOutline,
+  IoShieldCheckmarkOutline,
+} from "react-icons/io5";
 import { FaWhatsapp } from "react-icons/fa";
-import { Users, ArrowLeft, ExternalLink, Calendar, Loader2 } from "lucide-react";
+import {
+  Users,
+  ArrowLeft,
+  ExternalLink,
+  Calendar,
+  Loader2,
+} from "lucide-react";
 import useFetchApartment from "../../../../../hooks/useFetchApartment";
 import useQueueStore from "../../../../../hooks/useQueueStore";
-import { getPropertyQueueApi, scheduleActiveTourApi, mapBackendQueue } from "../../../../../utils/queueApi";
+import {
+  getPropertyQueueApi,
+  scheduleActiveTourApi,
+  mapBackendQueue,
+  parseServerDate,
+} from "../../../../../utils/queueApi";
 import { formatWhatsAppPhone } from "../../../../../utils/inspectionApi";
 import placeholderImage from "../../../../../assets/images/apartments/apartment-image-1.png";
 import JoinQueueModal from "../../../../../components/queue/JoinQueueModal";
@@ -25,7 +40,12 @@ const CountdownTimer = ({ expiresAt }) => {
 
   useEffect(() => {
     const updateTimer = () => {
-      const diff = expiresAt - Date.now();
+      const expMs = parseServerDate(expiresAt);
+      if (!expMs) {
+        setTimeLeft("00:00:00");
+        return;
+      }
+      const diff = expMs - Date.now();
       if (diff <= 0) {
         setTimeLeft("00:00:00 (Expired)");
         return;
@@ -34,7 +54,7 @@ const CountdownTimer = ({ expiresAt }) => {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
       setTimeLeft(
-        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`,
       );
     };
 
@@ -99,7 +119,14 @@ const ApartmentQueue = () => {
   const [isScheduling, setIsScheduling] = useState(false);
   const [showSlotPicker, setShowSlotPicker] = useState(false);
 
-  const SAME_DAY_SLOTS = ["10:00 AM", "11:30 AM", "01:00 PM", "02:30 PM", "04:00 PM", "05:30 PM"];
+  const SAME_DAY_SLOTS = [
+    "10:00 AM",
+    "11:30 AM",
+    "01:00 PM",
+    "02:30 PM",
+    "04:00 PM",
+    "05:30 PM",
+  ];
 
   const handleScheduleSlot = async (slot) => {
     if (!userQueue?.id || isScheduling) return;
@@ -108,11 +135,17 @@ const ApartmentQueue = () => {
       const res = await scheduleActiveTourApi(userQueue.id, slot);
       if (res) {
         setPropertyQueue(mapBackendQueue(res));
-        hyveSuccess("Tour Scheduled", `Your viewing is confirmed for today at ${slot}`);
+        hyveSuccess(
+          "Tour Scheduled",
+          `Your viewing is confirmed for today at ${slot}`,
+        );
         setShowSlotPicker(false);
       }
     } catch (err) {
-      hyveError("Scheduling Failed", err?.message || "Could not schedule viewing time");
+      hyveError(
+        "Scheduling Failed",
+        err?.message || "Could not schedule viewing time",
+      );
     } finally {
       setIsScheduling(false);
     }
@@ -121,24 +154,41 @@ const ApartmentQueue = () => {
   // User details for automated WhatsApp dispatch to agent
   const currentUser = (() => {
     try {
-      return JSON.parse(localStorage.getItem("user")) || JSON.parse(localStorage.getItem("userData")) || {};
+      return (
+        JSON.parse(localStorage.getItem("user")) ||
+        JSON.parse(localStorage.getItem("userData")) ||
+        {}
+      );
     } catch {
       return {};
     }
   })();
-  const renterName = `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() || currentUser.email || "Tenant";
-  const renterPhone = currentUser.phone || currentUser.phoneNumber || "Not provided";
-  const apartmentType = apartment?.type || apartment?.propertyType || "Apartment";
+  const renterName =
+    `${currentUser.firstName || ""} ${currentUser.lastName || ""}`.trim() ||
+    currentUser.email ||
+    "Tenant";
+  const renterPhone =
+    currentUser.phone || currentUser.phoneNumber || "Not provided";
+  const apartmentType =
+    apartment?.type || apartment?.propertyType || "Apartment";
   const propertyTitle = apartment?.lodgeDesc || "Hyve Apartment";
-  const tourDetails = userQueue?.scheduledTour ? `Scheduled Viewing: Today at ${userQueue.scheduledTour}` : "Preferred Viewing: Flexible today";
+  const tourDetails = userQueue?.scheduledTour
+    ? `Scheduled Viewing: Today at ${userQueue.scheduledTour}`
+    : "Preferred Viewing: Flexible today";
 
   const cleanPhone = formatWhatsAppPhone(userQueue?.agentPhone);
   const waMessage = `Hello ${userQueue?.agentName || "Agent"},\n\nI am currently Position #1 on Hyve Haven for "${propertyTitle}" (${apartmentType}) and have paid my inspection fee.\n\nTenant Details:\n- Name: ${renterName}\n- Phone: ${renterPhone}\n- Apartment: ${propertyTitle} (${apartmentType})\n- Status: ${tourDetails}\n- Hyve Queue Reference: #${userQueue?.id}\n\nPlease confirm our viewing arrangement. Thank you!`;
-  const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}` : null;
+  const whatsappUrl = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}`
+    : null;
 
   const handleLeave = () => {
     if (!userQueue) return;
-    if (window.confirm("Leave this queue? This will free up 1 of your queue slots.")) {
+    if (
+      window.confirm(
+        "Leave this queue? This will free up 1 of your queue slots.",
+      )
+    ) {
       leaveQueue(userQueue.id);
       setPropertyQueue(null);
       hyveSuccess("Left Queue", "You have stepped out of the queue.");
@@ -185,31 +235,39 @@ const ApartmentQueue = () => {
                     Slots: {capacity.currentCount} of {capacity.maxLimit} used
                   </span>
                 </div>
-                <h2 className="font-montserrat text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-gray-900 font-montserrat">
                   Apartment Queue Status
                 </h2>
               </div>
 
               {/* Loading State */}
-              {(isLoading || isQueueLoading) ? (
+              {isLoading || isQueueLoading ? (
                 <div className="flex flex-col items-center justify-center p-16">
                   <div className="spinner w-[32px] h-[32px]" />
-                  <p className="mt-4 text-xs text-gray-400">Loading queue details...</p>
+                  <p className="mt-4 text-xs text-gray-400">
+                    Loading queue details...
+                  </p>
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center p-16 text-center">
-                  <BiErrorCircle className="text-4xl text-primary mb-2" />
+                  <BiErrorCircle className="mb-2 text-4xl text-primary" />
                   <p className="text-sm text-gray-600">{error}</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-md">
+                <div className="overflow-hidden bg-white border border-gray-200 shadow-md rounded-2xl">
                   {/* Image */}
-                  <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-gray-100">
+                  <div className="relative w-full h-64 overflow-hidden bg-gray-100 sm:h-72">
                     <img
-                      src={apartment?.lodgeImage || apartment?.images?.[0] || placeholderImage}
+                      src={
+                        apartment?.lodgeImage ||
+                        apartment?.images?.[0] ||
+                        placeholderImage
+                      }
                       alt="apartment"
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.target.src = placeholderImage; }}
+                      className="object-cover w-full h-full"
+                      onError={(e) => {
+                        e.target.src = placeholderImage;
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
 
@@ -222,7 +280,8 @@ const ApartmentQueue = () => {
                         </span>
                       ) : userQueue ? (
                         <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-primary text-white shadow-md">
-                          IN QUEUE: POSITION #{userQueue.position} OF {userQueue.total}
+                          IN QUEUE: POSITION #{userQueue.position} OF{" "}
+                          {userQueue.total}
                         </span>
                       ) : (
                         <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-white/90 text-gray-800 shadow-md backdrop-blur-xs">
@@ -231,9 +290,9 @@ const ApartmentQueue = () => {
                       )}
                     </div>
 
-                    <div className="absolute bottom-4 left-4 right-4 text-white flex items-end justify-between gap-3">
+                    <div className="absolute flex items-end justify-between gap-3 text-white bottom-4 left-4 right-4">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-xl font-bold font-montserrat leading-snug break-words">
+                        <h3 className="text-base font-bold leading-snug break-words sm:text-xl font-montserrat">
                           {apartment?.lodgeDesc}
                         </h3>
                         <p className="text-xs text-white/80 mt-0.5 truncate">
@@ -241,7 +300,7 @@ const ApartmentQueue = () => {
                         </p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-base sm:text-xl font-bold text-white whitespace-nowrap">
+                        <p className="text-base font-bold text-white sm:text-xl whitespace-nowrap">
                           ₦ {Number(apartment?.price || 0).toLocaleString()}
                         </p>
                         <p className="text-[11px] text-white/80">per month</p>
@@ -255,18 +314,21 @@ const ApartmentQueue = () => {
                     {userQueue?.status === "ACTIVE" ? (
                       <div className="space-y-4">
                         {/* Countdown */}
-                        <div className="p-4 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-primary font-semibold text-sm">
-                            <IoTimeOutline size={20} className="animate-pulse" />
+                        <div className="flex items-center justify-between p-4 border border-orange-200 rounded-xl bg-orange-50">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                            <IoTimeOutline
+                              size={20}
+                              className="animate-pulse"
+                            />
                             <span>Exclusive Decision Window:</span>
                           </div>
-                          <div className="font-mono font-bold text-lg text-primary">
+                          <div className="font-mono text-lg font-bold text-primary">
                             <CountdownTimer expiresAt={userQueue.expiresAt} />
                           </div>
                         </div>
 
                         {!userQueue.inspectionPaid ? (
-                          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-3">
+                          <div className="p-4 space-y-3 border border-gray-200 rounded-xl bg-gray-50">
                             <div className="flex items-start gap-2.5">
                               <IoShieldCheckmarkOutline className="text-primary w-5 h-5 shrink-0 mt-0.5" />
                               <div>
@@ -274,7 +336,10 @@ const ApartmentQueue = () => {
                                   Unlock Agent Direct Contact & Schedule Viewing
                                 </p>
                                 <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                                  Pay the inspection fee (₦5,000) to reveal the agent's verified contact, automatically dispatch your tenant details to their WhatsApp, and book your same-day viewing time.
+                                  Pay the inspection fee (₦5,000) to reveal the
+                                  agent's verified contact, automatically
+                                  dispatch your tenant details to their
+                                  WhatsApp, and book your same-day viewing time.
                                 </p>
                               </div>
                             </div>
@@ -290,7 +355,10 @@ const ApartmentQueue = () => {
                           <div className="p-4 rounded-xl bg-green-50/70 border border-green-200 space-y-3.5">
                             <div className="flex items-center justify-between text-xs font-bold text-green-800">
                               <span className="flex items-center gap-1.5">
-                                <IoShieldCheckmarkOutline size={18} className="text-green-600" />
+                                <IoShieldCheckmarkOutline
+                                  size={18}
+                                  className="text-green-600"
+                                />
                                 <span>Inspection Fee Confirmed (₦ 5,000)</span>
                               </span>
                               <span className="text-green-700 bg-green-100 px-2 py-0.5 rounded-md font-medium">
@@ -303,17 +371,19 @@ const ApartmentQueue = () => {
                               <div className="flex items-center justify-between gap-3">
                                 <div>
                                   <p className="text-xs font-bold text-gray-900">
-                                    {userQueue.agentName || "Assigned Property Agent"}
+                                    {userQueue.agentName ||
+                                      "Assigned Property Agent"}
                                   </p>
                                   <p className="text-[11px] text-gray-500">
-                                    {userQueue.agentPhone || "Verified Agent Phone"}
+                                    {userQueue.agentPhone ||
+                                      "Verified Agent Phone"}
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {userQueue.agentPhone && (
                                     <a
                                       href={`tel:${userQueue.agentPhone}`}
-                                      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs transition-colors"
+                                      className="p-2 text-xs text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
                                       title="Call Agent"
                                     >
                                       <IoCallOutline size={17} />
@@ -336,7 +406,10 @@ const ApartmentQueue = () => {
 
                               {whatsappUrl && (
                                 <p className="text-[11px] text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100">
-                                  💬 <strong>Auto-Dispatch Ready:</strong> Clicking "WhatsApp Agent" sends your name, phone, property choice, and queue ID directly to the agent's WhatsApp.
+                                  💬 <strong>Auto-Dispatch Ready:</strong>{" "}
+                                  Clicking "WhatsApp Agent" sends your name,
+                                  phone, property choice, and queue ID directly
+                                  to the agent's WhatsApp.
                                 </p>
                               )}
                             </div>
@@ -362,7 +435,10 @@ const ApartmentQueue = () => {
                               {userQueue.scheduledTour && !showSlotPicker ? (
                                 <div className="p-2.5 bg-green-50/70 rounded-lg border border-green-200/80 flex items-center justify-between text-xs">
                                   <span className="text-gray-700">
-                                    Confirmed inspection: <strong className="text-green-900">{userQueue.scheduledTour}</strong>
+                                    Confirmed inspection:{" "}
+                                    <strong className="text-green-900">
+                                      {userQueue.scheduledTour}
+                                    </strong>
                                   </span>
                                   <span className="text-[11px] text-green-700 font-semibold flex items-center gap-1">
                                     <BsCheck2Circle size={14} /> Scheduled
@@ -371,17 +447,21 @@ const ApartmentQueue = () => {
                               ) : (
                                 <div className="space-y-2">
                                   <p className="text-[11px] text-gray-500">
-                                    Pick your preferred tour slot for today (within your 24-hour decision lock):
+                                    Pick your preferred tour slot for today
+                                    (within your 24-hour decision lock):
                                   </p>
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                     {SAME_DAY_SLOTS.map((slot) => {
-                                      const isSelected = userQueue.scheduledTour?.includes(slot);
+                                      const isSelected =
+                                        userQueue.scheduledTour?.includes(slot);
                                       return (
                                         <button
                                           key={slot}
                                           type="button"
                                           disabled={isScheduling}
-                                          onClick={() => handleScheduleSlot(slot)}
+                                          onClick={() =>
+                                            handleScheduleSlot(slot)
+                                          }
                                           className={`py-2 px-2.5 rounded-lg text-xs font-semibold border transition-all text-center flex items-center justify-center gap-1 ${
                                             isSelected
                                               ? "bg-primary text-white border-primary shadow-xs"
@@ -433,32 +513,38 @@ const ApartmentQueue = () => {
                     ) : userQueue ? (
                       /* User is in Queue and waiting */
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between text-sm border-b border-gray-100 pb-3">
-                          <span className="text-gray-500">Your Current Position:</span>
+                        <div className="flex items-center justify-between pb-3 text-sm border-b border-gray-100">
+                          <span className="text-gray-500">
+                            Your Current Position:
+                          </span>
                           <span className="font-bold text-gray-900">
                             #{userQueue.position} of {userQueue.total}
                           </span>
                         </div>
 
-                        <div className="flex items-center justify-between text-sm border-b border-gray-100 pb-3">
+                        <div className="flex items-center justify-between pb-3 text-sm border-b border-gray-100">
                           <span className="text-gray-500">People Ahead:</span>
                           <span className="font-bold text-gray-900">
-                            {userQueue.peopleAhead} {userQueue.peopleAhead === 1 ? "person" : "people"}
+                            {userQueue.peopleAhead}{" "}
+                            {userQueue.peopleAhead === 1 ? "person" : "people"}
                           </span>
                         </div>
 
                         <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 space-y-2 text-xs">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-500 flex items-center gap-1">
-                              <IoTimeOutline size={14} className="text-primary" />
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1 text-gray-500">
+                              <IoTimeOutline
+                                size={14}
+                                className="text-primary"
+                              />
                               Estimated Wait:
                             </span>
                             <span className="font-bold text-gray-800">
                               {userQueue.peopleAhead === 0
                                 ? "You're first in queue / first to inspect and pay!"
                                 : userQueue.peopleAhead === 1
-                                ? "Approx. 24 hours until you can inspect"
-                                : `Approx. ${userQueue.peopleAhead * 24} hours until you can inspect`}
+                                  ? "Approx. 24 hours until you can inspect"
+                                  : `Approx. ${userQueue.peopleAhead * 24} hours until you can inspect`}
                             </span>
                           </div>
                           <div className="flex justify-between pt-1 border-t border-gray-200">
@@ -475,7 +561,7 @@ const ApartmentQueue = () => {
                           <button
                             type="button"
                             onClick={handleLeave}
-                            className="w-full py-3 border border-gray-300 hover:border-red-400 hover:text-red-600 text-gray-600 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                            className="w-full py-3 text-xs font-semibold text-gray-600 transition-colors border border-gray-300 cursor-pointer hover:border-red-400 hover:text-red-600 rounded-xl sm:text-sm"
                           >
                             Leave Queue (Free Up Slot)
                           </button>
@@ -484,8 +570,10 @@ const ApartmentQueue = () => {
                     ) : (
                       /* User is NOT yet in this queue */
                       <div className="space-y-4 text-center">
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Join the fair queue for this apartment to secure transparent, first-come-first-served viewing rights. Only 1 person inspects and decides at a time.
+                        <p className="text-sm leading-relaxed text-gray-600">
+                          Join the fair queue for this apartment to secure
+                          transparent, first-come-first-served viewing rights.
+                          Only 1 person inspects and decides at a time.
                         </p>
 
                         <button
