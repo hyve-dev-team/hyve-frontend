@@ -27,6 +27,10 @@ import PassSlotModal from "../../../../../components/queue/PassSlotModal";
 import { formatWhatsAppPhone } from "../../../../../utils/inspectionApi";
 import { parseServerDate } from "../../../../../utils/queueApi";
 import { hyveSuccess } from "../../../../../utils/hyveToast";
+import {
+  formatNaira,
+  calculateInspectionFee,
+} from "../../../../../utils/feeCalculations";
 
 // Digital Block Countdown Component
 const CountdownTimer = ({ expiresAt, compact = false }) => {
@@ -77,7 +81,7 @@ const CountdownTimer = ({ expiresAt, compact = false }) => {
 
   if (timeLeft.isExpired) {
     return (
-      <span className="text-red-500 font-semibold text-xs">Window Expired</span>
+      <span className="text-xs font-semibold text-red-500">Window Expired</span>
     );
   }
 
@@ -94,11 +98,11 @@ const CountdownTimer = ({ expiresAt, compact = false }) => {
       <span className="bg-white text-primary px-2 py-0.5 rounded-md border border-orange-200/80 shadow-xs text-xs sm:text-sm">
         {timeLeft.hours}h
       </span>
-      <span className="text-orange-400 text-xs font-bold">:</span>
+      <span className="text-xs font-bold text-orange-400">:</span>
       <span className="bg-white text-primary px-2 py-0.5 rounded-md border border-orange-200/80 shadow-xs text-xs sm:text-sm">
         {timeLeft.minutes}m
       </span>
-      <span className="text-orange-400 text-xs font-bold">:</span>
+      <span className="text-xs font-bold text-orange-400">:</span>
       <span className="bg-white text-primary px-2 py-0.5 rounded-md border border-orange-200/80 shadow-xs text-xs sm:text-sm">
         {timeLeft.seconds}s
       </span>
@@ -153,19 +157,19 @@ const MyQueues = () => {
           <main className="w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-y-auto">
             <Header />
 
-            <div className="px-4 sm:px-8 lg:px-12 py-6 sm:py-8 pb-28 sm:pb-16 max-w-7xl mx-auto">
+            <div className="px-4 py-6 mx-auto sm:px-8 lg:px-12 sm:py-8 pb-28 sm:pb-16 max-w-7xl">
               {/* Header Title Section */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+              <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-center">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-2xl sm:text-3xl font-bold font-montserrat text-gray-900 tracking-tight">
+                    <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl font-montserrat">
                       My Queues
                     </h2>
                     <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
                       Fair Queue System
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-xl">
+                  <p className="max-w-xl mt-1 text-xs text-gray-500 sm:text-sm">
                     Orderly, transparent, and first-come-first-served apartment
                     access. Only one prospective tenant inspects and decides at
                     a time.
@@ -189,35 +193,35 @@ const MyQueues = () => {
 
               {/* Collapsible Fair Queue Trust Banner */}
               {showTrustInfo && (
-                <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-orange-50/90 via-amber-50/70 to-emerald-50/80 border border-primary/20 shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="flex items-center gap-2 font-bold text-gray-900 text-sm mb-3">
+                <div className="p-4 mb-6 duration-200 border shadow-xs sm:p-5 rounded-2xl bg-gradient-to-r from-orange-50/90 via-amber-50/70 to-emerald-50/80 border-primary/20 animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-900">
                     <Sparkles size={18} className="text-primary" />
                     <span>The Hyve Haven 3-Pillar Fair Queue Guarantee</span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs text-gray-700">
-                    <div className="bg-white/80 p-3 rounded-xl border border-orange-100 shadow-2xs">
+                    <div className="p-3 border border-orange-100 bg-white/80 rounded-xl shadow-2xs">
                       <p className="font-bold text-gray-900 mb-0.5">
                         1. No Agent Bidding Wars
                       </p>
-                      <p className="text-gray-500 leading-relaxed">
+                      <p className="leading-relaxed text-gray-500">
                         Only 1 person gets the landlord's contact and tours at a
                         time. Agents cannot pit renters against each other.
                       </p>
                     </div>
-                    <div className="bg-white/80 p-3 rounded-xl border border-orange-100 shadow-2xs">
+                    <div className="p-3 border border-orange-100 bg-white/80 rounded-xl shadow-2xs">
                       <p className="font-bold text-gray-900 mb-0.5">
                         2. 24-Hour Decision Lock
                       </p>
-                      <p className="text-gray-500 leading-relaxed">
+                      <p className="leading-relaxed text-gray-500">
                         When it's your turn, the listing is completely reserved
                         for your decision window. Nobody can jump ahead.
                       </p>
                     </div>
-                    <div className="bg-white/80 p-3 rounded-xl border border-emerald-100 shadow-2xs">
+                    <div className="p-3 border bg-white/80 rounded-xl border-emerald-100 shadow-2xs">
                       <p className="font-bold text-[#1B784D] mb-0.5">
                         3. 100% Escrow Protection
                       </p>
-                      <p className="text-gray-500 leading-relaxed">
+                      <p className="leading-relaxed text-gray-500">
                         Rent is safely held in Hyve Haven Escrow until physical
                         key handover and inspection confirmation.
                       </p>
@@ -234,27 +238,27 @@ const MyQueues = () => {
                     {[1, 2, 3].map((i) => (
                       <div
                         key={i}
-                        className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs"
+                        className="p-4 bg-white border border-gray-200 rounded-2xl shadow-2xs"
                       >
-                        <div className="h-4 bg-gray-200 rounded w-28 mb-3" />
-                        <div className="h-8 bg-gray-200 rounded w-16 mb-2" />
-                        <div className="h-3 bg-gray-100 rounded w-40" />
+                        <div className="h-4 mb-3 bg-gray-200 rounded w-28" />
+                        <div className="w-16 h-8 mb-2 bg-gray-200 rounded" />
+                        <div className="w-40 h-3 bg-gray-100 rounded" />
                       </div>
                     ))}
                   </div>
 
                   {/* Skeleton Queue Cards */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse mt-6">
+                  <div className="grid grid-cols-1 gap-6 mt-6 lg:grid-cols-2 animate-pulse">
                     {[1, 2].map((i) => (
                       <div
                         key={i}
-                        className="bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-sm"
+                        className="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-3xl"
                       >
-                        <div className="h-60 sm:h-64 bg-gray-200" />
+                        <div className="bg-gray-200 h-60 sm:h-64" />
                         <div className="p-6 space-y-3">
-                          <div className="h-5 bg-gray-200 rounded w-3/4" />
-                          <div className="h-4 bg-gray-100 rounded w-1/2" />
-                          <div className="h-10 bg-gray-100 rounded-xl w-full mt-4" />
+                          <div className="w-3/4 h-5 bg-gray-200 rounded" />
+                          <div className="w-1/2 h-4 bg-gray-100 rounded" />
+                          <div className="w-full h-10 mt-4 bg-gray-100 rounded-xl" />
                         </div>
                       </div>
                     ))}
@@ -286,8 +290,8 @@ const MyQueues = () => {
                           <BsCheck2Circle size={18} />
                         </div>
                       </div>
-                      <div className="mt-2 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold font-montserrat text-gray-900">
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-2xl font-bold text-gray-900 font-montserrat">
                           {activeTurnsCount}
                         </span>
                         {activeTurnsCount > 0 ? (
@@ -307,17 +311,17 @@ const MyQueues = () => {
                     </div>
 
                     {/* Metric 2: Waiting in Line */}
-                    <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs">
+                    <div className="p-4 bg-white border border-gray-200 rounded-2xl shadow-2xs">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-gray-500">
                           In Waiting Lines
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-orange-50 text-primary flex items-center justify-center">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-50 text-primary">
                           <Clock size={16} />
                         </div>
                       </div>
-                      <div className="mt-2 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold font-montserrat text-gray-900">
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <span className="text-2xl font-bold text-gray-900 font-montserrat">
                           {waitingCount}
                         </span>
                         <span className="text-xs text-gray-500">
@@ -332,7 +336,7 @@ const MyQueues = () => {
                     </div>
 
                     {/* Metric 3: Queue Slots & Tier */}
-                    <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs flex flex-col justify-between">
+                    <div className="flex flex-col justify-between p-4 bg-white border border-gray-200 rounded-2xl shadow-2xs">
                       <div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-gray-500">
@@ -342,8 +346,8 @@ const MyQueues = () => {
                             {capacity.tierDetails.name}
                           </span>
                         </div>
-                        <div className="mt-2 flex items-baseline justify-between">
-                          <span className="text-2xl font-bold font-montserrat text-gray-900">
+                        <div className="flex items-baseline justify-between mt-2">
+                          <span className="text-2xl font-bold text-gray-900 font-montserrat">
                             {capacity.currentCount}{" "}
                             <span className="text-sm font-normal text-gray-400">
                               / {capacity.maxLimit}
@@ -352,7 +356,7 @@ const MyQueues = () => {
                           <button
                             type="button"
                             onClick={() => setShowUpgradeModal(true)}
-                            className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-hover transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 text-xs font-bold transition-colors cursor-pointer text-primary hover:text-primary-hover"
                           >
                             <Zap size={13} />
                             <span>Upgrade</span>
@@ -433,18 +437,18 @@ const MyQueues = () => {
                   {/* Queues List Grid */}
                   {filteredQueues.length === 0 ? (
                     /* Empty state */
-                    <div className="bg-white border border-gray-200 rounded-3xl p-8 sm:p-14 text-center max-w-lg mx-auto my-8 shadow-xs">
-                      <div className="w-16 h-16 rounded-2xl bg-orange-50 text-primary flex items-center justify-center mx-auto mb-4 border border-orange-100">
+                    <div className="max-w-lg p-8 mx-auto my-8 text-center bg-white border border-gray-200 shadow-xs rounded-3xl sm:p-14">
+                      <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 border border-orange-100 rounded-2xl bg-orange-50 text-primary">
                         <BsPeople size={28} />
                       </div>
-                      <h3 className="text-lg sm:text-xl font-bold font-montserrat text-gray-900">
+                      <h3 className="text-lg font-bold text-gray-900 sm:text-xl font-montserrat">
                         {activeFilter === "ACTIVE"
                           ? "No apartments currently in your turn"
                           : activeFilter === "WAITING"
                             ? "No apartments in waiting line"
                             : "You have no active queues"}
                       </h3>
-                      <p className="text-xs sm:text-sm text-gray-500 mt-2 leading-relaxed">
+                      <p className="mt-2 text-xs leading-relaxed text-gray-500 sm:text-sm">
                         {activeFilter === "ALL"
                           ? "Browse verified listings, join an orderly fair queue, and secure exclusive private inspection rights with zero bidding wars."
                           : "Explore available apartments to secure your spot in line."}
@@ -452,14 +456,14 @@ const MyQueues = () => {
                       <button
                         type="button"
                         onClick={() => navigate("/user/dashboard")}
-                        className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-semibold text-xs sm:text-sm rounded-xl hover:bg-primary-hover transition-colors shadow-md shadow-primary/20 cursor-pointer"
+                        className="inline-flex items-center gap-2 px-6 py-3 mt-6 text-xs font-semibold text-white transition-colors shadow-md cursor-pointer bg-primary sm:text-sm rounded-xl hover:bg-primary-hover shadow-primary/20"
                       >
                         <span>Browse Verified Apartments</span>
                         <ArrowRight size={14} />
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                       {filteredQueues.map((queue) => {
                         const isYourTurn = queue.status === "ACTIVE";
 
@@ -474,23 +478,23 @@ const MyQueues = () => {
                           >
                             <div>
                               {/* Property Image Banner */}
-                              <div className="relative h-60 sm:h-64 w-full overflow-hidden bg-gray-100">
+                              <div className="relative w-full overflow-hidden bg-gray-100 h-60 sm:h-64">
                                 <img
                                   src={queue.image}
                                   alt={queue.property}
-                                  className="w-full h-full object-cover"
+                                  className="object-cover w-full h-full"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
 
                                 {/* Top Badges */}
-                                <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+                                <div className="absolute flex items-center justify-between top-4 left-4 right-4">
                                   {isYourTurn ? (
                                     <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#1B784D] text-white flex items-center gap-1.5 shadow-md backdrop-blur-xs">
-                                      <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                      <span className="w-2 h-2 bg-white rounded-full animate-ping" />
                                       <span>YOUR TURN (POSITION #1)</span>
                                     </span>
                                   ) : (
-                                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-primary text-white shadow-md">
+                                    <span className="px-3 py-1 text-xs font-bold text-white rounded-full shadow-md bg-primary">
                                       POSITION #{queue.position} OF{" "}
                                       {queue.total}
                                     </span>
@@ -498,7 +502,7 @@ const MyQueues = () => {
 
                                   <Link
                                     to={`/user/apartment/${queue.apartmentId}`}
-                                    className="p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-xs transition-colors"
+                                    className="p-2 text-white transition-colors rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-xs"
                                     title="View Apartment Page"
                                   >
                                     <ExternalLink size={14} />
@@ -506,7 +510,7 @@ const MyQueues = () => {
                                 </div>
 
                                 {/* Title & Price Overlay */}
-                                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3 text-white">
+                                <div className="absolute flex items-end justify-between gap-3 text-white bottom-4 left-4 right-4">
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs text-white/80 flex items-center gap-1 mb-0.5">
                                       <IoLocationOutline className="shrink-0" />
@@ -514,12 +518,12 @@ const MyQueues = () => {
                                         {queue.location}
                                       </span>
                                     </p>
-                                    <h3 className="text-base sm:text-lg font-bold font-montserrat leading-snug break-words">
+                                    <h3 className="text-base font-bold leading-snug break-words sm:text-lg font-montserrat">
                                       {queue.property}
                                     </h3>
                                   </div>
                                   <div className="text-right shrink-0">
-                                    <p className="text-base sm:text-lg font-bold text-white whitespace-nowrap">
+                                    <p className="text-base font-bold text-white sm:text-lg whitespace-nowrap">
                                       ₦{" "}
                                       {typeof queue.price === "number"
                                         ? queue.price.toLocaleString()
@@ -533,13 +537,13 @@ const MyQueues = () => {
                               </div>
 
                               {/* Queue Card Body */}
-                              <div className="p-4 sm:p-6 space-y-4">
+                              <div className="p-4 space-y-4 sm:p-6">
                                 {/* ================= CASE 1: YOUR TURN (POSITION 1) ================= */}
                                 {isYourTurn ? (
                                   <div className="space-y-4">
                                     {/* 24-Hour Urgent Countdown Bar */}
                                     <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50/70 border border-orange-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                                      <div className="flex items-center gap-2 text-primary font-bold text-xs sm:text-sm">
+                                      <div className="flex items-center gap-2 text-xs font-bold text-primary sm:text-sm">
                                         <IoTimeOutline
                                           size={18}
                                           className="animate-pulse shrink-0"
@@ -566,10 +570,15 @@ const MyQueues = () => {
                                             </span>
                                           </div>
                                           <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                                            ₦ 5,000 fee
+                                            {formatNaira(
+                                              queue.inspectionFee ||
+                                                calculateInspectionFee(queue)
+                                                  .totalFee,
+                                            )}{" "}
+                                            fee
                                           </span>
                                         </div>
-                                        <p className="text-xs text-gray-500 leading-relaxed">
+                                        <p className="text-xs leading-relaxed text-gray-500">
                                           Pay the official inspection fee to
                                           unlock the agent's verified contact,
                                           schedule your private walkthrough, and
@@ -581,14 +590,20 @@ const MyQueues = () => {
                                           className="w-full py-3 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm shadow-primary/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
                                         >
                                           <span>
-                                            Pay Inspection Fee (₦ 5,000)
+                                            Pay Inspection Fee (
+                                            {formatNaira(
+                                              queue.inspectionFee ||
+                                                calculateInspectionFee(queue)
+                                                  .totalFee,
+                                            )}
+                                            )
                                           </span>
                                           <ArrowRight size={14} />
                                         </button>
                                       </div>
                                     ) : (
                                       /* Inspection fee paid: Agent contact unlocked */
-                                      <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-3">
+                                      <div className="p-4 space-y-3 border rounded-2xl bg-emerald-50/70 border-emerald-200">
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
                                             <IoShieldCheckmarkOutline
@@ -605,15 +620,15 @@ const MyQueues = () => {
                                         </div>
 
                                         {/* Agent Contact Card */}
-                                        <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-emerald-100 shadow-2xs">
+                                        <div className="flex items-center justify-between p-3 bg-white border rounded-xl border-emerald-100 shadow-2xs">
                                           <div className="flex items-center gap-2.5">
-                                            <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center">
+                                            <div className="flex items-center justify-center text-sm font-bold rounded-full w-9 h-9 bg-primary/10 text-primary">
                                               {queue.agentName
                                                 ? queue.agentName.charAt(0)
                                                 : "A"}
                                             </div>
                                             <div>
-                                              <p className="text-xs font-bold text-gray-900 leading-tight">
+                                              <p className="text-xs font-bold leading-tight text-gray-900">
                                                 {queue.agentName}
                                               </p>
                                               <p className="text-[11px] text-gray-500 mt-0.5">
@@ -645,7 +660,7 @@ const MyQueues = () => {
                                     )}
 
                                     {/* Step 2: Commit & Reserve / Pass Turn */}
-                                    <div className="space-y-2 pt-1">
+                                    <div className="pt-1 space-y-2">
                                       <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
                                         <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] flex items-center justify-center font-bold">
                                           2
@@ -668,7 +683,7 @@ const MyQueues = () => {
                                         <button
                                           type="button"
                                           onClick={() => setPassingQueue(queue)}
-                                          className="w-full sm:w-auto py-3 px-4 border border-gray-200 hover:border-red-300 hover:bg-red-50/50 hover:text-red-600 text-gray-600 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer text-center"
+                                          className="w-full px-4 py-3 text-xs font-semibold text-center text-gray-600 transition-colors border border-gray-200 cursor-pointer sm:w-auto hover:border-red-300 hover:bg-red-50/50 hover:text-red-600 rounded-xl sm:text-sm"
                                         >
                                           Pass Turn
                                         </button>
@@ -680,8 +695,8 @@ const MyQueues = () => {
                                   <div className="space-y-4">
                                     {/* Visual Queue Step Track */}
                                     <div>
-                                      <div className="flex items-center justify-between text-xs mb-2">
-                                        <span className="text-gray-500 font-medium">
+                                      <div className="flex items-center justify-between mb-2 text-xs">
+                                        <span className="font-medium text-gray-500">
                                           Queue Progression:
                                         </span>
                                         <span className="font-bold text-primary">
@@ -693,14 +708,14 @@ const MyQueues = () => {
                                       </div>
 
                                       {/* Progress Step Bar */}
-                                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden flex">
+                                      <div className="flex w-full h-2 overflow-hidden bg-gray-100 rounded-full">
                                         <div
-                                          className="h-full bg-gray-300 rounded-l-full transition-all"
+                                          className="h-full transition-all bg-gray-300 rounded-l-full"
                                           style={{
                                             width: `${Math.min(100, Math.max(15, ((queue.total - queue.position) / queue.total) * 100))}%`,
                                           }}
                                         />
-                                        <div className="h-full bg-primary flex-1" />
+                                        <div className="flex-1 h-full bg-primary" />
                                       </div>
                                     </div>
 
@@ -716,7 +731,7 @@ const MyQueues = () => {
                                             Estimated Wait Until Your Turn:
                                           </span>
                                         </span>
-                                        <span className="font-semibold text-gray-800 font-mono">
+                                        <span className="font-mono font-semibold text-gray-800">
                                           ~
                                           <CountdownTimer
                                             expiresAt={
@@ -728,7 +743,7 @@ const MyQueues = () => {
                                         </span>
                                       </div>
 
-                                      <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-200/80">
+                                      <div className="flex items-center justify-between pt-2 text-xs border-t border-gray-200/80">
                                         <span className="text-gray-500">
                                           Your Exclusive Window When Called:
                                         </span>

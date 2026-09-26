@@ -33,6 +33,10 @@ import PayInspectionModal from "../../../../../components/queue/PayInspectionMod
 import PassSlotModal from "../../../../../components/queue/PassSlotModal";
 import { BiErrorCircle } from "react-icons/bi";
 import { hyveSuccess, hyveError } from "../../../../../utils/hyveToast";
+import {
+  formatNaira,
+  calculateInspectionFee,
+} from "../../../../../utils/feeCalculations";
 
 // Live Countdown
 const CountdownTimer = ({ expiresAt }) => {
@@ -336,10 +340,16 @@ const ApartmentQueue = () => {
                                   Unlock Agent Direct Contact & Schedule Viewing
                                 </p>
                                 <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                                  Pay the inspection fee (₦5,000) to reveal the
-                                  agent's verified contact, automatically
-                                  dispatch your tenant details to their
-                                  WhatsApp, and book your same-day viewing time.
+                                  Pay the inspection fee (
+                                  {formatNaira(
+                                    userQueue.inspectionFee ||
+                                      calculateInspectionFee(userQueue)
+                                        .totalFee,
+                                  )}
+                                  ) to reveal the agent's verified contact,
+                                  automatically dispatch your tenant details to
+                                  their WhatsApp, and book your same-day viewing
+                                  time.
                                 </p>
                               </div>
                             </div>
@@ -348,7 +358,12 @@ const ApartmentQueue = () => {
                               onClick={() => setPayingQueue(userQueue)}
                               className="w-full py-3 bg-primary hover:bg-primary-hover active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md cursor-pointer transition-all"
                             >
-                              Pay Inspection Fee (₦ 5,000)
+                              Pay Inspection Fee (
+                              {formatNaira(
+                                userQueue.inspectionFee ||
+                                  calculateInspectionFee(userQueue).totalFee,
+                              )}
+                              )
                             </button>
                           </div>
                         ) : (
@@ -359,7 +374,15 @@ const ApartmentQueue = () => {
                                   size={18}
                                   className="text-green-600"
                                 />
-                                <span>Inspection Fee Confirmed (₦ 5,000)</span>
+                                <span>
+                                  Inspection Fee Confirmed (
+                                  {formatNaira(
+                                    userQueue.inspectionFee ||
+                                      calculateInspectionFee(userQueue)
+                                        .totalFee,
+                                  )}
+                                  )
+                                </span>
                               </span>
                               <span className="text-green-700 bg-green-100 px-2 py-0.5 rounded-md font-medium">
                                 24h Window Active

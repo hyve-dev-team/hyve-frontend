@@ -5,79 +5,93 @@
 import placeholderImage from "../assets/images/apartments/apartment-image-1.png";
 
 export function mapProperty(item) {
-    if (!item) return null;
+  if (!item) return null;
 
-    // Handle both direct Property entity and NearbyPropertyResponse wrapper ({ property, distanceKm })
-    const p = item.property ? item.property : item;
-    const distanceKm = item.distanceKm != null ? item.distanceKm : (p.distanceKm != null ? p.distanceKm : null);
+  // Handle both direct Property entity and NearbyPropertyResponse wrapper ({ property, distanceKm })
+  const p = item.property ? item.property : item;
+  const distanceKm =
+    item.distanceKm != null
+      ? item.distanceKm
+      : p.distanceKm != null
+        ? p.distanceKm
+        : null;
 
-    const reviews = p.reviews || [];
-    const avgRating = reviews.length
-        ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)
-        : "New";
+  const reviews = p.reviews || [];
+  const avgRating = reviews.length
+    ? (
+        reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
+      ).toFixed(1)
+    : "New";
 
-    // ApartmentReviews.jsx expects { author, review, rating, profileImage } per
-    // review — map from the real backend's { student: {firstName,lastName}, comment }.
-    const mappedReviews = reviews.map((r) => ({
-        id: r.id,
-        author: `${r.student?.firstName || ""} ${r.student?.lastName || ""}`.trim() || "Anonymous",
-        review: r.comment || "",
-        rating: r.rating || 0,
-        profileImage: null,
-        createdAt: r.createdAt,
-    }));
+  // ApartmentReviews.jsx expects { author, review, rating, profileImage } per
+  // review — map from the real backend's { student: {firstName,lastName}, comment }.
+  const mappedReviews = reviews.map((r) => ({
+    id: r.id,
+    author:
+      `${r.student?.firstName || ""} ${r.student?.lastName || ""}`.trim() ||
+      "Anonymous",
+    review: r.comment || "",
+    rating: r.rating || 0,
+    profileImage: null,
+    createdAt: r.createdAt,
+  }));
 
-    return {
-        id: p.id,
-        lodgeDesc: p.title || "Untitled listing",
-        description: p.description || "",
-        price: p.priceMonthly != null ? Math.round(p.priceMonthly) : 0,
-        priceAnnually: p.priceAnnually != null ? Math.round(p.priceAnnually) : null,
-        propertySize: p.propertySize || null,
-        minimumRentalPeriod: p.minimumRentalPeriod || null,
-        nearbyDistance: p.location || "",
-        latitude: p.latitude || null,
-        longitude: p.longitude || null,
-        distanceKm: distanceKm != null ? Number(distanceKm) : null,
-        lodgeImage: (p.images && p.images[0]) || placeholderImage,
-        images: p.images && p.images.length ? p.images : [placeholderImage],
-        amenities: (p.amenities || []).join(", ") || "No amenities listed",
-        amenitiesList: p.amenities || [],
-        // rawStatus: the exact backend enum value (ACTIVE, INACTIVE, RENTED, SOLD)
-        rawStatus: p.status || "ACTIVE",
-        // status: display value used by UI badge / filter
-        status: p.status === "ACTIVE" ? "open" : "closed",
-        propertyType: p.propertyType || "",
-        starRating: avgRating,
-        totalReviews: reviews.length,
-        reviews: mappedReviews,
-        landlord: p.landlord || null,
-        createdAt: p.createdAt || null,
-        houseRules: p.houseRules || null,
-        utilitiesInfo: p.utilitiesInfo || null,
-        emergencyContacts: p.emergencyContacts || null,
-        raw: p,
-    };
+  return {
+    id: p.id,
+    lodgeDesc: p.title || "Untitled listing",
+    description: p.description || "",
+    price: p.priceMonthly != null ? Math.round(p.priceMonthly) : 0,
+    priceAnnually: p.priceAnnually != null ? Math.round(p.priceAnnually) : null,
+    propertySize: p.propertySize || null,
+    minimumRentalPeriod: p.minimumRentalPeriod || null,
+    nearbyDistance: p.location || "",
+    latitude: p.latitude || null,
+    longitude: p.longitude || null,
+    distanceKm: distanceKm != null ? Number(distanceKm) : null,
+    lodgeImage: (p.images && p.images[0]) || placeholderImage,
+    images: p.images && p.images.length ? p.images : [placeholderImage],
+    amenities: (p.amenities || []).join(", ") || "No amenities listed",
+    amenitiesList: p.amenities || [],
+    // rawStatus: the exact backend enum value (ACTIVE, INACTIVE, RENTED, SOLD)
+    rawStatus: p.status || "ACTIVE",
+    // status: display value used by UI badge / filter
+    status: p.status === "ACTIVE" ? "open" : "closed",
+    propertyType: p.propertyType || "",
+    bedrooms: p.bedrooms != null ? p.bedrooms : null,
+    serviceCharge: p.serviceCharge != null ? Number(p.serviceCharge) : 0,
+    legalFee: p.legalFee != null ? Number(p.legalFee) : null,
+    agencyFee: p.agencyFee != null ? Number(p.agencyFee) : null,
+    cautionFee: p.cautionFee != null ? Number(p.cautionFee) : null,
+    starRating: avgRating,
+    totalReviews: reviews.length,
+    reviews: mappedReviews,
+    landlord: p.landlord || null,
+    createdAt: p.createdAt || null,
+    houseRules: p.houseRules || null,
+    utilitiesInfo: p.utilitiesInfo || null,
+    emergencyContacts: p.emergencyContacts || null,
+    raw: p,
+  };
 }
 
 export function mapProperties(list) {
-    return (list || []).map(mapProperty);
+  return (list || []).map(mapProperty);
 }
 
 /**
  * Calculates distance in kilometers between two GPS coordinates using Haversine formula
  */
 export function calculateDistanceKm(lat1, lon1, lat2, lon2) {
-    if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return null;
-    const R = 6371; // Earth radius in km
-    const dLat = ((Number(lat2) - Number(lat1)) * Math.PI) / 180;
-    const dLon = ((Number(lon2) - Number(lon1)) * Math.PI) / 180;
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((Number(lat1) * Math.PI) / 180) *
-        Math.cos((Number(lat2) * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c * 10) / 10;
+  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return null;
+  const R = 6371; // Earth radius in km
+  const dLat = ((Number(lat2) - Number(lat1)) * Math.PI) / 180;
+  const dLon = ((Number(lon2) - Number(lon1)) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((Number(lat1) * Math.PI) / 180) *
+      Math.cos((Number(lat2) * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 10) / 10;
 }

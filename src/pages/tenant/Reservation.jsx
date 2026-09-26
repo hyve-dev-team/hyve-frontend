@@ -1,356 +1,500 @@
-
-import Sidebar from './components/layout/Sidebar/Sidebar'
-import Header from './components/layout/Dashboard/Header'
-import MobileNavigationTab from './components/layout/MobileNavigation/MobileNavigationTab'
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import defaultApartmentImage from '../../assets/images/apartments/apartment-image-2.png'
-import useFetchApartment from '../../hooks/useFetchApartment'
-import { setCurrentLodge } from '../../utils/currentLodge'
-import { createLease } from '../../utils/leaseApi'
-import { getPropertyQueueApi, commitAndPayRentApi } from '../../utils/queueApi'
-import { BsShieldCheck } from 'react-icons/bs'
-import { IoCheckmarkCircle, IoKeyOutline } from 'react-icons/io5'
-import { FiFileText, FiExternalLink } from 'react-icons/fi'
-import { hyveSuccess } from '../../utils/hyveToast'
-import TenancyAgreementModal from '../../components/modals/TenancyAgreementModal'
+import Sidebar from "./components/layout/Sidebar/Sidebar";
+import Header from "./components/layout/Dashboard/Header";
+import MobileNavigationTab from "./components/layout/MobileNavigation/MobileNavigationTab";
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import defaultApartmentImage from "../../assets/images/apartments/apartment-image-2.png";
+import useFetchApartment from "../../hooks/useFetchApartment";
+import { setCurrentLodge } from "../../utils/currentLodge";
+import { createLease } from "../../utils/leaseApi";
+import { getPropertyQueueApi, commitAndPayRentApi } from "../../utils/queueApi";
+import { BsShieldCheck } from "react-icons/bs";
+import { IoCheckmarkCircle, IoKeyOutline } from "react-icons/io5";
+import { FiFileText, FiExternalLink } from "react-icons/fi";
+import { hyveSuccess } from "../../utils/hyveToast";
+import TenancyAgreementModal from "../../components/modals/TenancyAgreementModal";
+import { calculateRentPackage, formatNaira } from "../../utils/feeCalculations";
 
 const Reservation = () => {
-    const { apartmentID } = useParams();
-    const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [hasAgreedTerms, setHasAgreedTerms] = useState(false);
-    const [hasAgreedPolicy, setHasAgreedPolicy] = useState(false);
-    const [hasAgreedTenancy, setHasAgreedTenancy] = useState(false);
-    const [showTenancyModal, setShowTenancyModal] = useState(false);
+  const { apartmentID } = useParams();
+  const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [hasAgreedTerms, setHasAgreedTerms] = useState(false);
+  const [hasAgreedPolicy, setHasAgreedPolicy] = useState(false);
+  const [hasAgreedTenancy, setHasAgreedTenancy] = useState(false);
+  const [showTenancyModal, setShowTenancyModal] = useState(false);
 
-    const isReadyToPay = hasAgreedTerms && hasAgreedPolicy && hasAgreedTenancy;
+  const isReadyToPay = hasAgreedTerms && hasAgreedPolicy && hasAgreedTenancy;
 
-    const { apartment: lodge, isLoading: isApartmentLoading } = useFetchApartment(apartmentID);
+  const { apartment: lodge, isLoading: isApartmentLoading } =
+    useFetchApartment(apartmentID);
+  const rentPackage = calculateRentPackage(lodge, false);
 
-    const handlePayment = (e) => {
-        e.preventDefault();
-        if (!isReadyToPay || isProcessing) return;
+  const handlePayment = (e) => {
+    e.preventDefault();
+    if (!isReadyToPay || isProcessing) return;
 
-        setIsProcessing(true);
+    setIsProcessing(true);
 
-        setTimeout(async () => {
-            // Calculate rent expiry (1 year from now)
-            const rentExpiry = new Date();
-            rentExpiry.setFullYear(rentExpiry.getFullYear() + 1);
+    setTimeout(async () => {
+      // Calculate rent expiry (1 year from now)
+      const rentExpiry = new Date();
+      rentExpiry.setFullYear(rentExpiry.getFullYear() + 1);
 
-            // Attempt to persist the lease to the backend database
-            try {
-                const lease = await createLease({
-                    propertyId: Number(apartmentID),
-                    durationMonths: 12,
-                });
-                if (lease?.property) {
-                    setCurrentLodge({
-                        apartmentId: Number(apartmentID),
-                        name: lease.property.title || (lodge ? lodge.lodgeDesc : "Your Apartment"),
-                        rentExpiryDate: lease.rentExpiryDate || rentExpiry.toISOString(),
-                        leaseId: lease.id,
-                    });
-                } else {
-                    setCurrentLodge({
-                        apartmentId: Number(apartmentID),
-                        name: lodge ? lodge.lodgeDesc : "Your Apartment",
-                        rentExpiryDate: rentExpiry.toISOString(),
-                    });
-                }
-            } catch (err) {
-                console.warn("Notice: Could not persist lease to backend directly, saving locally:", err?.message);
-                setCurrentLodge({
-                    apartmentId: Number(apartmentID),
-                    name: lodge ? lodge.lodgeDesc : "Your Apartment",
-                    rentExpiryDate: rentExpiry.toISOString(),
-                });
-            }
+      // Attempt to persist the lease to the backend database
+      try {
+        const lease = await createLease({
+          propertyId: Number(apartmentID),
+          durationMonths: 12,
+        });
+        if (lease?.property) {
+          setCurrentLodge({
+            apartmentId: Number(apartmentID),
+            name:
+              lease.property.title ||
+              (lodge ? lodge.lodgeDesc : "Your Apartment"),
+            rentExpiryDate: lease.rentExpiryDate || rentExpiry.toISOString(),
+            leaseId: lease.id,
+          });
+        } else {
+          setCurrentLodge({
+            apartmentId: Number(apartmentID),
+            name: lodge ? lodge.lodgeDesc : "Your Apartment",
+            rentExpiryDate: rentExpiry.toISOString(),
+          });
+        }
+      } catch (err) {
+        console.warn(
+          "Notice: Could not persist lease to backend directly, saving locally:",
+          err?.message,
+        );
+        setCurrentLodge({
+          apartmentId: Number(apartmentID),
+          name: lodge ? lodge.lodgeDesc : "Your Apartment",
+          rentExpiryDate: rentExpiry.toISOString(),
+        });
+      }
 
-            // If tenant joined the queue for this apartment, close/commit that queue via API
-            try {
-                const propertyQueue = await getPropertyQueueApi(apartmentID);
-                if (propertyQueue?.id) {
-                    await commitAndPayRentApi(propertyQueue.id);
-                }
-            } catch (queueErr) {
-                console.warn("Queue commit notice:", queueErr?.message);
-            }
+      // If tenant joined the queue for this apartment, close/commit that queue via API
+      try {
+        const propertyQueue = await getPropertyQueueApi(apartmentID);
+        if (propertyQueue?.id) {
+          await commitAndPayRentApi(propertyQueue.id);
+        }
+      } catch (queueErr) {
+        console.warn("Queue commit notice:", queueErr?.message);
+      }
 
-            setIsProcessing(false);
-            setIsPaymentSuccessful(true);
-            hyveSuccess("Payment Received!", "Your rent has been safely placed in Hyve Haven Escrow.");
-        }, 800);
-    }
+      setIsProcessing(false);
+      setIsPaymentSuccessful(true);
+      hyveSuccess(
+        "Payment Received!",
+        "Your rent has been safely placed in Hyve Haven Escrow.",
+      );
+    }, 800);
+  };
 
-    return (
-        <div className='page-wrapper'>
-            <div className='flex'>
-                {/* dashboard sidebar*/}
-                <Sidebar />
+  return (
+    <div className="page-wrapper">
+      <div className="flex">
+        {/* dashboard sidebar*/}
+        <Sidebar />
 
-                {/* dashboard content area */}
-                <main className='w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-auto'>
-                    {/* dashboard header */}
-                    <Header />
+        {/* dashboard content area */}
+        <main className="w-full h-[100svh] sm:w-[70%] lg:w-[80%] overflow-auto">
+          {/* dashboard header */}
+          <Header />
 
-                    <div className='px-3 mt-8 pb-28 sm:pb-16 sm:px-6 lg:px-8 lg:mt-8'>
-                        <div className='mb-4'>
-                            <p className='text-sm text-[#9B9B9B]'>Apartment Reservations</p>
-                            <h2 className='text-xl sm:text-2xl font-bold font-montserrat text-gray-900 mt-1'>
-                                Finalize Rent & Escrow Protection
-                            </h2>
-                        </div>
-
-                        {/* Property summary banner */}
-                        {lodge && (
-                            <div className='bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm'>
-                                <div className='flex items-center gap-4'>
-                                    <img
-                                        src={lodge.lodgeImage || lodge.image || (lodge.images && lodge.images[0]) || defaultApartmentImage}
-                                        alt={lodge.lodgeDesc || "Apartment"}
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = defaultApartmentImage;
-                                        }}
-                                        className='w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0'
-                                    />
-                                    <div>
-                                        <div className='flex items-center gap-2'>
-                                            <span className='px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#1B784D]/10 text-[#1B784D] inline-flex items-center gap-1'>
-                                                <BsShieldCheck size={12} /> Hyve Haven Escrow Protected
-                                            </span>
-                                        </div>
-                                        <h3 className='font-bold text-gray-900 text-base sm:text-lg mt-1'>{lodge.lodgeDesc}</h3>
-                                        <p className='text-xs text-gray-500'>{lodge.nearbyDistance || lodge.location || lodge.lodgeLocation || "Lagos, Nigeria"}</p>
-                                    </div>
-                                </div>
-                                <div className='sm:text-right w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0'>
-                                    <p className='text-xs text-gray-400'>Annual Rent</p>
-                                    <p className='text-xl sm:text-2xl font-bold text-primary font-montserrat'>
-                                        ₦ {Number(lodge.lodgePrice || lodge.price || 0).toLocaleString()}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        <form onSubmit={handlePayment} method='POST'>
-                            <div className='flex flex-col gap-6 lg:mt-4 lg:flex-row'>
-                                <div className='w-full'>
-                                    <div className='bg-[#F4F4F4] rounded-[14px] py-6 lg:py-8 px-4 lg:px-10'>
-                                        <h4 className='font-semibold text-sm lg:text-[18px] text-center font-poppins text-gray-900'>
-                                            Escrow Terms & Key Handover
-                                        </h4>
-
-                                        <p className='text-[#2D2D2D] mt-4 text-xs sm:text-sm font-light leading-relaxed text-justify'>
-                                            Your annual rent payment will be deposited into Hyve Haven Escrow. Funds are never disbursed directly to the landlord or agent until you have conducted your physical key handover and verified that the apartment matches the agreed condition. If any discrepancy occurs, Hyve Haven Escrow guarantees a prompt dispute review and resolution.
-                                        </p>
-
-                                        <div className='flex items-center gap-2.5 mt-6'>
-                                            <input
-                                                type="checkbox"
-                                                id="terms"
-                                                checked={hasAgreedTerms}
-                                                onChange={(e) => setHasAgreedTerms(e.target.checked)}
-                                                className='w-4 h-4 accent-primary cursor-pointer'
-                                                required
-                                            />
-                                            <label htmlFor="terms" className='font-medium text-[#2D2D2D] text-xs sm:text-sm cursor-pointer'>
-                                                I agree to Hyve Haven Escrow protection terms and rental conditions
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className='w-full'>
-                                    <div className='bg-[#F4F4F4] rounded-[14px] py-6 lg:py-8 px-4 lg:px-10'>
-                                        <h4 className='font-semibold text-center font-poppins text-sm lg:text-[18px] text-gray-900'>
-                                            Cancellation & Queue Policy
-                                        </h4>
-
-                                        <p className='text-[#2D2D2D] mt-4 text-xs sm:text-sm font-light leading-relaxed text-justify'>
-                                            By completing this payment, your 24-hour exclusive queue lock concludes and the property is officially reserved under your account. Other waiting queue applicants will be notified that the apartment is taken. You will receive immediate access to the landlord's verified move-in checklist and key handover schedule.
-                                        </p>
-
-                                        <div className='flex items-center gap-2.5 mt-6'>
-                                            <input
-                                                type="checkbox"
-                                                id="policy"
-                                                checked={hasAgreedPolicy}
-                                                onChange={(e) => setHasAgreedPolicy(e.target.checked)}
-                                                className='w-4 h-4 accent-primary cursor-pointer'
-                                                required
-                                            />
-                                            <label htmlFor="policy" className='font-medium text-[#2D2D2D] text-xs sm:text-sm cursor-pointer'>
-                                                I agree to Hyve Haven cancellation and fair queue reservation policy
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Tenancy Agreement Acceptance Card */}
-                            <div className='mt-6 bg-white border border-[#FF6300]/25 rounded-2xl p-5 sm:p-6 shadow-xs'>
-                                <div className='flex items-start sm:items-center justify-between gap-3 mb-3'>
-                                    <div className='flex items-center gap-2.5'>
-                                        <div className='w-9 h-9 rounded-xl bg-orange-100 text-primary flex items-center justify-center text-lg shrink-0'>
-                                            <FiFileText />
-                                        </div>
-                                        <div>
-                                            <h4 className='font-bold text-sm sm:text-base font-poppins text-gray-900'>
-                                                Standard Residential Tenancy Agreement
-                                            </h4>
-                                            <p className='text-xs text-stone-500'>
-                                                Lagos State Tenancy Law compliant · Mandatory review before rent payment
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        type='button'
-                                        onClick={() => setShowTenancyModal(true)}
-                                        className='text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 shrink-0'
-                                    >
-                                        <span>Read Full Agreement</span>
-                                        <FiExternalLink className='text-[11px]' />
-                                    </button>
-                                </div>
-
-                                <p className='text-xs text-stone-600 leading-relaxed mb-4'>
-                                    By proceeding, you enter into a 12-month residential tenancy with the landlord. Caution fees (₦{Number(lodge?.lodgePrice ? Math.round(Number(lodge.lodgePrice) * 0.1) : 0).toLocaleString()} or as specified) are held directly with the landlord and refundable within 14 days of move-out.
-                                </p>
-
-                                {lodge?.landlordDocUrls && lodge.landlordDocUrls.length > 0 && (
-                                    <div className='mb-4 p-3 bg-amber-50/70 border border-amber-200/60 rounded-xl text-xs text-stone-700 flex items-center justify-between'>
-                                        <div className='flex items-center gap-2'>
-                                            <FiFileText className='text-amber-600' />
-                                            <span>The landlord has attached <strong>{lodge.landlordDocUrls.length} custom addendum/estate bylaws document(s)</strong>.</span>
-                                        </div>
-                                        <button
-                                            type='button'
-                                            onClick={() => setShowTenancyModal(true)}
-                                            className='text-primary font-bold hover:underline shrink-0'
-                                        >
-                                            View in agreement
-                                        </button>
-                                    </div>
-                                )}
-
-                                <label className='flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-stone-100'>
-                                    <input
-                                        type="checkbox"
-                                        id="tenancyAgreement"
-                                        checked={hasAgreedTenancy}
-                                        onChange={(e) => setHasAgreedTenancy(e.target.checked)}
-                                        className='mt-0.5 w-4 h-4 accent-primary cursor-pointer'
-                                        required
-                                    />
-                                    <div className='text-xs leading-snug text-stone-700'>
-                                        <span>I have reviewed and agree to the </span>
-                                        <button
-                                            type='button'
-                                            onClick={() => setShowTenancyModal(true)}
-                                            className='text-primary font-bold hover:underline inline-flex items-center gap-0.5 cursor-pointer'
-                                        >
-                                            Tenancy Agreement Template & Landlord Terms
-                                            <FiExternalLink className='text-[10px]' />
-                                        </button>
-                                        <span className='block text-[11px] text-stone-400 mt-0.5'>
-                                            Governing your tenancy, caution deposit return timeline (14 days), and dispute resolution.
-                                        </span>
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div className='flex justify-center mt-6'>
-                                <button
-                                    type='submit'
-                                    disabled={!isReadyToPay || isProcessing}
-                                    className={`w-full lg:w-[45%] text-center font-semibold text-sm sm:text-base rounded-xl py-3.5 sm:py-4 transition-all flex items-center justify-center gap-2 ${
-                                        isReadyToPay && !isProcessing
-                                            ? 'text-white bg-primary hover:bg-primary-hover cursor-pointer shadow-lg shadow-primary/20'
-                                            : 'text-white bg-primary/50 cursor-not-allowed shadow-none'
-                                    }`}
-                                >
-                                    {isProcessing ? (
-                                        <>
-                                            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                            <span>Processing Escrow Payment...</span>
-                                        </>
-                                    ) : (
-                                        "Proceed to Make Escrow Payment"
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </main>
+          <div className="px-3 mt-8 pb-28 sm:pb-16 sm:px-6 lg:px-8 lg:mt-8">
+            <div className="mb-4">
+              <p className="text-sm text-[#9B9B9B]">Apartment Reservations</p>
+              <h2 className="text-xl sm:text-2xl font-bold font-montserrat text-gray-900 mt-1">
+                Finalize Rent & Escrow Protection
+              </h2>
             </div>
 
-            {/* Tenancy Agreement Modal */}
-            <TenancyAgreementModal
-                isOpen={showTenancyModal}
-                onClose={() => setShowTenancyModal(false)}
-                onAccept={() => setHasAgreedTenancy(true)}
-                hasAccepted={hasAgreedTenancy}
-                showAcceptButton={true}
-                propertyTitle={lodge?.lodgeDesc || lodge?.title || "Apartment"}
-                propertyAddress={lodge?.nearbyDistance || lodge?.location || "Lagos, Nigeria"}
-                annualRent={lodge?.lodgePrice || lodge?.price || 0}
-                cautionFee={lodge?.lodgePrice ? Math.round(Number(lodge.lodgePrice) * 0.1) : 0}
-                landlordDocUrls={lodge?.landlordDocUrls || []}
-            />
-
-            {/* Mobile navigation */}
-            <MobileNavigationTab />
-
-            {/* Payment confirmation Modal */}
-            <div className={`fixed top-0 bottom-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm ${isPaymentSuccessful ? 'flex' : 'hidden'} items-center justify-center p-4`}>
-                <div className='bg-white w-full max-w-lg p-6 sm:p-8 rounded-3xl flex items-center flex-col shadow-2xl animate-in fade-in zoom-in duration-200'>
-                    <div className='w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4'>
-                        <IoCheckmarkCircle size={44} />
+            {/* Property summary banner */}
+            {lodge && (
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={
+                      lodge.lodgeImage ||
+                      lodge.image ||
+                      (lodge.images && lodge.images[0]) ||
+                      defaultApartmentImage
+                    }
+                    alt={lodge.lodgeDesc || "Apartment"}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = defaultApartmentImage;
+                    }}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0"
+                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#1B784D]/10 text-[#1B784D] inline-flex items-center gap-1">
+                        <BsShieldCheck size={12} /> Hyve Haven Escrow Protected
+                      </span>
                     </div>
-
-                    <div className='text-center'>
-                        <span className='inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#1B784D]/10 text-[#1B784D] mb-2'>
-                            <BsShieldCheck size={13} /> Escrow Protected
-                        </span>
-                        <h3 className='font-bold text-gray-900 font-montserrat text-xl sm:text-2xl mt-1'>
-                            Payment Received & Apartment Secured!
-                        </h3>
-                        <p className='mt-3 text-xs sm:text-sm text-gray-600 leading-relaxed max-w-md'>
-                            Congratulations! Your rent is safely deposited into Hyve Haven Escrow. The listing queue has been closed and the apartment is yours. Next step is key collection and move-in!
-                        </p>
-                    </div>
-
-                    <div className='w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 my-6 flex items-center gap-3 text-left'>
-                        <div className='w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0'>
-                            <IoKeyOutline size={22} />
-                        </div>
-                        <div>
-                            <p className='text-xs font-bold text-gray-900'>Move-in & Key Pickup</p>
-                            <p className='text-[11px] text-gray-500'>Your landlord has been notified. Funds remain in escrow until key confirmation.</p>
-                        </div>
-                    </div>
-
-                    <div className='w-full flex flex-col sm:flex-row gap-3'>
-                        <Link
-                            to='/user/apartment/manage'
-                            className="flex-1 py-3 sm:py-3.5 text-center text-white rounded-xl bg-primary hover:bg-primary-hover font-semibold text-xs sm:text-sm shadow-md shadow-primary/20 transition-all"
-                        >
-                            View My Apartment
-                        </Link>
-                        <Link
-                            to='/user/dashboard'
-                            className="py-3 sm:py-3.5 px-6 text-center text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold text-xs sm:text-sm transition-all"
-                        >
-                            Go to Dashboard
-                        </Link>
-                    </div>
+                    <h3 className="font-bold text-gray-900 text-base sm:text-lg mt-1">
+                      {lodge.lodgeDesc}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {lodge.nearbyDistance ||
+                        lodge.location ||
+                        lodge.lodgeLocation ||
+                        "Lagos, Nigeria"}
+                    </p>
+                  </div>
                 </div>
-            </div>
-        </div>
-    )
-}
+                <div className="sm:text-right w-full sm:w-auto border-t sm:border-t-0 pt-2 sm:pt-0 space-y-0.5">
+                  <p className="text-xs text-gray-400">Total Escrow Deposit</p>
+                  <p className="text-xl sm:text-2xl font-bold text-primary font-montserrat">
+                    {formatNaira(rentPackage.totalPayable)}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    Rent: {formatNaira(rentPackage.houseRent)} + 5% HYVE Fee:{" "}
+                    {formatNaira(rentPackage.hyveServiceFee)}
+                  </p>
+                </div>
+              </div>
+            )}
 
-export default Reservation
+            <form onSubmit={handlePayment} method="POST">
+              {/* Complete Transparent Rent Package & HYVE Fee Card */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 mb-6 shadow-xs">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+                  <div>
+                    <h4 className="font-bold text-base font-poppins text-gray-900">
+                      Rent Package & Escrow Breakdown
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      100% transparent fee allocation · Zero hidden surcharges
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-50 text-primary border border-orange-200">
+                    5% HYVE Service Fee (1st Year)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5 text-xs text-gray-600 mb-4">
+                  <div className="flex justify-between py-1 border-b border-gray-100">
+                    <span>Annual House Rent:</span>
+                    <span className="font-semibold text-gray-900">
+                      {formatNaira(rentPackage.houseRent)}
+                    </span>
+                  </div>
+                  {rentPackage.serviceCharge > 0 && (
+                    <div className="flex justify-between py-1 border-b border-gray-100">
+                      <span>Service Charge:</span>
+                      <span className="font-semibold text-gray-900">
+                        {formatNaira(rentPackage.serviceCharge)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-1 border-b border-gray-100">
+                    <span>Agent Commission (10%):</span>
+                    <span className="font-semibold text-gray-900">
+                      {formatNaira(rentPackage.agencyFee)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-gray-100">
+                    <span>Agreement & Legal Fee (10%):</span>
+                    <span className="font-semibold text-gray-900">
+                      {formatNaira(rentPackage.legalFee)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-gray-100">
+                    <span>Caution Deposit (10% Refundable):</span>
+                    <span className="font-semibold text-gray-900">
+                      {formatNaira(rentPackage.cautionFee)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-gray-100 font-bold text-gray-800">
+                    <span>Supplier's Full Package:</span>
+                    <span>{formatNaira(rentPackage.supplierPackageTotal)}</span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-orange-50/70 border border-orange-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div>
+                    <p className="font-bold text-gray-900">
+                      HYVE Service Fee (5% on top):{" "}
+                      {formatNaira(rentPackage.hyveServiceFee)}
+                    </p>
+                    <p className="text-[11px] text-gray-600">
+                      Covers escrow protection, key handover guarantee, and
+                      digital lease verification.
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-semibold text-gray-600">
+                      Grand Total Due into Escrow:
+                    </p>
+                    <p className="text-lg sm:text-xl font-bold text-primary font-montserrat">
+                      {formatNaira(rentPackage.totalPayable)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-6 lg:mt-4 lg:flex-row">
+                <div className="w-full">
+                  <div className="bg-[#F4F4F4] rounded-[14px] py-6 lg:py-8 px-4 lg:px-10">
+                    <h4 className="font-semibold text-sm lg:text-[18px] text-center font-poppins text-gray-900">
+                      Escrow Terms & Key Handover
+                    </h4>
+
+                    <p className="text-[#2D2D2D] mt-4 text-xs sm:text-sm font-light leading-relaxed text-justify">
+                      Your annual rent payment will be deposited into Hyve Haven
+                      Escrow. Funds are never disbursed directly to the landlord
+                      or agent until you have conducted your physical key
+                      handover and verified that the apartment matches the
+                      agreed condition. If any discrepancy occurs, Hyve Haven
+                      Escrow guarantees a prompt dispute review and resolution.
+                    </p>
+
+                    <div className="flex items-center gap-2.5 mt-6">
+                      <input
+                        type="checkbox"
+                        id="terms"
+                        checked={hasAgreedTerms}
+                        onChange={(e) => setHasAgreedTerms(e.target.checked)}
+                        className="w-4 h-4 accent-primary cursor-pointer"
+                        required
+                      />
+                      <label
+                        htmlFor="terms"
+                        className="font-medium text-[#2D2D2D] text-xs sm:text-sm cursor-pointer"
+                      >
+                        I agree to Hyve Haven Escrow protection terms and rental
+                        conditions
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-full">
+                  <div className="bg-[#F4F4F4] rounded-[14px] py-6 lg:py-8 px-4 lg:px-10">
+                    <h4 className="font-semibold text-center font-poppins text-sm lg:text-[18px] text-gray-900">
+                      Cancellation & Queue Policy
+                    </h4>
+
+                    <p className="text-[#2D2D2D] mt-4 text-xs sm:text-sm font-light leading-relaxed text-justify">
+                      By completing this payment, your 24-hour exclusive queue
+                      lock concludes and the property is officially reserved
+                      under your account. Other waiting queue applicants will be
+                      notified that the apartment is taken. You will receive
+                      immediate access to the landlord's verified move-in
+                      checklist and key handover schedule.
+                    </p>
+
+                    <div className="flex items-center gap-2.5 mt-6">
+                      <input
+                        type="checkbox"
+                        id="policy"
+                        checked={hasAgreedPolicy}
+                        onChange={(e) => setHasAgreedPolicy(e.target.checked)}
+                        className="w-4 h-4 accent-primary cursor-pointer"
+                        required
+                      />
+                      <label
+                        htmlFor="policy"
+                        className="font-medium text-[#2D2D2D] text-xs sm:text-sm cursor-pointer"
+                      >
+                        I agree to Hyve Haven cancellation and fair queue
+                        reservation policy
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tenancy Agreement Acceptance Card */}
+              <div className="mt-6 bg-white border border-[#FF6300]/25 rounded-2xl p-5 sm:p-6 shadow-xs">
+                <div className="flex items-start sm:items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-primary flex items-center justify-center text-lg shrink-0">
+                      <FiFileText />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm sm:text-base font-poppins text-gray-900">
+                        Standard Residential Tenancy Agreement
+                      </h4>
+                      <p className="text-xs text-stone-500">
+                        Lagos State Tenancy Law compliant · Mandatory review
+                        before rent payment
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowTenancyModal(true)}
+                    className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 shrink-0"
+                  >
+                    <span>Read Full Agreement</span>
+                    <FiExternalLink className="text-[11px]" />
+                  </button>
+                </div>
+
+                <p className="text-xs text-stone-600 leading-relaxed mb-4">
+                  By proceeding, you enter into a 12-month residential tenancy
+                  with the landlord. Caution deposit (
+                  {formatNaira(rentPackage.cautionFee)}) is refundable within 14
+                  days of move-out subject to move-out inspection.
+                </p>
+
+                {lodge?.landlordDocUrls && lodge.landlordDocUrls.length > 0 && (
+                  <div className="mb-4 p-3 bg-amber-50/70 border border-amber-200/60 rounded-xl text-xs text-stone-700 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FiFileText className="text-amber-600" />
+                      <span>
+                        The landlord has attached{" "}
+                        <strong>
+                          {lodge.landlordDocUrls.length} custom addendum/estate
+                          bylaws document(s)
+                        </strong>
+                        .
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowTenancyModal(true)}
+                      className="text-primary font-bold hover:underline shrink-0"
+                    >
+                      View in agreement
+                    </button>
+                  </div>
+                )}
+
+                <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-stone-100">
+                  <input
+                    type="checkbox"
+                    id="tenancyAgreement"
+                    checked={hasAgreedTenancy}
+                    onChange={(e) => setHasAgreedTenancy(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-primary cursor-pointer"
+                    required
+                  />
+                  <div className="text-xs leading-snug text-stone-700">
+                    <span>I have reviewed and agree to the </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowTenancyModal(true)}
+                      className="text-primary font-bold hover:underline inline-flex items-center gap-0.5 cursor-pointer"
+                    >
+                      Tenancy Agreement Template & Landlord Terms
+                      <FiExternalLink className="text-[10px]" />
+                    </button>
+                    <span className="block text-[11px] text-stone-400 mt-0.5">
+                      Governing your tenancy, caution deposit return timeline
+                      (14 days), and dispute resolution.
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="flex justify-center mt-6">
+                <button
+                  type="submit"
+                  disabled={!isReadyToPay || isProcessing}
+                  className={`w-full lg:w-[45%] text-center font-semibold text-sm sm:text-base rounded-xl py-3.5 sm:py-4 transition-all flex items-center justify-center gap-2 ${
+                    isReadyToPay && !isProcessing
+                      ? "text-white bg-primary hover:bg-primary-hover cursor-pointer shadow-lg shadow-primary/20"
+                      : "text-white bg-primary/50 cursor-not-allowed shadow-none"
+                  }`}
+                >
+                  {isProcessing ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Processing Escrow Payment...</span>
+                    </>
+                  ) : (
+                    `Pay ${formatNaira(rentPackage.totalPayable)} into Escrow`
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </main>
+      </div>
+
+      {/* Tenancy Agreement Modal */}
+      <TenancyAgreementModal
+        isOpen={showTenancyModal}
+        onClose={() => setShowTenancyModal(false)}
+        onAccept={() => setHasAgreedTenancy(true)}
+        hasAccepted={hasAgreedTenancy}
+        showAcceptButton={true}
+        propertyTitle={lodge?.lodgeDesc || lodge?.title || "Apartment"}
+        propertyAddress={
+          lodge?.nearbyDistance || lodge?.location || "Lagos, Nigeria"
+        }
+        annualRent={rentPackage.houseRent}
+        cautionFee={rentPackage.cautionFee}
+        landlordDocUrls={lodge?.landlordDocUrls || []}
+      />
+
+      {/* Mobile navigation */}
+      <MobileNavigationTab />
+
+      {/* Payment confirmation Modal */}
+      <div
+        className={`fixed top-0 bottom-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm ${isPaymentSuccessful ? "flex" : "hidden"} items-center justify-center p-4`}
+      >
+        <div className="bg-white w-full max-w-lg p-6 sm:p-8 rounded-3xl flex items-center flex-col shadow-2xl animate-in fade-in zoom-in duration-200">
+          <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+            <IoCheckmarkCircle size={44} />
+          </div>
+
+          <div className="text-center">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#1B784D]/10 text-[#1B784D] mb-2">
+              <BsShieldCheck size={13} /> Escrow Protected
+            </span>
+            <h3 className="font-bold text-gray-900 font-montserrat text-xl sm:text-2xl mt-1">
+              Payment Received & Apartment Secured!
+            </h3>
+            <p className="mt-3 text-xs sm:text-sm text-gray-600 leading-relaxed max-w-md">
+              Congratulations! Your rent is safely deposited into Hyve Haven
+              Escrow. The listing queue has been closed and the apartment is
+              yours. Next step is key collection and move-in!
+            </p>
+          </div>
+
+          <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 my-6 flex items-center gap-3 text-left">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <IoKeyOutline size={22} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-900">
+                Move-in & Key Pickup
+              </p>
+              <p className="text-[11px] text-gray-500">
+                Your landlord has been notified. Funds remain in escrow until
+                key confirmation.
+              </p>
+            </div>
+          </div>
+
+          <div className="w-full flex flex-col sm:flex-row gap-3">
+            <Link
+              to="/user/apartment/manage"
+              className="flex-1 py-3 sm:py-3.5 text-center text-white rounded-xl bg-primary hover:bg-primary-hover font-semibold text-xs sm:text-sm shadow-md shadow-primary/20 transition-all"
+            >
+              View My Apartment
+            </Link>
+            <Link
+              to="/user/dashboard"
+              className="py-3 sm:py-3.5 px-6 text-center text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold text-xs sm:text-sm transition-all"
+            >
+              Go to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Reservation;

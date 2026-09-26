@@ -1,5 +1,6 @@
 // Real API calls against the live Spring Boot backend for Fair Queues
 import config from "../config";
+import { calculateInspectionFee } from "./feeCalculations";
 
 export const TIER_LIMITS = {
   FREE: { name: "Free Tier", limit: 3, price: 0, decisionWindowHours: 24 },
@@ -146,6 +147,18 @@ export function mapBackendQueue(bq) {
     ? parsedExpiresAt - windowHours * 60 * 60 * 1000
     : Date.now();
 
+  const fallbackFee = calculateInspectionFee(bq);
+  const dynamicFee =
+    bq.inspectionFee != null ? Number(bq.inspectionFee) : fallbackFee.totalFee;
+  const supplierShare =
+    bq.supplierInspectionShare != null
+      ? Number(bq.supplierInspectionShare)
+      : fallbackFee.supplierBaseFee;
+  const hyveShare =
+    bq.hyveInspectionShare != null
+      ? Number(bq.hyveInspectionShare)
+      : fallbackFee.hyveShare;
+
   return {
     id: bq.id,
     apartmentId: bq.propertyId,
@@ -159,7 +172,11 @@ export function mapBackendQueue(bq) {
     peopleAhead: Math.max(0, (bq.position || 1) - 1),
     status: bq.status || "WAITING",
     inspectionPaid: Boolean(bq.inspectionPaid),
-    inspectionFee: 5000,
+    inspectionFee: dynamicFee,
+    supplierInspectionShare: supplierShare,
+    hyveInspectionShare: hyveShare,
+    rentPackage: bq.rentPackage || null,
+    propertyType: bq.propertyType || "",
     agentName: bq.agentName || "Assigned Agent",
     agentPhone: bq.agentPhone || "+234 800 000 0000",
     agentEmail: "agent@hyvehaven.com",
