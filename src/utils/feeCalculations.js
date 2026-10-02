@@ -2,28 +2,37 @@
 // Matches backend FeeCalculationService exactly
 
 export const SUPPLIER_BASE_INSPECTION_FEE = 5000;
+export const HYVE_INSPECTION_SHARE = 1450;
+export const TOTAL_INSPECTION_FEE = 6450;
 
 export const INSPECTION_FEE_TIERS = {
-  SELF_CONTAINED_TO_2BED: {
-    category: "SELF_CONTAINED_TO_2BED",
-    label: "Self-contained to 2 Bedroom",
-    totalFee: 10000,
+  STANDARD: {
+    category: "STANDARD",
+    label: "Physical Property Inspection",
+    totalFee: 6450,
     supplierBaseFee: 5000,
-    hyveShare: 5000,
+    hyveShare: 1450,
+  },
+  SELF_CONTAINED_TO_2BED: {
+    category: "STANDARD",
+    label: "Physical Property Inspection",
+    totalFee: 6450,
+    supplierBaseFee: 5000,
+    hyveShare: 1450,
   },
   THREE_TO_FIVE_BEDROOM: {
-    category: "3_TO_5_BEDROOM",
-    label: "3 Bedroom to 5 Bedroom",
-    totalFee: 12000,
+    category: "STANDARD",
+    label: "Physical Property Inspection",
+    totalFee: 6450,
     supplierBaseFee: 5000,
-    hyveShare: 7000,
+    hyveShare: 1450,
   },
   ENTIRE_HOUSE: {
-    category: "ENTIRE_HOUSE",
-    label: "Entire House",
-    totalFee: 15000,
+    category: "STANDARD",
+    label: "Physical Property Inspection",
+    totalFee: 6450,
     supplierBaseFee: 5000,
-    hyveShare: 10000,
+    hyveShare: 1450,
   },
 };
 
@@ -33,11 +42,12 @@ export const HYVE_SERVICE_FEE_RATES = {
 };
 
 /**
- * Calculates dynamic inspection fee breakdown for a property or queue object
+ * Calculates dynamic inspection fee breakdown for a property or queue object:
+ * Total: ₦6,450 (₦5,000 Agent/Caretaker Logistics + ₦1,450 HYVE Platform Share)
  */
 export function calculateInspectionFee(property) {
   if (!property) {
-    return INSPECTION_FEE_TIERS.SELF_CONTAINED_TO_2BED;
+    return INSPECTION_FEE_TIERS.STANDARD;
   }
 
   // Check if backend already sent the inspection fee fields
@@ -46,65 +56,18 @@ export function calculateInspectionFee(property) {
     const supplier = Number(
       property.supplierInspectionShare || SUPPLIER_BASE_INSPECTION_FEE,
     );
-    const hyve = Number(property.hyveInspectionShare || total - supplier);
-    let cat = "SELF_CONTAINED_TO_2BED";
-    if (total >= 15000) cat = "ENTIRE_HOUSE";
-    else if (total >= 12000) cat = "3_TO_5_BEDROOM";
+    const hyve = Number(property.hyveInspectionShare ?? (total - supplier));
 
     return {
-      category: cat,
-      label: INSPECTION_FEE_TIERS[cat]?.label || "Inspection Fee",
+      category: "STANDARD",
+      label: "Physical Property Inspection",
       totalFee: total,
       supplierBaseFee: supplier,
       hyveShare: hyve,
     };
   }
 
-  const rawType = (property.propertyType || property.raw?.propertyType || "")
-    .toString()
-    .toUpperCase();
-  const title = (
-    property.lodgeDesc ||
-    property.title ||
-    property.property ||
-    ""
-  )
-    .toString()
-    .toLowerCase();
-  const bedrooms = property.bedrooms ?? property.raw?.bedrooms ?? null;
-  const size = property.propertySize ?? property.raw?.propertySize ?? null;
-
-  // 1. Entire House (HOUSE type or > 5 bedrooms or > 120 sqm or title contains house / duplex / villa)
-  if (
-    rawType === "HOUSE" ||
-    (bedrooms != null && bedrooms > 5) ||
-    (size != null && size > 120) ||
-    title.includes("entire house") ||
-    title.includes("duplex") ||
-    title.includes("mansion")
-  ) {
-    return INSPECTION_FEE_TIERS.ENTIRE_HOUSE;
-  }
-
-  // 2. 3 to 5 Bedroom (bedrooms 3..5 or size 61..120 or title contains 3 bed / 4 bed / 5 bed)
-  if (
-    (bedrooms != null && bedrooms >= 3 && bedrooms <= 5) ||
-    (size != null && size > 60 && size <= 120) ||
-    title.includes("3 bed") ||
-    title.includes("4 bed") ||
-    title.includes("5 bed") ||
-    title.includes("3-bed") ||
-    title.includes("4-bed") ||
-    title.includes("5-bed") ||
-    title.includes("3 bedroom") ||
-    title.includes("4 bedroom") ||
-    title.includes("5 bedroom")
-  ) {
-    return INSPECTION_FEE_TIERS.THREE_TO_FIVE_BEDROOM;
-  }
-
-  // 3. Default: Self-contained to 2 Bedroom
-  return INSPECTION_FEE_TIERS.SELF_CONTAINED_TO_2BED;
+  return INSPECTION_FEE_TIERS.STANDARD;
 }
 
 /**

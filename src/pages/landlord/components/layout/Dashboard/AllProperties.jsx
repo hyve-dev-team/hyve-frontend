@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { IoStarSharp, IoHomeOutline } from 'react-icons/io5';
 import placeholderImage from '../../../../../assets/images/apartments/apartment-image-1.png';
 
-const AllProperties = ({ properties = [], isLoading = false, error = null, onRetry }) => {
+const AllProperties = ({ properties = [], isLoading = false, error = null, onRetry, onViewTenant }) => {
     return (
         <section className='mt-6 md:mt-8'>
             <div className='flex items-center justify-between mb-4'>
@@ -73,7 +73,9 @@ const AllProperties = ({ properties = [], isLoading = false, error = null, onRet
             {/* Populated Properties Grid */}
             {!isLoading && !error && properties.length > 0 && (
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-1 md:gap-6 lg:grid-cols-2">
-                    {properties.map((lodge) => (
+                    {properties.map((lodge) => {
+                        const isOccupied = lodge.isOccupied || lodge.status === 'closed' || lodge.rawStatus === 'RENTED' || !!lodge.currentTenant;
+                        return (
                         <div key={lodge.id} className='border border-[#FF630033] rounded-[16px] p-3 md:p-4 bg-white shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow duration-200'>
                             <div>
                                 {/* lodge image */}
@@ -86,13 +88,14 @@ const AllProperties = ({ properties = [], isLoading = false, error = null, onRet
                                             onError={(e) => { e.target.src = placeholderImage; }}
                                         />
                                     </Link>
-                                    {/* Status Badge */}
-                                    <span className={`absolute top-3 right-3 text-[11px] px-3 py-1 rounded-full font-medium shadow-sm ${
-                                        lodge.status === 'open' || lodge.status === 'ACTIVE'
-                                            ? 'bg-[#DDFFE7] text-[#1B784D]'
-                                            : 'bg-black/60 text-white'
+                                    {/* Status Badge: Vacant vs Occupied */}
+                                    <span className={`absolute top-3 right-3 text-[11px] px-3 py-1 rounded-full font-semibold shadow-sm backdrop-blur-xs flex items-center gap-1.5 ${
+                                        isOccupied
+                                            ? 'bg-stone-900/80 text-white border border-stone-700/50'
+                                            : 'bg-[#DDFFE7] text-[#1B784D] border border-emerald-300/40'
                                     }`}>
-                                        {lodge.status === 'open' || lodge.status === 'ACTIVE' ? 'Available' : 'Filled'}
+                                        <span className={`w-2 h-2 rounded-full ${isOccupied ? 'bg-blue-400' : 'bg-emerald-500 animate-pulse'}`} />
+                                        {isOccupied ? 'Occupied' : 'Vacant'}
                                     </span>
                                 </div>
 
@@ -131,6 +134,58 @@ const AllProperties = ({ properties = [], isLoading = false, error = null, onRet
                                         </span>
                                     </div>
                                 </div>
+                                {/* Occupancy & Tenant Chip */}
+                                {lodge.currentTenant ? (
+                                    <div 
+                                        onClick={() => onViewTenant && onViewTenant(lodge.currentTenant, lodge.lodgeDesc)}
+                                        className="mt-3 p-2.5 px-3 rounded-xl bg-orange-50/70 border border-orange-200/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-orange-100/60 transition-colors group shadow-2xs"
+                                        title="Click to view tenant details"
+                                    >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            {lodge.currentTenant.profilePictureUrl ? (
+                                                <img
+                                                    src={lodge.currentTenant.profilePictureUrl}
+                                                    alt={lodge.currentTenant.fullName || 'Tenant'}
+                                                    className="w-8 h-8 rounded-full object-cover border border-primary/30"
+                                                />
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs font-poppins shrink-0 shadow-2xs">
+                                                    {(() => {
+                                                        const name = lodge.currentTenant.fullName || `${lodge.currentTenant.firstName || ''} ${lodge.currentTenant.lastName || ''}`.trim() || 'T';
+                                                        return name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase();
+                                                    })()}
+                                                </div>
+                                            )}
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold leading-tight">Occupied by</p>
+                                                <p className="text-xs font-bold text-[#3D3129] truncate group-hover:text-primary transition-colors">
+                                                    {lodge.currentTenant.fullName || `${lodge.currentTenant.firstName || ''} ${lodge.currentTenant.lastName || ''}`.trim() || 'Verified Tenant'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className="text-[11px] font-semibold text-primary underline underline-offset-2 shrink-0">
+                                            View Profile →
+                                        </span>
+                                    </div>
+                                ) : isOccupied ? (
+                                    <div className="mt-3 p-2.5 px-3 rounded-xl bg-stone-50 border border-stone-200/80 flex items-center justify-between text-xs text-stone-600">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-stone-400" />
+                                            <span className="font-semibold text-stone-800">Occupied</span>
+                                        </div>
+                                        <span className="text-[11px] text-stone-400">Leased via Escrow</span>
+                                    </div>
+                                ) : (
+                                    <div className="mt-3 p-2 px-3 rounded-xl bg-emerald-50/60 border border-emerald-200/70 flex items-center justify-between text-xs text-emerald-800">
+                                        <div className="flex items-center gap-1.5 font-medium">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span>Vacant &amp; Open for Rent</span>
+                                        </div>
+                                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                                            Listed
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* CTA Actions */}
@@ -150,7 +205,7 @@ const AllProperties = ({ properties = [], isLoading = false, error = null, onRet
                                 </Link>
                             </div>
                         </div>
-                    ))}
+                    );})}
                 </div>
             )}
         </section>

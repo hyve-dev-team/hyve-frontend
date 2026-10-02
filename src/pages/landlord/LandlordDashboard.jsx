@@ -9,6 +9,7 @@ import { mapProperties } from '../../utils/mapProperty'
 import { hyveError } from '../../utils/hyveToast'
 import AgentSetupSection from './components/AgentSetupSection'
 import LandlordTourRequests from './components/LandlordTourRequests'
+import TenantProfileModal from '../../components/modals/TenantProfileModal'
 
 const LandlordDashboard = () => {
   const [properties, setProperties] = useState([]);
@@ -16,6 +17,9 @@ const LandlordDashboard = () => {
   const [overallRating, setOverallRating] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedTenant, setSelectedTenant] = useState(null);
+  const [selectedTenantPropertyTitle, setSelectedTenantPropertyTitle] = useState('');
+  const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
 
   const fetchLandlordData = useCallback(async () => {
     setIsLoading(true);
@@ -133,6 +137,11 @@ const LandlordDashboard = () => {
               isLoading={isLoading}
               error={error}
               onRetry={fetchLandlordData}
+              onViewTenant={(tenant, propTitle) => {
+                setSelectedTenant(tenant);
+                setSelectedTenantPropertyTitle(propTitle);
+                setIsTenantModalOpen(true);
+              }}
             />
 
             {/* Incoming Tenant Tour Inspection Requests */}
@@ -190,6 +199,14 @@ const LandlordDashboard = () => {
 
       {/* Mobile navigation */}
       <MobileNavigationTab currentTab={"home"} />
+
+      {/* Tenant Profile Modal */}
+      <TenantProfileModal
+        isOpen={isTenantModalOpen}
+        onClose={() => setIsTenantModalOpen(false)}
+        tenant={selectedTenant}
+        propertyTitle={selectedTenantPropertyTitle}
+      />
     </div>
   )
 }

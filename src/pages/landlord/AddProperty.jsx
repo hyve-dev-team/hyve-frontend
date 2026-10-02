@@ -60,6 +60,10 @@ const AddProperty = () => {
     const [formData, setFormData] = useState({
         title: '',
         priceAnnually: '',
+        serviceCharge: '',
+        legalFee: '',
+        agencyFee: '',
+        cautionFee: '',
         location: '',
         latitude: null,
         longitude: null,
@@ -286,6 +290,10 @@ const AddProperty = () => {
                 title: formData.title.trim(),
                 description: formData.description.trim() || `${formData.propertyType} located at ${formData.location.trim()}`,
                 priceAnnually: Number(formData.priceAnnually),
+                serviceCharge: formData.serviceCharge ? Number(formData.serviceCharge) : 0,
+                legalFee: formData.legalFee ? Number(formData.legalFee) : 0,
+                agencyFee: formData.agencyFee ? Number(formData.agencyFee) : 0,
+                cautionFee: formData.cautionFee ? Number(formData.cautionFee) : 0,
                 location: formData.location.trim(),
                 propertyType: formData.propertyType,
                 amenities: selectedAmenities,
@@ -326,9 +334,39 @@ const AddProperty = () => {
         }
     };
 
-    const monthlyPriceEstimate = formData.priceAnnually && Number(formData.priceAnnually) > 0
-        ? Math.round(Number(formData.priceAnnually) / 12)
+    const annualRentNum = Number(formData.priceAnnually) || 0;
+    const legalFeeNum = Number(formData.legalFee) || 0;
+    const agencyFeeNum = Number(formData.agencyFee) || 0;
+    const cautionFeeNum = Number(formData.cautionFee) || 0;
+    const serviceChargeNum = Number(formData.serviceCharge) || 0;
+
+    // 5% HYVE Service Charge auto-calculated on yearly rent and ADDED on top
+    const hyveServiceFee = Math.round(annualRentNum * 0.05);
+
+    // Landlord & Agent Subtotal
+    const landlordPackageTotal = annualRentNum + legalFeeNum + agencyFeeNum + cautionFeeNum + serviceChargeNum;
+
+    // Total Tenant Package Payable
+    const totalTenantPayable = landlordPackageTotal + hyveServiceFee;
+
+    const monthlyPriceEstimate = annualRentNum > 0
+        ? Math.round(annualRentNum / 12)
         : null;
+
+    const handleAutofillStandardCharges = (e) => {
+        if (e) e.preventDefault();
+        if (!annualRentNum) {
+            hyveError('Annual Rent Required', 'Please enter your annual rent first to auto-calculate the standard 10% fees.');
+            return;
+        }
+        const tenPercent = Math.round(annualRentNum * 0.10);
+        setFormData((prev) => ({
+            ...prev,
+            legalFee: String(tenPercent),
+            agencyFee: String(tenPercent),
+            cautionFee: String(tenPercent),
+        }));
+    };
 
     return (
         <div className='page-wrapper'>
@@ -543,6 +581,172 @@ const AddProperty = () => {
                                             <p className='text-[11px] text-[#3D3129]/50 mt-1.5'>
                                                 Standard lease is 12 months
                                             </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Additional Charges & Real-Time Hyve 5% Fee Breakdown */}
+                                    <div className='mt-6 pt-6 border-t border-[#3D3129]/10 mb-6'>
+                                        <div className='flex flex-wrap items-center justify-between gap-3 mb-4'>
+                                            <div>
+                                                <h3 className='text-sm font-semibold text-[#3D3129] font-poppins flex items-center gap-1.5'>
+                                                    <span>Additional Charges & Tenant Escrow Breakdown</span>
+                                                </h3>
+                                                <p className='text-xs text-[#3D3129]/60'>
+                                                    Set agreement, caution, agency, and service charges. Hyve fee is auto-calculated on rent.
+                                                </p>
+                                            </div>
+                                            {annualRentNum > 0 && (
+                                                <button
+                                                    type='button'
+                                                    onClick={handleAutofillStandardCharges}
+                                                    className='text-xs font-semibold text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/15 px-3 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5'
+                                                >
+                                                    <IoSparklesOutline />
+                                                    <span>Auto-fill standard 10% charges</span>
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5'>
+                                            {/* Agreement & Legal Fee */}
+                                            <div>
+                                                <label htmlFor='legalFee' className='block text-xs font-semibold text-[#3D3129] uppercase tracking-wider mb-2 font-poppins'>
+                                                    Agreement Fee (₦)
+                                                </label>
+                                                <div className='relative'>
+                                                    <span className='absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#3D3129]/60'>
+                                                        ₦
+                                                    </span>
+                                                    <input
+                                                        type='number'
+                                                        id='legalFee'
+                                                        name='legalFee'
+                                                        min='0'
+                                                        value={formData.legalFee}
+                                                        onChange={handleChange}
+                                                        placeholder='e.g., 60000'
+                                                        className='w-full pl-7 pr-3 py-2.5 rounded-xl text-sm border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none smooth-transition'
+                                                    />
+                                                </div>
+                                                <p className='text-[11px] text-[#3D3129]/50 mt-1'>Legal / Tenancy agreement</p>
+                                            </div>
+
+                                            {/* Caution Deposit */}
+                                            <div>
+                                                <label htmlFor='cautionFee' className='block text-xs font-semibold text-[#3D3129] uppercase tracking-wider mb-2 font-poppins'>
+                                                    Caution Fee (₦)
+                                                </label>
+                                                <div className='relative'>
+                                                    <span className='absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#3D3129]/60'>
+                                                        ₦
+                                                    </span>
+                                                    <input
+                                                        type='number'
+                                                        id='cautionFee'
+                                                        name='cautionFee'
+                                                        min='0'
+                                                        value={formData.cautionFee}
+                                                        onChange={handleChange}
+                                                        placeholder='e.g., 60000'
+                                                        className='w-full pl-7 pr-3 py-2.5 rounded-xl text-sm border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none smooth-transition'
+                                                    />
+                                                </div>
+                                                <p className='text-[11px] text-[#3D3129]/50 mt-1'>Refundable damages caution</p>
+                                            </div>
+
+                                            {/* Agent Fee */}
+                                            <div>
+                                                <label htmlFor='agencyFee' className='block text-xs font-semibold text-[#3D3129] uppercase tracking-wider mb-2 font-poppins'>
+                                                    Agent Fee (₦)
+                                                </label>
+                                                <div className='relative'>
+                                                    <span className='absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#3D3129]/60'>
+                                                        ₦
+                                                    </span>
+                                                    <input
+                                                        type='number'
+                                                        id='agencyFee'
+                                                        name='agencyFee'
+                                                        min='0'
+                                                        value={formData.agencyFee}
+                                                        onChange={handleChange}
+                                                        placeholder='e.g., 60000'
+                                                        className='w-full pl-7 pr-3 py-2.5 rounded-xl text-sm border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none smooth-transition'
+                                                    />
+                                                </div>
+                                                <p className='text-[11px] text-[#3D3129]/50 mt-1'>Agent commission fee</p>
+                                            </div>
+
+                                            {/* Service Charge */}
+                                            <div>
+                                                <label htmlFor='serviceCharge' className='block text-xs font-semibold text-[#3D3129] uppercase tracking-wider mb-2 font-poppins'>
+                                                    Service Charge (₦)
+                                                </label>
+                                                <div className='relative'>
+                                                    <span className='absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#3D3129]/60'>
+                                                        ₦
+                                                    </span>
+                                                    <input
+                                                        type='number'
+                                                        id='serviceCharge'
+                                                        name='serviceCharge'
+                                                        min='0'
+                                                        value={formData.serviceCharge}
+                                                        onChange={handleChange}
+                                                        placeholder='e.g., 50000'
+                                                        className='w-full pl-7 pr-3 py-2.5 rounded-xl text-sm border border-[#3D3129]/15 bg-[#FAF7F5]/50 focus:bg-white focus:border-primary outline-none smooth-transition'
+                                                    />
+                                                </div>
+                                                <p className='text-[11px] text-[#3D3129]/50 mt-1'>Security, water, waste, power</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Auto-Calculated Hyve Charges & Escrow Breakdown Card */}
+                                        <div className='rounded-2xl p-4 sm:p-5 bg-gradient-to-br from-orange-50/80 via-white to-orange-50/40 border border-primary/20 shadow-xs mb-5'>
+                                            <div className='flex items-center justify-between pb-3 border-b border-primary/15 mb-3'>
+                                                <div className='flex items-center gap-2'>
+                                                    <span className='w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold'>%</span>
+                                                    <span className='text-xs sm:text-sm font-bold text-[#3D3129] font-poppins'>
+                                                        Auto-Calculated HYVE Platform Service Charge (5%)
+                                                    </span>
+                                                </div>
+                                                <span className='text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider'>
+                                                    Added to Tenant
+                                                </span>
+                                            </div>
+
+                                            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs'>
+                                                <div className='p-3 bg-white/80 rounded-xl border border-stone-200/80'>
+                                                    <p className='text-[11px] text-[#3D3129]/60 font-medium'>Landlord & Agent Total</p>
+                                                    <p className='text-base font-bold text-[#3D3129] mt-0.5 font-montserrat'>
+                                                        ₦{landlordPackageTotal.toLocaleString()}
+                                                    </p>
+                                                    <p className='text-[10px] text-green-700 font-medium mt-1 flex items-center gap-1'>
+                                                        <IoCheckmarkCircle className='shrink-0' />
+                                                        <span>100% credited to you & agent</span>
+                                                    </p>
+                                                </div>
+
+                                                <div className='p-3 bg-white/80 rounded-xl border border-primary/30'>
+                                                    <p className='text-[11px] text-primary font-medium'>HYVE Service Charge (5%)</p>
+                                                    <p className='text-base font-bold text-primary mt-0.5 font-montserrat'>
+                                                        + ₦{hyveServiceFee.toLocaleString()}
+                                                    </p>
+                                                    <p className='text-[10px] text-primary/80 font-medium mt-1'>
+                                                        Auto-calculated & added on top (zero deduction)
+                                                    </p>
+                                                </div>
+
+                                                <div className='p-3 bg-primary text-white rounded-xl shadow-xs'>
+                                                    <p className='text-[11px] text-white/80 font-medium'>Total Tenant Escrow Deposit</p>
+                                                    <p className='text-base sm:text-lg font-bold text-white mt-0.5 font-montserrat'>
+                                                        ₦{totalTenantPayable.toLocaleString()}
+                                                    </p>
+                                                    <p className='text-[10px] text-white/70 mt-1'>
+                                                        Rent + all charges + 5% HYVE fee
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -1151,11 +1355,47 @@ const AddProperty = () => {
                                         <div className='flex justify-between'>
                                             <span className='text-[#3D3129]/60'>Annual Rent:</span>
                                             <span className='font-bold text-primary'>
-                                                {formData.priceAnnually
-                                                    ? `₦${Number(formData.priceAnnually).toLocaleString()}`
+                                                {annualRentNum > 0
+                                                    ? `₦${annualRentNum.toLocaleString()}`
                                                     : 'Not specified'}
                                             </span>
                                         </div>
+                                        {legalFeeNum > 0 && (
+                                            <div className='flex justify-between'>
+                                                <span className='text-[#3D3129]/60'>Agreement Fee:</span>
+                                                <span className='font-semibold'>₦{legalFeeNum.toLocaleString()}</span>
+                                            </div>
+                                        )}
+                                        {cautionFeeNum > 0 && (
+                                            <div className='flex justify-between'>
+                                                <span className='text-[#3D3129]/60'>Caution Fee:</span>
+                                                <span className='font-semibold'>₦{cautionFeeNum.toLocaleString()}</span>
+                                            </div>
+                                        )}
+                                        {agencyFeeNum > 0 && (
+                                            <div className='flex justify-between'>
+                                                <span className='text-[#3D3129]/60'>Agent Fee:</span>
+                                                <span className='font-semibold'>₦{agencyFeeNum.toLocaleString()}</span>
+                                            </div>
+                                        )}
+                                        {serviceChargeNum > 0 && (
+                                            <div className='flex justify-between'>
+                                                <span className='text-[#3D3129]/60'>Service Charge:</span>
+                                                <span className='font-semibold'>₦{serviceChargeNum.toLocaleString()}</span>
+                                            </div>
+                                        )}
+                                        {annualRentNum > 0 && (
+                                            <div className='flex justify-between text-primary font-medium'>
+                                                <span>HYVE Service (5%):</span>
+                                                <span>+ ₦{hyveServiceFee.toLocaleString()}</span>
+                                            </div>
+                                        )}
+                                        {annualRentNum > 0 && (
+                                            <div className='pt-2 border-t border-orange-200/80 flex justify-between font-bold text-xs text-[#3D3129]'>
+                                                <span>Total Tenant Escrow:</span>
+                                                <span className='text-primary'>₦{totalTenantPayable.toLocaleString()}</span>
+                                            </div>
+                                        )}
                                         <div className='flex justify-between'>
                                             <span className='text-[#3D3129]/60'>Photos attached:</span>
                                             <span className='font-semibold'>{images.length}</span>

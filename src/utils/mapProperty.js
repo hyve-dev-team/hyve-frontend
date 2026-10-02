@@ -66,6 +66,8 @@ export function mapProperty(item) {
     totalReviews: reviews.length,
     reviews: mappedReviews,
     landlord: p.landlord || null,
+    currentTenant: p.currentTenant || null,
+    isOccupied: p.status === "RENTED" || !!p.currentTenant,
     createdAt: p.createdAt || null,
     houseRules: p.houseRules || null,
     utilitiesInfo: p.utilitiesInfo || null,
