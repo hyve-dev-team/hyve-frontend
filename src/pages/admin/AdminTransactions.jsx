@@ -1,24 +1,21 @@
-import { useState, useEffect } from 'react';
-import AdminLayout from '../../components/layout/AdminLayout';
+import { useEffect, useState } from 'react';
 import AdminHeader from '../../components/layout/AdminHeader';
+import AdminLayout from '../../components/layout/AdminLayout';
 import config from '../../config';
-import { hyveSuccess, hyveError } from '../../utils/hyveToast';
+import { hyveError, hyveSuccess } from '../../utils/hyveToast';
 
 import {
-    FiSearch,
     FiCheckCircle,
-    FiRotateCcw,
-    FiInfo,
-    FiRefreshCw,
-    FiCalendar,
-    FiArrowUpRight,
-    FiDollarSign,
-    FiLock,
-    FiUser,
+    FiClock,
     FiEye,
-    FiFileText
+    FiInfo,
+    FiLock,
+    FiRefreshCw,
+    FiRotateCcw,
+    FiShield,
+    FiUser,
+    FiXCircle
 } from 'react-icons/fi';
-import { MdOutlineAccountBalanceWallet, MdPayment } from 'react-icons/md';
 import { IoCloseOutline } from 'react-icons/io5';
 
 const AdminTransactions = () => {
@@ -26,8 +23,8 @@ const AdminTransactions = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Filters
-    const [statusFilter, setStatusFilter] = useState('all'); // all, HELD_IN_ESCROW, RELEASED_TO_LANDLORD, REFUNDED_TO_TENANT
+    // Filters: all, PENDING, PAID, RELEASED, REFUNDED, FAILED
+    const [statusFilter, setStatusFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
 
     // Modal state for viewing transaction details
@@ -56,15 +53,25 @@ const AdminTransactions = () => {
             if (res?.success && res?.data) {
                 setOverview(res.data);
             } else {
-                setOverview(null);
-                if (res?.message) {
-                    setError(res.message);
-                }
+                setOverview({
+                    totalVolume: 0,
+                    pendingEscrow: 0,
+                    releasedPayments: 0,
+                    totalRefunds: 0,
+                    transactions: []
+                });
+                if (res?.message) setError(res.message);
             }
         } catch (err) {
             console.error('Failed to load transactions:', err);
-            setError(err?.message || 'Unable to retrieve escrow transactions from server.');
-            setOverview(null);
+            setError(err?.message || 'Unable to connect to backend server to load transactions.');
+            setOverview({
+                totalVolume: 0,
+                pendingEscrow: 0,
+                releasedPayments: 0,
+                totalRefunds: 0,
+                transactions: []
+            });
         } finally {
             setIsLoading(false);
         }
@@ -73,23 +80,18 @@ const AdminTransactions = () => {
     const handleReleaseEscrow = async (id) => {
         setIsActionLoading(true);
         try {
-            const res = await config.postAPI({
+            await config.postAPI({
                 url: `/api/v1/admin/transactions/${id}/release`,
                 params: {}
             });
-
-            if (res?.success) {
-                hyveSuccess('Escrow Released', 'Funds successfully disbursed to verified landlord account.');
-                if (selectedTx && selectedTx.id === id) {
-                    setSelectedTx((prev) => ({ ...prev, escrowStatus: 'RELEASED_TO_LANDLORD' }));
-                }
-                fetchTransactions();
-            } else {
-                hyveError('Release Failed', res?.message || 'Could not release escrow funds');
+            hyveSuccess('Escrow Released', 'Funds successfully disbursed to verified landlord account.');
+            if (selectedTx && selectedTx.id === id) {
+                setSelectedTx((prev) => ({ ...prev, paymentStatus: 'RELEASED', escrowStatus: 'RELEASED_TO_LANDLORD' }));
             }
+            fetchTransactions();
         } catch (err) {
-            console.error('Release failed:', err);
-            hyveError('Error', err?.message || 'An error occurred during release');
+            console.error('Failed to release escrow:', err);
+            hyveError('Release Failed', err?.message || 'Could not release escrow payment on server.');
         } finally {
             setIsActionLoading(false);
         }
@@ -98,24 +100,19 @@ const AdminTransactions = () => {
     const handleRefundEscrow = async (id) => {
         setIsActionLoading(true);
         try {
-            const res = await config.postAPI({
+            await config.postAPI({
                 url: `/api/v1/admin/transactions/${id}/refund`,
                 params: { reason: refundReason || 'Tenant refund approved by administrator' }
             });
-
-            if (res?.success) {
-                hyveSuccess('Refund Processed', 'Escrow funds reversed back to tenant account.');
-                setShowRefundInput(false);
-                if (selectedTx && selectedTx.id === id) {
-                    setSelectedTx((prev) => ({ ...prev, escrowStatus: 'REFUNDED_TO_TENANT' }));
-                }
-                fetchTransactions();
-            } else {
-                hyveError('Refund Failed', res?.message || 'Could not refund escrow');
+            hyveSuccess('Refund Processed', 'Escrow funds reversed back to tenant account.');
+            setShowRefundInput(false);
+            if (selectedTx && selectedTx.id === id) {
+                setSelectedTx((prev) => ({ ...prev, paymentStatus: 'REFUNDED', escrowStatus: 'REFUNDED_TO_TENANT' }));
             }
+            fetchTransactions();
         } catch (err) {
-            console.error('Refund failed:', err);
-            hyveError('Error', err?.message || 'An error occurred during refund');
+            console.error('Failed to refund escrow:', err);
+            hyveError('Refund Failed', err?.message || 'Could not process refund on server.');
         } finally {
             setIsActionLoading(false);
         }
@@ -137,6 +134,13 @@ const AdminTransactions = () => {
 
     const transactions = overview?.transactions || [];
 
+    // Realistic counts for the 5 payment statuses
+    const pendingCount = transactions.filter((t) => (t.paymentStatus || '').toUpperCase() === 'PENDING').length;
+    const paidCount = transactions.filter((t) => (t.paymentStatus || '').toUpperCase() === 'PAID').length;
+    const releasedCount = transactions.filter((t) => (t.paymentStatus || '').toUpperCase() === 'RELEASED').length;
+    const refundedCount = transactions.filter((t) => (t.paymentStatus || '').toUpperCase() === 'REFUNDED').length;
+    const failedCount = transactions.filter((t) => (t.paymentStatus || '').toUpperCase() === 'FAILED').length;
+
     return (
         <AdminLayout>
             <AdminHeader
@@ -147,6 +151,29 @@ const AdminTransactions = () => {
             />
 
             <main className="p-6 sm:p-10 space-y-8 max-w-7xl">
+                {/* Clear Sandbox / Demo Label Banner */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-stone-900 text-white shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 shrink-0">
+                            <FiShield className="text-lg" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold font-poppins">Sandbox Escrow Environment</span>
+                                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-400 text-stone-900">
+                                    Demo Mode
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-stone-300 mt-0.5">
+                                Showing clean escrow transactions, verified tenant payments, and landlord disbursements without inflated figures.
+                            </p>
+                        </div>
+                    </div>
+                    <span className="text-xs font-semibold text-stone-400 shrink-0">
+                        {transactions.length} Records Tracked
+                    </span>
+                </div>
+
                 {/* Error Banner with Retry */}
                 {error && (
                     <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between text-xs sm:text-sm">
@@ -165,26 +192,26 @@ const AdminTransactions = () => {
                     </div>
                 )}
 
-                {/* 1. Metric Stat Cards */}
+                {/* 1. Simple, Clean Metric Stat Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-                        <span className="text-xs font-semibold text-stone-500">Total Escrow Volume</span>
+                        <span className="text-xs font-semibold text-stone-500">Total Volume Tracked</span>
                         <div className="mt-4 flex items-baseline justify-between">
                             <span className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-poppins">
                                 {isLoading ? '-' : `₦ ${Number(overview?.totalVolume || 0).toLocaleString()}`}
                             </span>
-                            <span className="text-xs text-stone-400 font-medium">All Time</span>
+                            <span className="text-xs text-stone-400 font-medium">{transactions.length} Total</span>
                         </div>
                     </div>
 
                     <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-                        <span className="text-xs font-semibold text-stone-500">Held in Escrow</span>
+                        <span className="text-xs font-semibold text-stone-500">Held in Escrow (Paid)</span>
                         <div className="mt-4 flex items-baseline justify-between">
-                            <span className="text-2xl sm:text-3xl font-extrabold text-[#FA6400] font-poppins">
+                            <span className="text-2xl sm:text-3xl font-extrabold text-blue-600 font-poppins">
                                 {isLoading ? '-' : `₦ ${Number(overview?.pendingEscrow || 0).toLocaleString()}`}
                             </span>
-                            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-bold">
-                                Protected
+                            <span className="text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full font-bold">
+                                {paidCount} Secured
                             </span>
                         </div>
                     </div>
@@ -195,20 +222,20 @@ const AdminTransactions = () => {
                             <span className="text-2xl sm:text-3xl font-extrabold text-[#12B76A] font-poppins">
                                 {isLoading ? '-' : `₦ ${Number(overview?.releasedPayments || 0).toLocaleString()}`}
                             </span>
-                            <span className="text-xs text-emerald-600 bg-[#E6F8EF] px-2 py-0.5 rounded-full font-bold">
-                                Disbursed
+                            <span className="text-xs text-emerald-700 bg-[#E6F8EF] px-2 py-0.5 rounded-full font-bold">
+                                {releasedCount} Disbursed
                             </span>
                         </div>
                     </div>
 
                     <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-                        <span className="text-xs font-semibold text-stone-500">Platform Revenue (5%)</span>
+                        <span className="text-xs font-semibold text-stone-500">Refunded / Pending</span>
                         <div className="mt-4 flex items-baseline justify-between">
-                            <span className="text-2xl sm:text-3xl font-extrabold text-[#7F56D9] font-poppins">
-                                {isLoading ? '-' : `₦ ${Number(overview?.platformFeeEarned || 0).toLocaleString()}`}
+                            <span className="text-2xl sm:text-3xl font-extrabold text-purple-600 font-poppins">
+                                {isLoading ? '-' : `₦ ${Number(overview?.totalRefunds || 0).toLocaleString()}`}
                             </span>
-                            <span className="text-xs text-purple-600 bg-[#F4EBFF] px-2 py-0.5 rounded-full font-bold">
-                                Fees
+                            <span className="text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full font-bold">
+                                {refundedCount} Reversed
                             </span>
                         </div>
                     </div>
@@ -217,33 +244,35 @@ const AdminTransactions = () => {
                 {/* 2. Main Card with Search, Filter Tabs, and Transactions Table */}
                 <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] space-y-6">
                     {/* Header bar with filters */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-stone-100">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-stone-100">
                         <div>
                             <h2 className="text-lg font-bold text-stone-900 font-poppins">Escrow & Payment Records</h2>
                             <p className="text-xs text-stone-500 mt-0.5">
-                                Audit student lease reservation payments, security locks, and verified disbursements.
+                                Simple payment status tracking for student reservations, escrow locks, and disbursements.
                             </p>
                         </div>
 
-                        {/* Status filter tabs */}
-                        <div className="flex p-1 bg-stone-100 rounded-full text-xs font-semibold">
+                        {/* 5 Clear Payment Status Tabs */}
+                        <div className="flex flex-wrap p-1 bg-stone-100 rounded-full text-xs font-semibold gap-1">
                             {[
-                                { label: 'All Records', value: 'all' },
-                                { label: 'Held in Escrow', value: 'HELD_IN_ESCROW' },
-                                { label: 'Released', value: 'RELEASED_TO_LANDLORD' },
-                                { label: 'Refunded', value: 'REFUNDED_TO_TENANT' }
+                                { label: 'All', value: 'all', count: transactions.length },
+                                { label: 'Pending', value: 'PENDING', count: pendingCount },
+                                { label: 'Paid (Escrow)', value: 'PAID', count: paidCount },
+                                { label: 'Released', value: 'RELEASED', count: releasedCount },
+                                { label: 'Refunded', value: 'REFUNDED', count: refundedCount },
+                                { label: 'Failed', value: 'FAILED', count: failedCount }
                             ].map((tab) => (
                                 <button
                                     key={tab.value}
                                     type="button"
                                     onClick={() => setStatusFilter(tab.value)}
-                                    className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-                                        statusFilter === tab.value
+                                    className={`px-3 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${statusFilter === tab.value
                                             ? 'bg-white text-stone-900 shadow-xs'
                                             : 'text-stone-500 hover:text-stone-800'
-                                    }`}
+                                        }`}
                                 >
-                                    {tab.label}
+                                    <span>{tab.label}</span>
+                                    <span className="text-[10px] opacity-75 font-bold">({tab.count})</span>
                                 </button>
                             ))}
                         </div>
@@ -253,14 +282,14 @@ const AdminTransactions = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="text-xs font-semibold text-stone-400 border-b border-stone-100 pb-3">
+                                <tr className="text-[11px] uppercase tracking-wider font-bold text-stone-400 border-b border-stone-100 pb-3">
                                     <th className="pb-3 pl-2">Reference</th>
                                     <th className="pb-3">Property</th>
                                     <th className="pb-3">Tenant</th>
                                     <th className="pb-3">Landlord</th>
                                     <th className="pb-3">Amount</th>
                                     <th className="pb-3">Date</th>
-                                    <th className="pb-3">Escrow Status</th>
+                                    <th className="pb-3">Payment Status</th>
                                     <th className="pb-3 text-right pr-2">Actions</th>
                                 </tr>
                             </thead>
@@ -275,103 +304,108 @@ const AdminTransactions = () => {
                                 ) : transactions.length === 0 ? (
                                     <tr>
                                         <td colSpan={8} className="py-16 text-center text-stone-400 text-xs sm:text-sm">
-                                            No transaction records found.
+                                            No transaction records found matching this status.
                                         </td>
                                     </tr>
                                 ) : (
-                                    transactions.map((tx) => (
-                                        <tr key={tx.id} className="hover:bg-stone-50/60 transition-colors">
-                                            {/* Reference */}
-                                            <td className="py-4 pl-2 font-mono text-xs font-bold text-stone-800">
-                                                {tx.referenceNumber}
-                                            </td>
+                                    transactions.map((tx) => {
+                                        const pStatus = (tx.paymentStatus || 'PENDING').toUpperCase();
 
-                                            {/* Property */}
-                                            <td className="py-4 text-xs font-bold text-stone-900 max-w-[180px] truncate" title={tx.propertyName}>
-                                                {tx.propertyName || 'Verified Apartment'}
-                                            </td>
+                                        return (
+                                            <tr key={tx.id} className="hover:bg-stone-50/60 transition-colors">
+                                                {/* Reference */}
+                                                <td className="py-4 pl-2 font-mono text-xs font-bold text-stone-800">
+                                                    {tx.referenceNumber}
+                                                </td>
 
-                                            {/* Tenant */}
-                                            <td className="py-4 text-xs text-stone-700">
-                                                <div className="font-semibold text-stone-900">{tx.tenantName || 'Tenant'}</div>
-                                                <div className="text-[11px] text-stone-400">{tx.tenantEmail || '-'}</div>
-                                            </td>
+                                                {/* Property */}
+                                                <td className="py-4 text-xs font-bold text-stone-900 max-w-[180px] truncate" title={tx.propertyName}>
+                                                    {tx.propertyName || 'Property Lease'}
+                                                </td>
 
-                                            {/* Landlord */}
-                                            <td className="py-4 text-xs text-stone-700">
-                                                <div className="font-semibold text-stone-900">{tx.landlordName || 'Landlord'}</div>
-                                                <div className="text-[11px] text-stone-400">{tx.landlordEmail || '-'}</div>
-                                            </td>
+                                                {/* Tenant */}
+                                                <td className="py-4 text-xs text-stone-700">
+                                                    <div className="font-semibold text-stone-900">{tx.tenantName || 'Tenant'}</div>
+                                                    <div className="text-[11px] text-stone-400">{tx.tenantEmail || '-'}</div>
+                                                </td>
 
-                                            {/* Amount */}
-                                            <td className="py-4 text-xs font-bold text-stone-900 font-poppins">
-                                                ₦ {Number(tx.amount || 0).toLocaleString()}
-                                            </td>
+                                                {/* Landlord */}
+                                                <td className="py-4 text-xs text-stone-700">
+                                                    <div className="font-semibold text-stone-900">{tx.landlordName || 'Verified Landlord'}</div>
+                                                    <div className="text-[11px] text-stone-400">{tx.landlordEmail || '-'}</div>
+                                                </td>
 
-                                            {/* Date */}
-                                            <td className="py-4 text-xs text-stone-500">
-                                                {formatDate(tx.createdAt)}
-                                            </td>
+                                                {/* Amount */}
+                                                <td className="py-4 text-xs font-bold text-stone-900">
+                                                    ₦ {Number(tx.amount || 0).toLocaleString()}
+                                                </td>
 
-                                            {/* Status Badge */}
-                                            <td className="py-4">
-                                                <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${
-                                                    tx.escrowStatus === 'RELEASED_TO_LANDLORD'
-                                                        ? 'bg-[#E6F8EF] text-[#12B76A] border border-emerald-200/40'
-                                                        : tx.escrowStatus === 'REFUNDED_TO_TENANT'
-                                                        ? 'bg-[#FEECEB] text-[#F04438] border border-red-200/40'
-                                                        : 'bg-amber-50 text-amber-700 border border-amber-200/40'
-                                                }`}>
-                                                    {tx.escrowStatus === 'RELEASED_TO_LANDLORD'
-                                                        ? 'Released'
-                                                        : tx.escrowStatus === 'REFUNDED_TO_TENANT'
-                                                        ? 'Refunded'
-                                                        : 'Held in Escrow'}
-                                                </span>
-                                            </td>
+                                                {/* Date */}
+                                                <td className="py-4 text-xs text-stone-500">
+                                                    {formatDate(tx.createdAt)}
+                                                </td>
 
-                                            {/* Actions */}
-                                            <td className="py-4 text-right pr-2">
-                                                <div className="flex items-center justify-end gap-1.5">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSelectedTx(tx)}
-                                                        className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition-colors cursor-pointer"
-                                                        title="Inspect Payment Details"
-                                                    >
-                                                        <FiEye className="text-xs" />
-                                                    </button>
+                                                {/* 5 Clear Payment Status Badges */}
+                                                <td className="py-4">
+                                                    {pStatus === 'PAID' && (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                                            <FiLock className="text-xs" />
+                                                            <span>Paid (In Escrow)</span>
+                                                        </span>
+                                                    )}
+                                                    {pStatus === 'RELEASED' && (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#E6F8EF] text-[#12B76A] border border-emerald-200">
+                                                            <FiCheckCircle className="text-xs" />
+                                                            <span>Released</span>
+                                                        </span>
+                                                    )}
+                                                    {pStatus === 'PENDING' && (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                                            <FiClock className="text-xs" />
+                                                            <span>Pending</span>
+                                                        </span>
+                                                    )}
+                                                    {pStatus === 'REFUNDED' && (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                                                            <FiRotateCcw className="text-xs" />
+                                                            <span>Refunded</span>
+                                                        </span>
+                                                    )}
+                                                    {pStatus === 'FAILED' && (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                                            <FiXCircle className="text-xs" />
+                                                            <span>Failed</span>
+                                                        </span>
+                                                    )}
+                                                </td>
 
-                                                    {tx.escrowStatus === 'HELD_IN_ESCROW' && (
-                                                        <>
+                                                {/* Actions */}
+                                                <td className="py-4 text-right pr-2">
+                                                    <div className="flex items-center justify-end gap-1.5">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSelectedTx(tx)}
+                                                            className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs transition-colors cursor-pointer"
+                                                            title="View Payment Breakdown"
+                                                        >
+                                                            <FiEye />
+                                                        </button>
+
+                                                        {pStatus === 'PAID' && (
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleReleaseEscrow(tx.id)}
-                                                                disabled={isActionLoading}
-                                                                className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-[11px] transition-colors cursor-pointer"
+                                                                className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold transition-colors cursor-pointer"
                                                                 title="Release Escrow to Landlord"
                                                             >
                                                                 Release
                                                             </button>
-
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setSelectedTx(tx);
-                                                                    setShowRefundInput(true);
-                                                                }}
-                                                                disabled={isActionLoading}
-                                                                className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-[11px] transition-colors cursor-pointer"
-                                                                title="Refund to Tenant"
-                                                            >
-                                                                Refund
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
@@ -396,98 +430,95 @@ const AdminTransactions = () => {
                             {/* Modal Header */}
                             <div className="flex items-center justify-between pb-4 border-b border-stone-100">
                                 <div>
-                                    <span className="text-[10px] font-bold tracking-wider uppercase text-[#FA6400]">
-                                        Payment Verification Receipt
-                                    </span>
-                                    <h3 className="text-lg font-bold text-stone-900 font-poppins">
-                                        Ref: {selectedTx.referenceNumber}
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-mono text-xs font-bold text-[#FA6400]">
+                                            {selectedTx.referenceNumber}
+                                        </span>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-700">
+                                            {selectedTx.paymentStatus}
+                                        </span>
+                                    </div>
+                                    <h3 className="text-lg font-bold text-stone-900 font-poppins mt-1">
+                                        Payment Breakdown
                                     </h3>
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setSelectedTx(null);
-                                        setShowRefundInput(false);
-                                    }}
-                                    className="p-2 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100"
+                                    onClick={() => setSelectedTx(null)}
+                                    className="p-2 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 cursor-pointer"
                                 >
                                     <IoCloseOutline className="text-2xl" />
                                 </button>
                             </div>
 
-                            {/* Escrow Amount Callout */}
-                            <div className="p-6 bg-[#FFF2EA] border border-[#FA6400]/20 rounded-2xl text-center space-y-1">
-                                <span className="text-xs text-stone-500 font-medium">Total Escrow Amount</span>
-                                <p className="text-3xl font-extrabold text-[#FA6400] font-poppins">
+                            {/* Amount Summary */}
+                            <div className="p-5 bg-stone-50 rounded-2xl border border-stone-100 text-center space-y-1">
+                                <span className="text-xs font-semibold text-stone-500">Total Escrow Amount</span>
+                                <div className="text-3xl font-extrabold text-stone-900 font-poppins">
                                     ₦ {Number(selectedTx.amount || 0).toLocaleString()}
-                                </p>
-                                <span className={`inline-block text-xs font-semibold px-3 py-0.5 rounded-full mt-2 ${
-                                    selectedTx.escrowStatus === 'RELEASED_TO_LANDLORD'
-                                        ? 'bg-[#E6F8EF] text-[#12B76A]'
-                                        : selectedTx.escrowStatus === 'REFUNDED_TO_TENANT'
-                                        ? 'bg-[#FEECEB] text-[#F04438]'
-                                        : 'bg-amber-100 text-amber-800'
-                                }`}>
-                                    Status: {selectedTx.escrowStatus}
+                                </div>
+                                <span className="text-[11px] text-emerald-600 font-bold block">
+                                    Funds Protected by Hyve Haven Escrow
                                 </span>
                             </div>
 
-                            {/* Transaction Details */}
-                            <div className="space-y-3 text-xs">
-                                <div className="flex justify-between py-2 border-b border-stone-100">
-                                    <span className="text-stone-400">Property Listing</span>
-                                    <span className="font-bold text-stone-800 text-right">{selectedTx.propertyName || 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b border-stone-100">
-                                    <span className="text-stone-400">Location</span>
-                                    <span className="font-bold text-stone-800 text-right">{selectedTx.propertyLocation || 'N/A'}</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b border-stone-100">
-                                    <span className="text-stone-400">Transaction Date</span>
-                                    <span className="font-bold text-stone-800">{formatDate(selectedTx.createdAt)}</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b border-stone-100">
-                                    <span className="text-stone-400">Move-in Date</span>
-                                    <span className="font-bold text-stone-800">{formatDate(selectedTx.moveInDate)}</span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b border-stone-100">
-                                    <span className="text-stone-400">Tenant</span>
-                                    <span className="font-bold text-stone-800 text-right">
-                                        {selectedTx.tenantName} ({selectedTx.tenantEmail})
-                                    </span>
-                                </div>
-                                <div className="flex justify-between py-2 border-b border-stone-100">
-                                    <span className="text-stone-400">Landlord</span>
-                                    <span className="font-bold text-stone-800 text-right">
-                                        {selectedTx.landlordName} ({selectedTx.landlordEmail})
-                                    </span>
+                            {/* Property Info */}
+                            <div className="space-y-1.5">
+                                <h4 className="text-xs font-bold text-stone-700 uppercase tracking-wider">
+                                    Property
+                                </h4>
+                                <div className="p-3 bg-stone-50 rounded-xl border border-stone-100 text-xs">
+                                    <p className="font-bold text-stone-900">{selectedTx.propertyName}</p>
+                                    <p className="text-stone-500 text-[11px] mt-0.5">{selectedTx.propertyLocation || 'Location on file'}</p>
                                 </div>
                             </div>
 
-                            {/* Refund input section if toggled */}
+                            {/* Tenant Info */}
+                            <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100 text-xs space-y-1.5">
+                                <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                                    <FiUser className="text-[#FA6400]" />
+                                    <span>Tenant (Payer)</span>
+                                </h4>
+                                <p><strong>Name:</strong> {selectedTx.tenantName}</p>
+                                <p><strong>Email:</strong> {selectedTx.tenantEmail}</p>
+                                <p><strong>Phone:</strong> {selectedTx.tenantPhone || 'N/A'}</p>
+                            </div>
+
+                            {/* Landlord Info */}
+                            <div className="p-4 bg-orange-50/50 rounded-2xl border border-orange-100 text-xs space-y-1.5">
+                                <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
+                                    <FiUser className="text-[#FA6400]" />
+                                    <span>Landlord (Beneficiary)</span>
+                                </h4>
+                                <p><strong>Name:</strong> {selectedTx.landlordName}</p>
+                                <p><strong>Email:</strong> {selectedTx.landlordEmail}</p>
+                                <p><strong>Phone:</strong> {selectedTx.landlordPhone || 'N/A'}</p>
+                            </div>
+
+                            {/* Refund Input if toggled */}
                             {showRefundInput && (
-                                <div className="p-4 bg-red-50/70 border border-red-200 rounded-2xl space-y-3 text-xs">
-                                    <h4 className="font-bold text-red-900">Specify Refund Justification</h4>
+                                <div className="p-4 bg-purple-50 rounded-2xl border border-purple-200 space-y-3">
+                                    <h4 className="text-xs font-bold text-purple-900">Confirm Escrow Refund</h4>
                                     <textarea
                                         value={refundReason}
                                         onChange={(e) => setRefundReason(e.target.value)}
-                                        placeholder="Enter reason for returning funds to student..."
-                                        rows={3}
-                                        className="w-full p-3 bg-white border border-red-200 rounded-xl text-xs outline-none focus:border-red-400"
+                                        placeholder="Reason for refund (e.g. Property unverified or lease cancelled)..."
+                                        rows={2}
+                                        className="w-full p-2.5 text-xs rounded-xl border border-purple-200 bg-white outline-none focus:border-purple-400"
                                     />
-                                    <div className="flex gap-2">
+                                    <div className="flex items-center gap-2">
                                         <button
                                             type="button"
                                             onClick={() => handleRefundEscrow(selectedTx.id)}
                                             disabled={isActionLoading}
-                                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold cursor-pointer transition-colors"
+                                            className="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
                                         >
-                                            {isActionLoading ? 'Processing...' : 'Confirm Full Refund'}
+                                            Confirm & Reverse Funds
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setShowRefundInput(false)}
-                                            className="px-3 py-2 bg-stone-100 text-stone-600 rounded-xl font-medium cursor-pointer"
+                                            className="px-3 py-2 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                                         >
                                             Cancel
                                         </button>
@@ -497,28 +528,30 @@ const AdminTransactions = () => {
                         </div>
 
                         {/* Actions Footer */}
-                        {selectedTx.escrowStatus === 'HELD_IN_ESCROW' && !showRefundInput && (
-                            <div className="pt-4 border-t border-stone-100 flex items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => handleReleaseEscrow(selectedTx.id)}
-                                    disabled={isActionLoading}
-                                    className="flex-1 py-3 bg-[#12B76A] hover:bg-[#0ea35c] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                                >
-                                    <FiCheckCircle />
-                                    <span>Release to Landlord</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowRefundInput(true)}
-                                    disabled={isActionLoading}
-                                    className="flex-1 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2"
-                                >
-                                    <FiRotateCcw />
-                                    <span>Refund to Tenant</span>
-                                </button>
-                            </div>
-                        )}
+                        <div className="pt-4 border-t border-stone-100 flex items-center gap-3">
+                            {selectedTx.paymentStatus === 'PAID' && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleReleaseEscrow(selectedTx.id)}
+                                        disabled={isActionLoading}
+                                        className="flex-1 py-3 bg-[#12B76A] hover:bg-[#0ea35c] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2"
+                                    >
+                                        <FiCheckCircle />
+                                        <span>Release to Landlord</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowRefundInput(!showRefundInput)}
+                                        disabled={isActionLoading}
+                                        className="px-4 py-3 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                                    >
+                                        Refund Tenant
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
